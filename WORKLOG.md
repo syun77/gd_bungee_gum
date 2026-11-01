@@ -1,12 +1,28 @@
-## Active tarako pasta asset task
-- Goal: Create photo-referenced Sicilian-style tarako pasta collectible in images/foods/.
-- Status: Generating.
-- Completed: Read handoff and food conventions; inspected photo.
-- Decisions: 64×64 transparent sprite; yellow pasta, pink sauce and dark shredded nori in white bowl.
-- Files changed: WORKLOG.md.
-- Verification: Pending.
+## Completed hamburger steak asset task
+- Goal/status: Create photo-referenced hamburger steak collectible; complete.
+- Completed: Built-in imagegen generation, visible-bounds nearest-neighbor normalization and enlarged final visual inspection.
+- Decisions: 64×64 transparent RGBA; sauced patty, egg, corn, two potatoes, black iron platter and red-brown wooden base; asset only.
+- Files changed: images/foods/hamburger_steak.png; specs/food-item-assets.md (final prompt); AGENTS.md; WORKLOG.md.
+- Verification: Pillow confirms 64×64 RGBA, alpha range 0–254 and transparent corners; final silhouette and food arrangement reviewed. Naming/docs checked; git diff --check passed.
 - Blockers: None.
-- Next action: Generate, normalize and visually inspect.
+- Next action: Use saved sprite; copy into res:// with nearest filtering when integrating collectibles.
+
+## Completed automatic gum release investigation
+- Goal/status: Explain releases without manual detach; complete, runtime unchanged.
+- Findings: validate_connection releases on straight-line obstruction (including a different face of the same terrain body), distance >900 px, or target deletion. Obstruction ray ends 3 px before anchor; no wrapping. Tension cap does not break gum. HUD preserves OBSTRUCTED / TOO FAR / TARGET LOST until later action.
+- Files changed: WORKLOG.md; AGENTS.md.
+- Verification: Headless verify_gum.gd passed, including obstruction/maximum-length/deleted-target cases; log /tmp/gum-release-investigation.log. Existing macOS certificate warning only. Reviewed code/spec agreement; exact user-observed trigger cannot be identified without HUD reason or reproduction.
+- Blockers: None for explanation.
+- Next action: Read HUD release reason at observed event; if changing behavior, decide obstacle handling and maximum-length rules first.
+
+## Completed tarako pasta asset task
+- Goal/status: Create photo-referenced Sicilian-style tarako pasta collectible; complete.
+- Completed: Built-in imagegen generation, visible-bounds nearest-neighbor normalization and enlarged final visual review.
+- Decisions: 64×64 transparent RGBA; yellow pasta, pink sauce, dark shredded nori and white patterned bowl; asset only.
+- Files changed: images/foods/tarako_pasta.png; specs/food-item-assets.md (final prompt); AGENTS.md; WORKLOG.md.
+- Verification: Pillow confirms 64×64 RGBA, alpha 0–255 and transparent corners. Final preview checked for distinct pasta/sauce/nori. Naming/docs reviewed; git diff --check passed.
+- Blockers: None.
+- Next action: Use saved sprite; copy into res:// with nearest filtering when integrating collectibles.
 
 ## Completed margherita pizza asset task
 - Goal/status: Create photo-referenced buffalo mozzarella margherita collectible; complete.

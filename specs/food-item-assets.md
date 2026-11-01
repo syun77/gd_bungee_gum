@@ -1,5 +1,27 @@
 # 回収用フード画像素材
 
+## ハンバーグ・ステーキ
+
+- ファイル: `images/foods/hamburger_steak.png`
+- 64 × 64 px、RGBA PNG、透過背景。単一の静止スプライト。
+- 濃い茶色のソースをかけたハンバーグ、目玉焼き、コーン、2本のポテト、黒い鉄板と赤茶色の木台を表現。
+- built-in imagegenで添付写真を参考に生成し、可視領域を基準に最近傍補間で正規化。表示はNearestフィルター。素材のみで回収処理・配置は未実装。
+
+最終生成プロンプト:
+
+> A tiny 16-bit pixel-art game collectible based on reference photo hamburger steak dinner. One black oval sizzling iron platter on a thin red-brown wooden base, entire platter visible centered horizontally. Large oval brown hamburger steak in front center with deep reddish-brown demi-glace sauce and a few chunky cream highlights. At back right a sunny-side-up fried egg with bright orange yolk and white edge; back center bright yellow corn mound; back left two golden rectangular potato croquettes. Slightly elevated three-quarter view. Simple chunky square pixel clusters on uniform 64x64 logical grid, complete item about 56x34 logical pixels. Restrained palette, bold stepped dark contour, clean readable food silhouettes, crisp nearest-neighbor enlarged pixel art. No fine texture, photo noise, gradients, blur or antialiasing. Actual transparent background alpha zero outside platter/base. NO glow, halo, shadow, backdrop or vignette. No steam, text, logos, cutlery or extra garnish. Single static sprite on square transparent canvas with padding.
+
+## たらこソースシシリー風
+
+- ファイル: `images/foods/tarako_pasta.png`
+- 64 × 64 px、RGBA PNG、透過背景。単一の静止スプライト。
+- 黄色いスパゲッティ、淡いピンクのたらこソース、黒緑色の刻み海苔、淡い色模様の白い器を表現。
+- built-in imagegenで添付写真を参考に生成し、可視領域を基準に最近傍補間で正規化。表示はNearestフィルター。素材のみで回収処理・配置は未実装。
+
+最終生成プロンプト:
+
+> A tiny 16-bit pixel-art game collectible based on the reference dish: Sicilian-style tarako spaghetti. A compact mound of pale yellow spaghetti loops topped with generous pale pink creamy cod roe sauce and a small mound of short dark olive-black shredded nori strips. In a shallow white ceramic bowl with subtle pale coral, cream and mint rectangular rim marks. Slightly elevated three-quarter view, horizontal oval silhouette. Entire complete bowl centered on square transparent canvas, generous padding. Simple chunky square pixel clusters on a uniform 64x64 logical grid; complete dish about 56x36 pixels. Limited palette, bold stepped warm gray outline, clean separated yellow noodles / pink sauce / dark nori, no tiny photographic texture or fine noise. Crisp nearest-neighbor enlarged pixel art. Actual transparent background alpha zero outside bowl. NO glow, halo, shadow, backdrop, vignette, gradients, blur, antialiasing, text, logos, utensils or extra garnish. Single static sprite.
+
 ## バッファローモッツァレラのマルゲリータピザ
 
 - ファイル: `images/foods/margherita_pizza.png`
