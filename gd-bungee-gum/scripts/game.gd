@@ -80,11 +80,11 @@ func _handle_gesture(jump_requested: bool) -> void:
 
 func _update_status() -> void:
 	if gum.connected():
-		status.text = "%s | TENSION %d%% | LENGTH %.0f / REST %.0f | LIMIT %.0f%%" % [
+		status.text = "%s | TENSION %d%% | LENGTH %.0f / REST %.0f | LIMIT %.0f%% | PIVOTS %d" % [
 			"CONTRACT" if gum.mode == gum.Mode.CONTRACT else "LOOSEN",
 			gum.tension / gum.settings.maximum_tension * 100.0,
-			gum.origin().distance_to(gum.endpoint()), gum.rest_length,
-			gum.origin().distance_to(gum.endpoint()) / gum.settings.maximum_length * 100.0]
+			gum.path.length, gum.rest_length,
+			gum.path.length / gum.settings.maximum_length * 100.0, gum.path.pivots.size()]
 	else:
 		status.text = "%s | %s" % ["AIM" if gesture == Gesture.AIM else gum.release_reason,
 			"TARGET" if gum.aim_valid else "NO TARGET"]

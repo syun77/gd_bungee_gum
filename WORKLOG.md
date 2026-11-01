@@ -1,12 +1,21 @@
-## Active gum wrapping design task
-- Goal: Redesign obstacle handling as corner wrapping.
-- Status: Source/spec review complete; drafting design, runtime unchanged.
-- Completed: Confirmed straight-ray obstruction release, shared 900 px limit, and merged rectangular Terrain shapes.
-- Decisions: Persistent ordered pivots on static terrain; total-path spring length; terrain reaction balances bent endpoint forces. Dynamic wrapping deferred explicitly.
-- Files changed: WORKLOG.md.
-- Verification: Source/spec inspection; document review pending.
-- Blockers: None.
-- Next action: Write wrapping specification and link target design separately from implemented behavior; review invariants and acceptance cases.
+## Active gum wrapping implementation
+- Goal: Implement specs/gum-wrapping.md.
+- Status: Core geometry/path/forces integrated; extending tests and reviewing final design alignment.
+- Completed: Collision polygon union exposed-edge corners, stable ordered pivots, sampled endpoint sweep, local visibility routing, hysteretic unwrap, total-path forces/reactions, HUD pivots and Inspector tuning. Existing gum and controls suites pass; dedicated path suite passes four-sided wrapping, 300-tick stability, union boundaries, sweep, deletion, budgets and force derivative/balance.
+- Decisions: Static rectangle/convex-polygon corners; unsupported geometry/dynamic intersections safely release. Sweep uses <=1px endpoint samples with 4096 hard cap. Rendering uses collision-safe polyline.
+- Files changed: scripts/gum_{terrain_geometry,path,connection}.gd, game.gd, game_settings.gd, resources/game_settings.tres; tools/verify_gum.gd and verify_gum_path.gd; WORKLOG.md. Design documents from preceding task retained.
+- Verification: /tmp/wrap-{gum,controls,path}.log PASS; map geometry ~6ms build, steady route ~0.24ms/tick in headless lab. Certificate warning unrelated.
+- Blockers: None; manual visual playtest pending.
+- Next action: Expand integration/failure tests, refactor touched area, align implementation docs and run full relevant suite.
+
+## Completed gum wrapping design task
+- Goal/status: Redesign obstacle handling as corner wrapping; design complete, runtime unchanged.
+- Completed: Added specs/gum-wrapping.md with static terrain union outlines, ordered stable pivots, swept path updates, side-preserving local routing, hysteretic unwrap, total-path spring/damping, balanced terrain reactions, rendering, budgets, phased implementation and acceptance cases.
+- Decisions: Static convex terrain corners first; dynamic endpoint boxes retained, dynamic pivot wrapping deferred with explicit unsupported-obstacle release. 900 px applies to total path; no rest-length reset or topology-change impulse.
+- Files changed: specs/gum-wrapping.md, godot-implementation-plan.md, physics-foundation.md, bungee-gum-prototype.md, keyboard-controls.md; AGENTS.md; WORKLOG.md. Concurrent food assets/docs preserved.
+- Verification: Reviewed force signs and telescoping force balance, no-pivot reduction, runtime-versus-target labels, controls/length semantics, safety failure cases and touched-area structure. git diff --check passed. No runtime tests run for documentation-only changes.
+- Blockers: None for design; proposed tolerances/budgets require prototype validation.
+- Next action: Implement terrain geometry/path unit checks first, then integrate total-path forces and replace obstruction-release tests per specs/gum-wrapping.md.
 
 ## Completed Italian pudding asset task
 - Goal/status: Create photo-referenced Italian pudding collectible; complete.

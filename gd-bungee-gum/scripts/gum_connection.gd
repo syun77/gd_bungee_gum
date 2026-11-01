@@ -1,6 +1,9 @@
 extends Node2D
 ## Rules own the connection; physics resolves both endpoints' motion.
 const Settings = preload("res://scripts/game_settings.gd")
+const GumPath = preload("res://scripts/gum_path.gd")
+var path = GumPath.new()
+var terrain_forces := PackedVector2Array()
 enum Mode { NONE, CONTRACT, LOOSEN }
 @export var settings: Settings
 var player: CharacterBody2D
@@ -47,7 +50,9 @@ func attach_at(point: Vector2) -> bool:
 		return false
 	target = hit.collider
 	target_local_point = target.to_local(hit.position)
-	rest_length = origin().distance_to(hit.position)
+	path.reset(origin(), hit.position)
+	rest_length = path.length
+	terrain_forces.clear()
 	tension = 0.0
 	player_force = Vector2.ZERO
 	target_force = Vector2.ZERO
@@ -58,6 +63,11 @@ func attach_at(point: Vector2) -> bool:
 func detach(reason := "RELEASED") -> void:
 	# Never alter either endpoint's velocity on release.
 	target = null
+	path.initialized = false
+	path.pivots.clear()
+	path.points.clear()
+	path.length = 0.0
+	terrain_forces.clear()
 	tension = 0.0
 	player_force = Vector2.ZERO
 	target_force = Vector2.ZERO
@@ -76,18 +86,16 @@ func validate_connection() -> void:
 		if target != null or mode != Mode.NONE:
 			detach("TARGET LOST")
 		return
-	var offset := endpoint() - origin()
-	if offset.length() > settings.maximum_length:
-		detach("TOO FAR")
-	elif offset.length() > 4.0 and not cast_to(endpoint() - offset.normalized() * 3.0).is_empty():
-		detach("OBSTRUCTED")
 
 func toggle_mode() -> void:
 	if not connected():
 		return
 	if mode == Mode.CONTRACT:
 		mode = Mode.LOOSEN
-		rest_length = minf(settings.maximum_length, maxf(rest_length, origin().distance_to(endpoint()) + settings.loosen_margin))
+		if not path.update(origin(), endpoint(), get_tree().root, settings, false):
+			detach(path.failure)
+			return
+		rest_length = minf(settings.maximum_length, maxf(rest_length, path.length + settings.loosen_margin))
 	else:
 		mode = Mode.CONTRACT
 
@@ -95,21 +103,31 @@ func step(delta: float) -> void:
 	player_force = Vector2.ZERO
 	target_force = Vector2.ZERO
 	tension = 0.0
+	terrain_forces.clear()
 	validate_connection()
 	if not connected():
 		return
-	var offset := endpoint() - origin()
-	var distance := offset.length()
+	if not path.update(origin(), endpoint(), get_tree().root, settings):
+		detach(path.failure)
+		return
+	if path.length > settings.maximum_length:
+		detach("TOO FAR")
+		return
+	if _dynamic_obstruction():
+		detach("UNSUPPORTED OBSTACLE")
+		return
+	var distance: float = path.length
 	if mode == Mode.CONTRACT:
 		# A shot closer than minimum_length must not lengthen on contraction.
 		rest_length = maxf(minf(rest_length, settings.minimum_length), rest_length - settings.contraction_speed * delta)
 	if distance <= rest_length or distance < 0.01:
 		return
-	var direction := offset / distance
-	var separation_speed := (target_point_velocity() - player.velocity).dot(direction)
+	var direction: Vector2 = path.start_direction()
+	var separation_speed: float = path.speed(player.velocity, target_point_velocity())
 	tension = clampf(settings.stiffness * (distance - rest_length) + settings.damping * separation_speed, 0.0, settings.maximum_tension)
 	player_force = direction * tension
-	target_force = -player_force
+	target_force = -path.end_direction() * tension
+	terrain_forces = path.reactions(tension)
 	player.apply_external_force(player_force, delta)
 	if target is RigidBody2D:
 		# apply_force takes force (not impulse) and a world-oriented offset from origin.
@@ -132,13 +150,52 @@ func _draw() -> void:
 		draw_arc(aim, settings.aim_reticle_radius, 0, TAU, 20, aim_color, settings.aim_reticle_width)
 	if not connected():
 		return
-	var end := to_local(endpoint())
 	var ratio := tension / settings.maximum_tension
 	var color := settings.gum_slack_color.lerp(settings.gum_taut_color, ratio)
-	var sag := minf(maxf(rest_length - start.distance_to(end), 0.0) * 0.35, 70.0)
-	var points := PackedVector2Array()
-	for index in 25:
-		var weight := index / 24.0
-		points.append(start.lerp(end, weight) + Vector2(0, sin(weight * PI) * sag))
-	draw_polyline(points, color, settings.gum_line_width + ratio * settings.gum_tension_width, true)
-	draw_circle(end, 5.0, color)
+	var points := _display_points()
+	if points.size() > 1:
+		draw_polyline(points, color, settings.gum_line_width + ratio * settings.gum_tension_width, true)
+	for pivot in path.pivots:
+		draw_circle(to_local(pivot.position), 3.0, color)
+	draw_circle(to_local(endpoint()), 5.0, color)
+
+func _display_points() -> PackedVector2Array:
+	var result := PackedVector2Array()
+	if path.points.size() < 2:
+		return result
+	var slack: float = maxf(rest_length - path.length, 0.0)
+	for i in range(path.points.size()-1):
+		var a: Vector2 = player.gum_visual_origin() if i == 0 else path.points[i]
+		var b: Vector2 = endpoint() if i == path.points.size()-2 else path.points[i+1]
+		var sag := minf(slack * a.distance_to(b) / maxf(path.length, 0.01) * 0.35, 70.0)
+		var curve := PackedVector2Array()
+		for attempt in 5:
+			curve = PackedVector2Array([a])
+			var clear := true
+			for sample in range(1,25):
+				var weight := sample / 24.0
+				var point := a.lerp(b,weight) + Vector2(0,sin(weight*PI)*sag)
+				if not path.geometry.visible(curve[-1],point):
+					clear = false
+				curve.append(point)
+			if clear:
+				break
+			sag *= 0.5
+			if attempt == 4:
+				curve = PackedVector2Array([a,b])
+		for j in range(0 if i == 0 else 1,curve.size()):
+			result.append(to_local(curve[j]))
+	return result
+
+func _dynamic_obstruction() -> bool:
+	for i in range(path.points.size()-1):
+		var a: Vector2 = path.points[i]
+		var b: Vector2 = path.points[i+1]
+		var end := b
+		if i == path.points.size()-2:
+			end = b.move_toward(a, minf(0.1, a.distance_to(b)*0.1))
+		var query := PhysicsRayQueryParameters2D.create(a, end, 4, [player.get_rid()])
+		query.hit_from_inside = true
+		if not get_world_2d().direct_space_state.intersect_ray(query).is_empty():
+			return true
+	return false

@@ -22,6 +22,13 @@ extends Resource
 @export_range(1.0, 10000.0) var maximum_tension := 2800.0
 @export_range(0.0, 200.0) var loosen_margin := 32.0
 
+@export_group("Gum Wrapping")
+@export_range(0.25, 4.0) var wrap_clearance := 1.0
+@export_range(1.0, 8.0) var wrap_release_margin := 2.0
+@export_range(1, 10) var wrap_release_ticks := 2
+@export_range(1, 64) var wrap_max_pivots := 16
+@export_range(1, 128) var wrap_max_repairs := 32
+
 @export_group("Aim Guide")
 ## Target available / unavailable. Alpha controls both guide and reticle opacity.
 @export var aim_valid_color := Color(0.45, 1.0, 0.75, 0.9)

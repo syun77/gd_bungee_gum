@@ -86,7 +86,27 @@ func verify() -> void:
 	var blocker := body_at(Vector2(100, -34))
 	await ticks(2)
 	step_lab()
-	check(not gum.connected() and gum.release_reason == "OBSTRUCTED", "Terrain obstruction must release")
+	check(gum.connected() and gum.path.pivots.size() == 2, "Terrain obstruction must wrap around two corners")
+	var total_force: Vector2 = gum.player_force + gum.target_force
+	for force in gum.terrain_forces:
+		total_force += force
+	check(total_force.length() < 0.001, "Wrapped forces balance including terrain reaction")
+	gum.mode = gum.Mode.CONTRACT
+	gum.toggle_mode()
+	check(absf(gum.rest_length - gum.path.length - gum.settings.loosen_margin) < 0.01, "Wrapped loosen uses total path plus margin")
+	var wrapped_velocity: Vector2 = player.external_velocity
+	gum.detach()
+	check(player.external_velocity == wrapped_velocity and gum.path.pivots.is_empty(), "Wrapped detach clears pivots and preserves momentum")
+	# Total route can exceed the limit while the endpoint chord remains below it.
+	gum.target = wall
+	gum.target_local_point = Vector2(-20,0)
+	gum.mode = gum.Mode.LOOSEN
+	gum.path.reset(gum.origin(),gum.endpoint())
+	var saved_maximum: float = gum.settings.maximum_length
+	gum.settings.maximum_length = 202.0
+	step_lab()
+	check(not gum.connected() and gum.release_reason == "TOO FAR", "Total path limit applies despite shorter straight distance")
+	gum.settings.maximum_length = saved_maximum
 	blocker.add_to_group("gum_blocked")
 	check(not gum.attach_at(wall.position), "Blocked first hit must not attach behind it")
 	blocker.free()
@@ -96,6 +116,16 @@ func verify() -> void:
 	step_lab()
 	check(not gum.connected() and gum.release_reason == "TOO FAR", "Maximum length releases without teleport")
 	player.position = Vector2.ZERO
+	wall.free()
+	# A dynamic object crossing the route is explicitly unsupported, never a ghost force.
+	wall = body_at(Vector2(220,-34))
+	await ticks(2)
+	gum.attach_at(wall.position)
+	var crossing := body_at(Vector2(100,-34),true)
+	await ticks(2)
+	step_lab()
+	check(not gum.connected() and gum.release_reason == "UNSUPPORTED OBSTACLE", "Dynamic obstruction has explicit safe release")
+	crossing.free()
 	wall.free()
 	var box := body_at(Vector2(220, -34), true) as RigidBody2D
 	await ticks(2)
@@ -178,5 +208,5 @@ func verify() -> void:
 	Input.action_release("jump")
 	game.free()
 	if failures == 0:
-		print("PASS: gum ray/blocked hit, slack, contraction/hold, release momentum, occlusion, maximum length, rotating endpoint, reciprocal forces and light/heavy rigid response, target deletion; live Game lift/poses/detach")
+		print("PASS: gum ray/blocked hit, slack, contraction/hold, release momentum, corner wrapping/terrain reactions/path limit, dynamic obstruction, maximum length, rotating endpoint, reciprocal forces and light/heavy rigid response, target deletion; live Game lift/poses/detach")
 	quit(1 if failures else 0)

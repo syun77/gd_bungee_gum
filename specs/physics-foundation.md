@@ -82,6 +82,8 @@ force = direction_between_endpoints * tension
 
 力は原則として双方へ反対向きに作用させる。ただし静的地形は無限質量の端点として扱い、プレイヤーキャラクターについては操作性を守るため、後述の補助制御を許可する。
 
+巻き付き時は端点間距離を総経路長に置き換え、両端をそれぞれ隣接する支点へ引く。曲がる地形が反力を受け持つため、作用反作用は両端と支点を含む系全体で維持する。具体式と検証条件は [巻き付き設計](gum-wrapping.md) に従う。以下および非交渉要件の「双方へ反対向き」は、支点なしでは直接成立し、支点ありでは地形反力を含めて成立する。
+
 ## Godotでの実装方針
 
 Godotの物理処理は固定間隔で実行され、物理に関係する計算は `_physics_process()` などの物理ティック側へ置くことが推奨されている。レンダリング頻度と物理ティックは一致しないため、表示の滑らかさには物理補間を検討する。[Idle and Physics Processing](https://docs.godotengine.org/en/stable/tutorials/scripting/idle_and_physics_processing.html) / [Physics Interpolation](https://docs.godotengine.org/en/stable/tutorials/physics/interpolation/physics_interpolation_introduction.html)
