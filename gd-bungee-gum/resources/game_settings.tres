@@ -6,4 +6,4 @@
 resource_name = "Game Settings"
 script = ExtResource("1")
 attachment_range = 240.0
-camera_hold_zoom = 1.2000000000000002
+gum_shot_speed = 1200.0

@@ -5,6 +5,14 @@ const GumPath = preload("res://scripts/gum_path.gd")
 var path = GumPath.new()
 var terrain_forces := PackedVector2Array()
 enum Mode { NONE, CONTRACT, LOOSEN }
+enum State { READY, OUTBOUND, ATTACHED, RETURNING }
+var state := State.READY
+var tip := Vector2.ZERO
+var shot_direction := Vector2.RIGHT
+var shot_distance := 0.0
+var return_points := PackedVector2Array()
+var return_time := 0.0
+var last_display := PackedVector2Array()
 @export var settings: Settings
 var player: CharacterBody2D
 var target: PhysicsBody2D
@@ -17,7 +25,6 @@ var aim_point := Vector2.ZERO
 var aim_valid := false
 var release_reason := "READY"
 var mode := Mode.NONE
-var aiming := false
 
 func origin() -> Vector2:
 	return player.global_position + Vector2(0, -34)
@@ -26,17 +33,20 @@ func connected() -> bool:
 	return is_instance_valid(target) and not target.is_queued_for_deletion()
 
 func endpoint() -> Vector2:
-	return target.to_global(target_local_point) if connected() else origin()
+	return target.to_global(target_local_point) if connected() else tip
 
 func support_point() -> Vector2:
-	return path.points[1] if connected() and path.points.size() > 1 else aim_point
+	return path.points[1] if connected() and path.points.size() > 1 else (tip if state == State.OUTBOUND else aim_point)
 
 func cast_to(point: Vector2) -> Dictionary:
 	var offset := point - origin()
 	if offset.length_squared() < 0.01:
 		return {}
 	var end := origin() + offset.limit_length(settings.attachment_range)
-	var query := PhysicsRayQueryParameters2D.create(origin(), end, 1 | 4, [player.get_rid()])
+	return _cast_segment(origin(), end)
+
+func _cast_segment(start: Vector2, end: Vector2) -> Dictionary:
+	var query := PhysicsRayQueryParameters2D.create(start, end, 1 | 4, [player.get_rid()])
 	query.hit_from_inside = true
 	return get_world_2d().direct_space_state.intersect_ray(query)
 
@@ -47,10 +57,17 @@ func attachable(hit: Dictionary) -> bool:
 	return (body is StaticBody2D or body is RigidBody2D) and not body.is_in_group("gum_blocked") and origin().distance_to(hit.position) <= settings.maximum_length
 
 func attach_at(point: Vector2) -> bool:
-	# A miss keeps the existing connection; a successful shot replaces it atomically.
+	# Direct connection setup for physics fixtures; gameplay fires a moving tip.
 	var hit := cast_to(point)
 	if not attachable(hit):
 		return false
+	_attach_hit(hit)
+	return true
+
+func _attach_hit(hit: Dictionary) -> void:
+	state = State.ATTACHED
+	return_points.clear()
+	last_display.clear()
 	target = hit.collider
 	target_local_point = target.to_local(hit.position)
 	path.reset(origin(), hit.position)
@@ -61,9 +78,80 @@ func attach_at(point: Vector2) -> bool:
 	target_force = Vector2.ZERO
 	mode = Mode.CONTRACT
 	release_reason = "ATTACHED"
-	return true
+	last_display = PackedVector2Array([player.gum_visual_origin(), hit.position])
+
+func fire(direction: Vector2) -> void:
+	if connected() or state == State.OUTBOUND or direction.is_zero_approx():
+		return
+	cancel_return()
+	state = State.OUTBOUND
+	tip = origin()
+	shot_direction = direction.normalized()
+	shot_distance = 0.0
+	release_reason = "FLYING"
+
+func cancel_return() -> void:
+	if state == State.RETURNING:
+		state = State.READY
+	return_points.clear()
+	last_display.clear()
+
+func _step_outbound(delta: float) -> void:
+	var travel := minf(settings.gum_shot_speed * delta, settings.attachment_range - shot_distance)
+	var next := tip + shot_direction * travel
+	var hit := _cast_segment(tip, next)
+	tip = hit.position if not hit.is_empty() else next
+	shot_distance += travel
+	if origin().distance_to(tip) > settings.maximum_length:
+		detach("TOO FAR")
+		return
+	# The root may have moved since firing. Reject lines obstructed behind the tip.
+	var root_hit := _cast_segment(origin(), tip.move_toward(origin(), 0.1))
+	if not root_hit.is_empty():
+		detach("BLOCKED PATH")
+		return
+	if not hit.is_empty():
+		if attachable(hit):
+			_attach_hit(hit)
+		else:
+			detach("BLOCKED")
+	elif shot_distance >= settings.attachment_range:
+		detach("MISS")
+
+func _step_return(delta: float) -> void:
+	return_time += delta
+	if return_points.size() > 0:
+		return_points[0] = player.gum_visual_origin()
+	var remaining := settings.gum_return_speed * delta
+	while return_points.size() > 1 and remaining > 0.0:
+		var index := return_points.size() - 1
+		var distance := return_points[index].distance_to(return_points[index - 1])
+		if remaining >= distance:
+			remaining -= distance
+			return_points.remove_at(index)
+		else:
+			return_points[index] = return_points[index].move_toward(return_points[index - 1], remaining)
+			remaining = 0.0
+	if return_points.size() <= 1 or return_time >= settings.gum_return_max_duration:
+		cancel_return()
+	else:
+		tip = return_points[-1]
 
 func detach(reason := "RELEASED") -> void:
+	if reason == "RESTART":
+		cancel_return()
+		state = State.READY
+	elif state == State.ATTACHED or state == State.OUTBOUND:
+		if connected() and reason == "RELEASED":
+			return_points = _world_display_points()
+		elif state == State.OUTBOUND:
+			return_points = PackedVector2Array([player.gum_visual_origin(), tip])
+		else:
+			return_points = last_display.duplicate()
+		state = State.RETURNING
+		return_time = 0.0
+		if return_points.size() > 0:
+			tip = return_points[-1]
 	# Never alter either endpoint's velocity on release.
 	target = null
 	path.initialized = false
@@ -111,6 +199,12 @@ func step(delta: float, length_input := 0.0) -> void:
 	tension = 0.0
 	terrain_forces.clear()
 	validate_connection()
+	if state == State.OUTBOUND:
+		_step_outbound(delta)
+		return
+	if state == State.RETURNING:
+		_step_return(delta)
+		return
 	if not connected():
 		return
 	if not path.update(origin(), endpoint(), get_tree().root, settings):
@@ -122,6 +216,7 @@ func step(delta: float, length_input := 0.0) -> void:
 	if _dynamic_obstruction():
 		detach("UNSUPPORTED OBSTACLE")
 		return
+	last_display = _world_display_points()
 	var distance: float = path.length
 	if mode == Mode.CONTRACT:
 		_shorten(settings.contraction_speed, delta)
@@ -152,13 +247,13 @@ func update_aim(point: Vector2) -> void:
 func _draw() -> void:
 	if not is_instance_valid(player):
 		return
-	var start := to_local(player.gum_visual_origin())
-	var aim := to_local(aim_point)
-	var aim_color := settings.aim_valid_color if aim_valid else settings.aim_invalid_color
-	if aiming:
+	if state == State.READY:
+		var start := to_local(player.gum_visual_origin())
+		var aim := to_local(aim_point)
+		var aim_color := settings.aim_valid_color if aim_valid else settings.aim_invalid_color
+		aim_color.a *= settings.aim_guide_opacity
 		draw_dashed_line(start, aim, aim_color, settings.aim_line_width, settings.aim_dash_length)
 		draw_arc(aim, settings.aim_reticle_radius, 0, TAU, 20, aim_color, settings.aim_reticle_width)
-	if not connected():
 		return
 	var ratio := tension / settings.maximum_tension
 	var color := settings.gum_slack_color.lerp(settings.gum_taut_color, ratio)
@@ -183,8 +278,22 @@ func _draw_gum_shape(points: PackedVector2Array, color: Color, width: float, spr
 		draw_circle(to_local(pivot.position), 3.0 * marker_scale + spread, color, true, -1.0, true)
 	draw_circle(to_local(endpoint()), 5.0 * marker_scale + spread, color, true, -1.0, true)
 
+func _world_display_points() -> PackedVector2Array:
+	var points := _display_points()
+	for i in points.size():
+		points[i] = to_global(points[i])
+	return points
+
 func _display_points() -> PackedVector2Array:
 	var result := PackedVector2Array()
+	if state == State.OUTBOUND:
+		return PackedVector2Array([to_local(player.gum_visual_origin()), to_local(tip)])
+	if state == State.RETURNING:
+		for point in return_points:
+			result.append(to_local(point))
+		if not result.is_empty():
+			result[0] = to_local(player.gum_visual_origin())
+		return result
 	if path.points.size() < 2:
 		return result
 	var slack: float = maxf(rest_length - path.length, 0.0)

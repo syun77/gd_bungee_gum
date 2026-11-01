@@ -16,7 +16,6 @@ var coyote_remaining := 0.0
 var coyote_gravity_velocity := Vector2.ZERO
 var landing_time := 0.0
 var gum: Node2D
-var fire_time := 0.0
 var landing_diagnostic_active := false
 var landing_diagnostic_next_tick := 0
 var landing_diagnostic_transitions := 0
@@ -34,17 +33,9 @@ func _ready() -> void:
 		for index in poses.get_frame_count(animation):
 			sprite.sprite_frames.add_frame(animation, poses.get_frame_texture(animation, index), poses.get_frame_duration(animation, index))
 
-func face_aim(direction: Vector2) -> void:
-	if direction.x != 0.0:
-		sprite.flip_h = direction.x < 0.0
-
 func fire_gum() -> void:
-	fire_time = 8.0 / 12.0
 	sprite.stop()
 	sprite.play("gum_fire")
-
-func cancel_gum_action() -> void:
-	fire_time = 0.0
 
 func gum_visual_origin() -> Vector2:
 	# Drawing-only hand samples in the 256px cells; physical attachment stays at chest.
@@ -59,7 +50,7 @@ func gum_visual_origin() -> Vector2:
 func apply_external_force(force: Vector2, delta: float) -> void:
 	external_velocity += force / settings.player_mass * delta
 
-func simulate(delta: float, aiming := false, jump_requested := false) -> void:
+func simulate(delta: float, jump_requested := false) -> void:
 	# 接触判定は直前の move_and_slide() の結果。今回の移動後に更新される。
 	var grounded := is_on_floor()
 	var touching := grounded or is_on_wall() or is_on_ceiling()
@@ -76,7 +67,7 @@ func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 			_log_jump_state("REARMED")
 		kick_available = true
 	# project.godot の物理キー割り当てを使用。A／左矢印=-1、D／右矢印=+1。
-	var direction := 0.0 if aiming else Input.get_axis("move_left", "move_right")
+	var direction := Input.get_axis("move_left", "move_right")
 	var acceleration := settings.ground_acceleration if grounded else settings.air_acceleration
 	# 入力速度は設定の加速度で目標速度へ近づけ、無入力ではゼロへ減速する。
 	var removed_control_y := control_velocity.y
@@ -138,7 +129,6 @@ func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 	if not grounded and is_on_floor():
 		landing_time = 0.12
 	landing_time = maxf(landing_time - delta, 0.0)
-	fire_time = maxf(fire_time - delta, 0.0)
 	_update_animation(direction)
 	if jump_requested:
 		_log_jump_state("AFTER_MOVE", incoming_velocity)
@@ -174,10 +164,10 @@ func _update_animation(direction: float) -> void:
 	# 外部速度で流されているときは、向きと実際の進行方向が逆になる。
 	if direction != 0.0:
 		sprite.flip_h = direction < 0.0
-	if is_instance_valid(gum) and (fire_time > 0.0 or gum.connected()):
+	if is_instance_valid(gum) and (gum.connected() or gum.state == gum.State.OUTBOUND):
 		var aim: Vector2 = gum.support_point() - gum.origin()
 		sprite.flip_h = aim.x < 0.0
-		if fire_time > 0.0:
+		if gum.state == gum.State.OUTBOUND:
 			sprite.play("gum_fire")
 			return
 		if not is_on_floor() and gum.tension > 10.0:
@@ -235,7 +225,7 @@ func _log_landing_state(was_grounded: bool, incoming_velocity: Vector2, removed_
 	var attached: bool = is_instance_valid(gum) and gum.connected()
 	var gum_status: String = gum.release_reason if is_instance_valid(gum) else "NO GUM"
 	var gum_tension: float = gum.tension if attached else 0.0
-	print("[LandingDiagnostic] %s tick=%d feet=%s control=%s external=%s floor=%s->%s transitions=%d animation=%s landing=%.3f fire=%.3f gum=%s reason=%s tension=%.1f incoming=%s removed_control_y=%.3f normals=%s" % [
+	print("[LandingDiagnostic] %s tick=%d feet=%s control=%s external=%s floor=%s->%s transitions=%d animation=%s landing=%.3f gum=%s reason=%s tension=%.1f incoming=%s removed_control_y=%.3f normals=%s" % [
 		event, tick, global_position, control_velocity, external_velocity,
 		was_grounded, is_on_floor(), landing_diagnostic_transitions,
-		sprite.animation, landing_time, fire_time, attached, gum_status, gum_tension, incoming_velocity, removed_control_y, normals])
+		sprite.animation, landing_time, attached, gum_status, gum_tension, incoming_velocity, removed_control_y, normals])

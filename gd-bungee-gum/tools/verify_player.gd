@@ -144,7 +144,7 @@ func verify_wall_landing_jump(game: Node2D) -> void:
 	assert(player.is_on_floor() and player.is_on_wall())
 	for attempt in 3:
 		await physics_frame
-		player.simulate(1.0 / 60.0, false, true)
+		player.simulate(1.0 / 60.0, true)
 		assert(not player.is_on_floor() and player.external_velocity.y < -100.0,
 			"Each floor jump must work after landing against a wall")
 		assert(player.is_on_wall(), "Reproduction must retain wall contact at takeoff")
@@ -184,7 +184,7 @@ func verify_coyote_time(game: Node2D) -> void:
 		assert(player.is_on_floor(), "Coyote fixture must start on real floor")
 		if scenario == "consumed":
 			await physics_frame
-			player.simulate(1.0 / 60.0, false, true)
+			player.simulate(1.0 / 60.0, true)
 			assert(not player.is_on_floor())
 		else:
 			Input.action_press("move_right")
@@ -201,7 +201,7 @@ func verify_coyote_time(game: Node2D) -> void:
 		var before: Vector2 = player.external_velocity
 		var gravity_budget: Vector2 = player.coyote_gravity_velocity + Vector2(0, game.settings.gravity / 60.0)
 		await physics_frame
-		player.simulate(1.0 / 60.0, false, true)
+		player.simulate(1.0 / 60.0, true)
 		var expected := before + Vector2(0, game.settings.gravity / 60.0)
 		if scenario == "within":
 			var normal := Vector2.UP
@@ -212,7 +212,7 @@ func verify_coyote_time(game: Node2D) -> void:
 		# Repeated airborne requests cannot use the same grace twice.
 		before = player.external_velocity
 		await physics_frame
-		player.simulate(1.0 / 60.0, false, true)
+		player.simulate(1.0 / 60.0, true)
 		assert(player.external_velocity.is_equal_approx(before + Vector2(0, game.settings.gravity / 60.0)))
 	game.settings.coyote_time = original_grace
 	platform.queue_free()
@@ -243,7 +243,7 @@ func verify_coyote_gravity_compensation(game: Node2D) -> void:
 						await physics_frame
 						player.simulate(dt)
 					await physics_frame
-					player.simulate(dt, false, true)
+					player.simulate(dt, true)
 					var gravity_change := Vector2(0, game.settings.gravity * dt * (delay + 1))
 					var expected: Vector2 = initial + gravity_change
 					var inward := maxf(expected.y, 0.0)
@@ -289,7 +289,7 @@ func verify_floor_kick_direction(game: Node2D) -> void:
 				assert(not player.is_on_floor() and player.coyote_remaining > 0.0)
 			var before: Vector2 = player.external_velocity
 			await physics_frame
-			player.simulate(1.0 / 60.0, false, true)
+			player.simulate(1.0 / 60.0, true)
 			assert(absf(player.external_velocity.x - before.x) < 0.01, "Corner floor/coyote kick must add no horizontal velocity")
 			assert(player.external_velocity.y < -300.0 and not player.is_on_floor())
 	platform.queue_free()

@@ -31,6 +31,11 @@ extends Resource
 ## Reserve between manual natural-length cap and path break limit (px).
 @export_range(1.0, 500.0) var manual_length_margin := 240.0
 
+@export_group("Gum Flight")
+@export_range(1.0, 10000.0) var gum_shot_speed := 2400.0
+@export_range(1.0, 10000.0) var gum_return_speed := 3200.0
+@export_range(0.01, 2.0) var gum_return_max_duration := 0.25
+
 @export_group("Gum Wrapping")
 @export_range(0.25, 4.0) var wrap_clearance := 1.0
 @export_range(1.0, 8.0) var wrap_release_margin := 2.0
@@ -39,6 +44,8 @@ extends Resource
 @export_range(1, 128) var wrap_max_repairs := 32
 
 @export_group("Aim Guide")
+## Guide alpha multiplier, independent of direction input.
+@export_range(0.0, 1.0) var aim_guide_opacity := 0.3
 ## Target available / unavailable. Alpha controls both guide and reticle opacity.
 @export var aim_valid_color := Color(0.45, 1.0, 0.75, 0.9)
 @export var aim_invalid_color := Color(1.0, 0.7, 0.6, 0.9)
@@ -65,10 +72,7 @@ extends Resource
 @export_group("Camera Zoom")
 ## Camera2D scale: larger values show a closer view.
 @export_range(0.1, 4.0) var camera_normal_zoom := 1.5
-@export_range(0.1, 4.0) var camera_hold_zoom := 1.2
 @export_range(0.1, 4.0) var camera_long_gum_zoom := 1.0
-## Continuous X hold time before requesting the wider view (seconds).
-@export_range(0.0, 2.0) var camera_hold_delay := 0.0
 ## Total wrapped path lengths (px) at which distance zoom starts / reaches its limit.
 @export_range(0.0, 3000.0) var camera_gum_zoom_start := 200.0
 @export_range(0.0, 3000.0) var camera_gum_zoom_end := 800.0

@@ -1,3 +1,60 @@
+## Completed constant faint guide
+- Goal/status: Keep prediction line and reticle faint regardless of arrow input; complete.
+- Completed: Unconditional guide opacity multiplier0.3, renamed setting aim_guide_opacity, removed obsolete cross-node aim_active flag; updated direction regression assertions, current specs and AGENTS.
+- Decisions: Valid/invalid hue and READY-only visibility retained; input no longer changes guide alpha.
+- Files changed: game/gum/game_settings scripts, verify_controls, current specs, AGENTS, WORKLOG.
+- Verification: Godot4.5.1 controls suite PASS exit0 (/tmp/faint-guide-controls.log); stale setting/state search clean; git diff --check PASS. Known unrelated macOS CA warning only. Rendered appearance not inspected.
+- Refactoring: Reviewed direction/render interface, removed unused flag and renamed opacity to reflect unconditional behavior; no compatibility aliases.
+- Blockers: None.
+- Next action: F5 inspect constant faint guide; tune Aim Guide Opacity if needed.
+
+## Completed guide visibility change
+- Goal/status: Hide predicted shot line until gum returns to hand; complete.
+- Completed: READY-only guide line/reticle drawing; hidden throughout outbound/attached/returning. Updated current specs and AGENTS; direction input continues while hidden.
+- Decisions: Reuse READY transition for completed return/timeout; interrupt/refire keeps guide hidden without a transient READY draw.
+- Files changed: gum_connection.gd, keyboard/flight/settings/direction/prototype/stage-action/implementation specs, AGENTS, WORKLOG.
+- Verification: Godot4.5.1 controls regression PASS exit0 (/tmp/guide-visibility-controls.log); git diff --check PASS. Known unrelated macOS CA warning only. Actual rendered appearance not inspected.
+- Refactoring: Reviewed complete draw branch and state transitions; guide and gum drawing now mutually exclusive, no extra flags/timers or redundant tests.
+- Blockers: None.
+- Next action: F5 inspect guide disappearance on fire and reappearance after return.
+
+## Completed press-to-fire implementation
+- Goal/status: Apply X press fire, always-on preview, no aim zoom, and pre-attachment Up/Down gating; complete.
+- Completed: Removed aim/release gesture state, movement suppression and camera hold settings; always-visible preview with idle alpha0.3; immediate return-cancel/refire; all pre-arrival Up/Down gated until release. Updated scene HUD and all current control/flight/camera/player specs and AGENTS.
+- Decisions: Neutral/opposing arrows retain last direction, initial facing. Arrows combine run/aim; A/D movement-only. Saved user shot speed400 and firing range240 preserved; timing fixtures explicitly set speed2400 and ranges. Path-length zoom remains independent.
+- Files changed: game/player/gum/settings scripts/resource/scene, controls/camera/gum/player tests, current specs, AGENTS, WORKLOG.
+- Verification: Godot4.5.1 all six suites PASS exit0: controls (/tmp/press-final-controls.log), gum/camera/player/gum_path/theater_stage (/tmp/press-*.log). Physical press/release/no-repeat, eight-way same-tick direction, running diagonal, return cancel/refire, pre-shot and midflight Up/Down gates, manual length controls and Z priority covered. git diff --check PASS. Known unrelated macOS CA warning only.
+- Refactoring: Reviewed direction→input→arrival→player→preview order; removed obsolete gesture/camera hold state, face_aim helper and simulate aiming argument; updated every caller and reran controls after cleanup. Initial timing-fixture failures resolved by explicit speed independent of saved tuning.
+- Blockers: None. Native visual opacity and play feel not checked by headless tests.
+- Next action: F5 playtest press firing while running, neutral preview and held pre-attachment Down; tune Aim Idle Opacity if needed.
+
+## Completed press-to-fire impact review
+- Goal/status: Summarize concerns changing X release fire to X press fire; analysis complete, no runtime/spec policy changes.
+- Findings: Press fire removes in-hold aiming/preview and aim zoom preparation. Must define pre-shot direction selection, movement-vs-aim ownership, held Up/Down gates after arrival, state-dependent X semantics and repeat suppression. Return X should cancel and fire atomically if adopting immediate fire; Z priority must remain explicit. Tip travel delay remains independent.
+- Files changed: WORKLOG.md only.
+- Verification: Read current Game gesture handling and flight/return authority; design analysis, no engine tests required.
+- Blockers: None for review.
+- Next action: If adopting press fire, choose direction/preview policy first, then update Game input, camera, tests and current control/flight specs together.
+
+## Completed gum flight / return implementation
+- Goal/status: Implement approved tip flight, delayed contraction and interruptible cosmetic return; complete.
+- Completed: Swept tip/arrival state, zero-force attachment tick, reverse-path cosmetic return with timeout, fresh-X interruption/re-fire, outbound-X release consumption, settings/HUD, flight-only pose. Promoted proposal to specs/gum-flight-return.md and aligned related current specs/AGENTS.
+- Decisions: Shot2400px/s, return3200px/s, max0.25s. Direct attach_at explicitly sets up connection physics fixtures; gameplay uses fire. Removed obsolete fire timer/cancel interface; state owns pose lifetime. Return drawing root follows current hand after player movement.
+- Files changed: game/gum_connection/game_settings/player scripts, verify_gum/controls, specs/gum-flight-return plus keyboard/prototype/wrapping/settings/implementation/animation/direction/stage-action specs, AGENTS, WORKLOG.
+- Verification: Godot4.5.1 all six suites PASS exit0: gum (/tmp/flight-final-gum.log), controls (/tmp/flight-final-controls.log), camera/player/gum_path/theater_stage (/tmp/flight-*.log). Covers 30/60/120Hz flight, zero arrival force, next-tick contraction, exact-range/thin-blocker/moving-target/moving-root cases, reverse return/lifetime/deleted-target snapshot, physical interrupt/re-fire and all existing reciprocal force/momentum regressions. git diff --check PASS. Known unrelated macOS CA warning only.
+- Refactoring: Reviewed touched runtime; shared segment query and world display conversion, state-driven animation, removed redundant cancel timer, simplified HUD branching; relevant suites rerun after cleanup.
+- Blockers: None. Native rendered appearance and speed feel not checked by headless suites.
+- Next action: F5 playtest flight and Z→X→release chaining; tune Gum Flight speeds/lifetime via resources/game_settings.tres if needed.
+
+## Completed gum flight / return specification review
+- Goal/status: Specify high-speed tip travel, attachment-before-contraction and interruptible return; proposal complete, runtime unchanged.
+- Completed: State/input table, swept collision and live hit validation, independent range/length limits, zero-force attachment tick, immediate physical Z release, reverse-path cosmetic return and fresh-X cancellation; current control authority links proposal.
+- Decisions: Proposed shot2400 px/s, return3200 px/s, return lifetime0.25s pending playtest. Keep X hold aim/release fire; consume held/canceled gestures. No force before attachment or during return; existing physics and kick rules retained.
+- Files changed: specs/gum-flight-return-proposal.md, specs/keyboard-controls.md, AGENTS.md, WORKLOG.md.
+- Verification: Reviewed current Game/Gum flow and keyboard specification. Reviewed proposal for state/input consistency, moving targets, wrapping, safety release and settings ownership; git diff --check PASS. No runtime tests for document-only proposal.
+- Blockers: None for design; proposed speeds need implementation-time playtest.
+- Next action: On implementation request, integrate proposal into authoritative specs, implement flight/return lifecycle and update gum/controls/camera regression suites.
+
 ## Completed independent gum range
 - Goal/status: Separate firing range and connected physical length; complete.
 - Completed: Added attachment_range for ray/aim/Game aim vector; maximum_length retains wrapped break limit, HUD length ratio and manual cap. Over-limit initial hit rejected consistently by preview/attachment. Updated long-range fixtures and current specs.

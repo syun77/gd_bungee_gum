@@ -6,14 +6,15 @@ GodotのFileSystemで `res://resources/game_settings.tres` を選択し、Inspec
 | --- | --- |
 | Player Movement | 走行速度、地上／空中の入力加速度、地面の摩擦、重力、蹴り出し速度、Coyote Time（床離脱後の猶予秒数）、プレイヤー質量 |
 | Gum Physics | ばね係数、減衰、収縮速度、最小／最大長、最大張力、手動延長／短縮速度、手動延長上限の安全余裕 |
+| Gum Flight | 先端速度、回収速度、回収表示の最大寿命 |
 | Gum Wrapping | 支点のクリアランス、解除離隔・確認ティック、支点数・経路修正の上限 |
 | Aim Guide | 接着可／不可の色と透明度、補助線の太さ・破線長、照準円の半径・太さ |
 | Gum Appearance | 緩めモードの色（Gum Loosen Color、初期値 #B8A6AD）、収縮中の無張力／最大張力の色、線の太さと張力による追加幅 |
 | Diagnostics | Landing Diagnostics：着地不安定の調査ログ、Jump Diagnostics：接地キックの調査ログ（両方初期値ON） |
-| Camera Zoom | 通常／X長押し／長距離時の倍率、長押し時間、距離範囲、追従速度 |
+| Camera Zoom | 通常／長距離時の倍率、距離範囲、追従速度 |
 | Stage Rules | 落下時に再スタートするY座標 |
 
-X長押し中の補助線は **Aim Valid Color / Aim Invalid Color** で変更する。カラーピッカーの **A（アルファ）** が透明度で、1が不透明。初期値は両方0.9、**Aim Line Width** は2 px。色とアルファは照準円にも適用する。描画側は `scripts/gum_connection.gd` の `_draw()`。
+READY時に表示する命中予告の補助線（発射から回収完了までは非表示）は **Aim Valid Color / Aim Invalid Color** で変更する。カラーピッカーの **A（アルファ）** が透明度で、1が不透明。初期値は両方0.9、**Aim Line Width** は2 px。色とアルファは照準円にも適用する。方向入力にかかわらず`Aim Guide Opacity`（0.3）をアルファに掛け、常に薄く表示する。描画側は `scripts/gum_connection.gd` の `_draw()`。
 
 `scenes/game.tscn` のGameノードのSettingsが設定の参照元。Gameは起動時に同じResourceをPlayerとGumへ渡す。Player単体のシーンにも既定ファイルを割り当てる。パラメータをスクリプト側へコピーせず参照しており、接続解除時の運動量保持や双方への力の適用方式は変わらない。
 
@@ -21,11 +22,11 @@ X長押し中の補助線は **Aim Valid Color / Aim Invalid Color** で変更�
 
 巻き付き時の最大長・手動延長上限・自然長は総経路長に適用する。初期設定はクリアランス1 px、解除離隔2 pxを2ティック確認、支点16個・修正32回まで。
 
-`Landing Diagnostics`がONの場合、横移動用速度に1 px/sを超える上下成分が生じたとき、`[LandingDiagnostic]`ログをGodotのOutputと標準ログへ出す。発生時、最初の接地変化6回、以後60物理ティックごとの要約、解消時を記録する。座標・両速度・接地変化・アニメーション・着地／発射タイマー・ガム接続と張力・衝突法線を含む。衝突時に入力用の縦成分を除外した際はCONTROL_COLLISION_RESOLVED、高速着地時はHIGH_SPEED_LANDINGを出力する（詳細は30ティック間隔）。衝突前の速度と除外した縦成分も含む。通常の待機・歩行では出力しない。
+`Landing Diagnostics`がONの場合、横移動用速度に1 px/sを超える上下成分が生じたとき、`[LandingDiagnostic]`ログをGodotのOutputと標準ログへ出す。発生時、最初の接地変化6回、以後60物理ティックごとの要約、解消時を記録する。座標・両速度・接地変化・アニメーション・着地タイマー・ガム接続と張力・衝突法線を含む。衝突時に入力用の縦成分を除外した際はCONTROL_COLLISION_RESOLVED、高速着地時はHIGH_SPEED_LANDINGを出力する（詳細は30ティック間隔）。衝突前の速度と除外した縦成分も含む。通常の待機・歩行では出力しない。
 
-カメラはプレイヤーを追従し、通常は `camera_normal_zoom`（1.5倍）。Godotの倍率は大きいほど近く、小さいほど広く映る。Xを `camera_hold_delay`（0秒）以上押し続けると `camera_hold_zoom`（1.2倍）まで引く。未接続時だけ有効で、接続中はXによる倍率変更を行わない。離したときと接続状態の変化で長押し時間をリセットする。
+カメラはプレイヤーを追従し、通常は `camera_normal_zoom`（1.5倍）。Godotの倍率は大きいほど近く、小さいほど広く映る。Xによる照準ズームは設けない。
 
-接続中はガムの総経路長（巻き付き支点を含む）が `camera_gum_zoom_start`（200 px）から `camera_gum_zoom_end`（800 px）へ伸びるにつれ、通常倍率から `camera_long_gum_zoom`（1.0倍）へ線形に引く。自然長や張力では判定しない。接続中は経路長だけ、未接続中はX保持だけを判定し、通常より近づく設定値は採用しない。終了距離が開始距離以下なら開始距離で切り替える。
+接続中はガムの総経路長（巻き付き支点を含む）が `camera_gum_zoom_start`（200 px）から `camera_gum_zoom_end`（800 px）へ伸びるにつれ、通常倍率から `camera_long_gum_zoom`（1.0倍）へ線形に引く。自然長や張力では判定しない。接続中は経路長だけを判定し、未接続時は通常倍率へ戻る。通常より近づく設定値は採用しない。終了距離が開始距離以下なら開始距離で切り替える。
 
 倍率は `camera_zoom_response`（5 /秒）の指数応答で滑らかに変化し、0なら即時切り替え。解除後も同じ応答で戻る。起動・再スタートは通常倍率から始まる。カメラの位置追従とシーンの範囲制限は維持するため、画面端ではキャラクターが中央からずれることがある。
 
@@ -41,4 +42,6 @@ X長押し中の補助線は **Aim Valid Color / Aim Invalid Color** で変更�
 
 接続中のガムは同じ経路に半透明のハロー4層、基本色の線、細い明るい芯を重ねて発光感を出す。折り返し点と接着点にも適用する。Gum Appearance の **Gum Glow Radius**（初期8 px）、**Gum Glow Opacity**（0.12）、**Gum Core Brightness**（白の混合率0.65）で調整する。半径または不透明度0でハローを無効化できる。緩めモードの基本色は灰色寄りのまま。描画のみの効果で、周囲への照明や物理への影響はなく、ポストエフェクトに依存しない。
 
-**Attachment Range**（`attachment_range`、初期400 px）は発射レイと照準の射程。**Maximum Length**（`maximum_length`、初期400 px）は接続後に伸びられる総経路長の切断上限で、巻き付き経路を含む。両者は独立して編集できる。例えば射程400／最大長800なら400 px以内に接着し、その後800 pxまで伸びられる。手動自然長の上限はMaximum Length−Manual Length Margin。射程を最大長より長くしても、最大長を超える位置には接着できず照準も接着不可になる。
+**Attachment Range**（`attachment_range`、初期400 px）は先端の累積飛行距離と照準の射程。**Maximum Length**（`maximum_length`、初期400 px）は接続後に伸びられる総経路長の切断上限で、巻き付き経路を含む。両者は独立して編集できる。例えば射程400／最大長800なら400 px以内に接着し、その後800 pxまで伸びられる。手動自然長の上限はMaximum Length−Manual Length Margin。射程を最大長より長くしても、最大長を超える位置には接着できず照準も接着不可になる。
+
+`Gum Flight`の`gum_shot_speed`は先端の直進速度（2400 px/s）、`gum_return_speed`は回収経路の短縮速度（3200 px/s）、`gum_return_max_duration`は回収表示の最大寿命（0.25秒）。飛行・回収はガム力を発生させず、接着成立の次更新から既存の物理計算を行う。飛行・回収の長さは経路長ズームに使用しない。

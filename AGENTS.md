@@ -47,10 +47,10 @@
 - If later evidence invalidates an entry, update or remove it immediately instead of appending contradictory guidance.
 
 - Gum fixed-step owner is `scripts/game.gd`: input → `Gum.step` → `Player.simulate` → camera/HUD. Player has no independent physics callback. Tune `resources/game_settings.tres`; attachable terrain/props are physics layers 1/4, player is layer 2. Keep reciprocal forces and collision momentum cleanup together.
-- Gum controls: hold X + arrows to aim in eight directions, release X to fire and auto-contract; attached Down relaxes/extends, Up manually shortens only while relaxed, X starts automatic contraction (no-op while already contracting); Z detaches then contact-kicks (no airborne impulse). `tools/verify_controls.gd` exercises physical Z/X gestures and cancellation. `tools/verify_gum.gd` covers real ray queries, rigid force/mass response and live Game integration. Input bindings use device -1 (any device); editor-saved device 16 bindings do not match Godot 4.5 synthetic keyboard events.
+- Gum controls: arrows continuously select eight-way direction, X press fires and arrival starts auto-contract next tick; attached Down relaxes/extends, Up manually shortens only while relaxed, X starts automatic contraction (no-op while already contracting); Z detaches then contact-kicks (no airborne impulse). `tools/verify_controls.gd` exercises physical Z/X gestures and cancellation. `tools/verify_gum.gd` covers real ray queries, rigid force/mass response and live Game integration. Input bindings use device -1 (any device); editor-saved device 16 bindings do not match Godot 4.5 synthetic keyboard events.
 - Assign the gum settings Resource through the scene's exported property; preloading its instance as a typed script property's default caused uninitialized Resource script values under Godot 4.5.1.
 
-- `specs/keyboard-controls.md` is the implemented Z/X control authority. Keep input gesture state separate from physical slack: an attached/canceled gesture waits for X release and never fires after connection loss. Firing-held Up/Down each wait for release before length control. Relaxed mode holds natural length when manual input stops.
+- `specs/keyboard-controls.md` is the implemented Z/X control authority. X only acts on press edges; held/released X never fires after connection loss or return. All pre-attachment held Up/Down, including presses during flight, wait for release before length control. Relaxed mode holds natural length when manual input stops.
 
 ## Persistent progress and session recovery
 
@@ -96,7 +96,7 @@
 - Player input velocity stays horizontal, including after collision projection; external velocity retains physical sliding/momentum. verify_player.gd covers both high-speed corner directions on actual physics ticks and stable landing.
 - Landing Diagnostics defaults ON: [LandingDiagnostic] logs CONTROL_COLLISION_RESOLVED / HIGH_SPEED_LANDING (30-tick detail throttle), plus persistent unexpected control-Y diagnostics; includes incoming/control/external velocity, discarded Y, normals and gum state. See specs/game-settings.md.
 
-- Runtime camera zoom is owned by Game._update_camera after Player.simulate; Camera Zoom settings in game_settings.tres control normal/held-X/path-length scales, hold delay, distance thresholds and exponential response. Uses wrapped total path length; physical X hold zoom applies only while unattached, independent of gesture state; connection transitions reset hold time. Verify with tools/verify_camera.gd.
+- Runtime camera zoom is owned by Game._update_camera after Player.simulate; Camera Zoom settings control normal/path-length scales, distance thresholds and exponential response. Uses wrapped total path length; X does not change zoom. Verify with tools/verify_camera.gd.
 
 - Jump Diagnostics defaults ON: `[JumpDiagnostic]` logs each Z request (ACCEPTED / REJECTED_NO_CONTACT / REJECTED_NOT_REARMED), AFTER_MOVE and pre-reset REARMED state. Contact eligibility resets on floor contact or a fully non-contact tick; request contact uses previous move_and_slide results. Toggle in shared Diagnostics settings; see specs/game-settings.md.
 
@@ -114,7 +114,7 @@
 
 - Corner-jump diagnostics use existing Jump Diagnostics: KICK_APPLIED records selected normal/angle and exact launch velocity changes; ACCEPTED/AFTER_MOVE include collider paths, contact points/depths and real displacement. Contact/real-motion fields before movement describe the previous move_and_slide result.
 
-- Settings script defaults match the saved tuning baseline: kick_speed400, coyote_time0.2, maximum_length400, camera_hold_zoom1.2, camera_long_gum_zoom1.0, camera_hold_delay0. Keep specs/game-settings.md default descriptions aligned.
+- Settings script defaults match the saved tuning baseline: kick_speed400, coyote_time0.2, maximum_length400, camera_long_gum_zoom1.0. Keep specs/game-settings.md default descriptions aligned.
 
 
 
@@ -127,3 +127,7 @@
 - Gum glow is renderer-independent layered drawing in gum_connection.gd: four translucent halos plus base/core, shared by line/pivots/endpoint. Tune Gum Appearance glow radius/opacity/core brightness in game_settings; no world lighting or physics effect.
 
 - Gum firing/aim range is attachment_range (default400); connected wrapped path break limit and manual cap use maximum_length (default400). A hit beyond maximum_length is non-attachable even inside firing range. Long-range fixtures must set both explicitly.
+
+- Gum flight/return authority: `specs/gum-flight-return.md`. Gameplay `fire` sweeps tip at2400px/s; arrival tick has zero force, next tick contracts. `attach_at` directly sets up connection physics fixtures. Z immediately releases physics and cosmetically retracts reverse path at3200px/s (max0.25s); fresh X cancels return and fires immediately, outbound X is ignored. Flight/return have no force; use press edges with independent pre-attachment length-key gates.
+
+- Direction preview (line and reticle) is visible only in READY; hide throughout outbound/attached/returning and restore on return completion. Neutral/opposing arrows preserve last direction (initial facing). Guide alpha always uses aim_guide_opacity0.3 regardless of input; no input brightness boost. Arrows combine run/aim; A/D remain movement-only. Player.simulate(delta, jump_requested) never suppresses movement for aiming. Saved gum_shot_speed400 and attachment_range240 are user tuning; timing fixtures set speed2400/ranges explicitly.

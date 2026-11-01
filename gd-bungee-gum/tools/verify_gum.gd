@@ -46,10 +46,83 @@ func verify() -> void:
 	world.add_child(player)
 	gum = load("res://scripts/gum_connection.gd").new()
 	gum.settings = load("res://resources/game_settings.tres").duplicate()
+	gum.settings.gum_shot_speed = 2400.0
 	gum.player = player
 	world.add_child(gum)
 	var wall := body_at(Vector2(220, -34))
 	await ticks(2)
+	# Actual outbound sweeps, delayed forces, and nonphysical return lifecycle.
+	for delta in [1.0 / 30.0, 1.0 / 60.0, 1.0 / 120.0]:
+		gum.fire(Vector2.RIGHT)
+		var elapsed := 0.0
+		while gum.state == gum.State.OUTBOUND and elapsed < 1.0:
+			gum.step(delta)
+			elapsed += delta
+			check(gum.tension == 0.0 and gum.player_force == Vector2.ZERO, "Flight and attachment tick have no force")
+		check(gum.connected() and absf(elapsed - 200.0 / 2400.0) <= delta + 0.0001, "Flight time follows distance at each fixed rate")
+		check(is_equal_approx(gum.rest_length, 200.0), "Arrival initializes natural length without shortening")
+		gum.step(delta)
+		check(gum.rest_length < 200.0 and gum.tension > 0.0, "Contraction starts on following tick")
+		var retained: Vector2 = player.external_velocity
+		gum.detach()
+		check(gum.state == gum.State.RETURNING and not gum.connected() and player.external_velocity == retained, "Detach immediately releases physics and retains momentum")
+		var old_tip: Vector2 = gum.tip
+		gum.step(0.01)
+		check(gum.tip.distance_to(gum.origin()) < old_tip.distance_to(gum.origin()) and gum.player_force == Vector2.ZERO, "Return tip moves inward without force")
+		gum.cancel_return()
+		check(gum.state == gum.State.READY and gum.return_points.is_empty(), "Return cancellation removes old line")
+	gum.fire(Vector2.LEFT)
+	gum.step(0.2)
+	check(gum.state == gum.State.RETURNING and not gum.connected(), "Miss flies to range then returns")
+	gum.step(gum.settings.gum_return_max_duration)
+	check(gum.state == gum.State.READY, "Return lifetime bounds display")
+	gum.fire(Vector2.RIGHT)
+	gum.step(0.02)
+	gum.detach()
+	check(gum.state == gum.State.RETURNING, "Z can cancel outbound flight")
+	gum.detach("RESTART")
+	check(gum.state == gum.State.READY, "Restart discards transient display")
+	player.external_velocity = Vector2.ZERO
+	# The first swept surface wins, even at the exact firing-range endpoint.
+	gum.settings.attachment_range = 200.0
+	gum.fire(Vector2.RIGHT)
+	gum.step(0.2)
+	check(gum.connected(), "A hit at the firing-range boundary attaches before miss")
+	gum.detach("RESTART")
+	gum.settings.attachment_range = 400.0
+	var thin := body_at(Vector2(110, -34))
+	thin.get_child(0).shape.size = Vector2(1, 40)
+	thin.add_to_group("gum_blocked")
+	await ticks(1)
+	gum.fire(Vector2.RIGHT)
+	gum.step(0.1)
+	check(not gum.connected() and gum.state == gum.State.RETURNING and gum.tip.x < 111.0, "Swept tip stops on a thin forbidden surface")
+	thin.free()
+	await ticks(1)
+	gum.detach("RESTART")
+	gum.fire(Vector2.RIGHT)
+	gum.step(0.02)
+	wall.position.y = 80.0
+	await ticks(1)
+	gum.step(0.1)
+	check(not gum.connected() and gum.state == gum.State.OUTBOUND, "Flight does not reserve a target that moved away")
+	wall.position.y = -34.0
+	await ticks(1)
+	gum.detach("RESTART")
+	gum.fire(Vector2.RIGHT)
+	gum.step(0.02)
+	player.position.x = -350.0
+	gum.step(0.02)
+	check(gum.state == gum.State.RETURNING and gum.release_reason == "TOO FAR", "Flight length limit uses moving player root")
+	player.position = Vector2.ZERO
+	gum.detach("RESTART")
+	# Cosmetic path retracts in reverse order and does not query removed targets.
+	gum.state = gum.State.RETURNING
+	gum.return_points = PackedVector2Array([Vector2(0, -34), Vector2(50, -34), Vector2(50, -84)])
+	gum.return_time = 0.0
+	gum.step(60.0 / gum.settings.gum_return_speed)
+	check(gum.return_points.size() == 2 and gum.tip.is_equal_approx(Vector2(40, -34)), "Return removes end segment before advancing along previous segment")
+	gum.detach("RESTART")
 	gum.settings.attachment_range = 150.0
 	check(not gum.attach_at(wall.position), "Short firing range cannot hit within longer physical limit")
 	gum.update_aim(wall.position)
@@ -139,6 +212,7 @@ func verify() -> void:
 	gum.detach()
 	check(player.external_velocity == wrapped_velocity and gum.path.pivots.is_empty(), "Wrapped detach clears pivots and preserves momentum")
 	# Total route can exceed the limit while the endpoint chord remains below it.
+	gum.state = gum.State.ATTACHED
 	gum.target = wall
 	gum.target_local_point = Vector2(-20,0)
 	gum.mode = gum.Mode.LOOSEN
@@ -212,7 +286,7 @@ func verify() -> void:
 	check(absf(box.angular_velocity) > 0.001, "Off-center gum force rotates rigid body")
 	box.free()
 	step_lab()
-	check(not gum.connected() and gum.tension == 0.0, "Deleted endpoint releases safely")
+	check(not gum.connected() and gum.tension == 0.0 and gum.state == gum.State.RETURNING and not gum.return_points.is_empty(), "Deleted endpoint returns from last valid display safely")
 	# Swing from a fixed ceiling point using the same force->controller sequence as Game.
 	var ceiling := body_at(Vector2(0, -260))
 	player.position = Vector2.ZERO
@@ -244,7 +318,7 @@ func verify() -> void:
 	check(game_gum.attach_at(Vector2(160, 100)), "Game can attach to restaurant ceiling")
 	game_player.fire_gum()
 	await ticks(10)
-	check(game_player.get_node("AnimatedSprite2D").animation == &"gum_fire", "Fire pose integrated with controller")
+	check(game_player.get_node("AnimatedSprite2D").animation != &"gum_fire", "Attachment ends fire pose immediately")
 	await ticks(90)
 	check(game_player.position.y < 600.0, "Game coordinator contracts and lifts player")
 	check(game_player.get_node("AnimatedSprite2D").animation in [&"gum_pull", &"gum_hang"], "Taut airborne connection uses gum pose")
