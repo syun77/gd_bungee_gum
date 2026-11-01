@@ -1,3 +1,31 @@
+## Completed scheduled block-top repair
+- Goal/status: Scheduled repair implemented and locally verified; one-time automation deleted at start. User4.7.2/native verification pending.
+- Completed: Distinguish floor support from repulsion. Non-support solver updates virtual body velocities and player momentum, commits rigid impulses after all movement. Supporting collision momentum is transferred at its real contact point after movement; no skin separation/restitution on floor normals. Default automatic platform layers preserved. Terrain queries exclude nearby rigid RIDs without mask changes on normal frames. Preserved existing pushing-run edits.
+- Files changed: player.gd, game_settings.gd comments, verify_compression.gd, specs/player-controller.md, specs/game-settings.md, AGENTS.md, WORKLOG.md. Existing verify_player/pushing edits preserved.
+- Verification: New support regressions fail pre-fix (central0/60 floor, edge drift24.88px, moving support9/60). Final Godot4.5.1 all7 suites PASS exit0 (/tmp/block-support-final-{compression,player,gum,controls,gum_path,camera,theater_stage}.log). Center/left/right support60/60, drift<=0.028px, no hover and kick escape; rightward/leftward-ascending rigid platforms60/60,0 relative-X drift; dual3000-force loaded gap20.553px and escape pass. Contact fixture verifies body velocity unchanged before deferred commit, then momentum/torque response. git diff --check PASS; known macOS CA warning only.
+- Decisions: Floor support uses actual engine collision rather than artificial clearance; body position/rotation and gum mechanics remain physics driven. Physical contact reactions are deferred, not discarded; real moving-platform carry remains enabled.
+- Refactoring: Removed duplicate normal member state; pending impulse records also supply cleanup normals. Updated all solver/commit callers and docs; support/repel diagnostics and platform velocity fields distinguish phases. Full7 suites rerun after cleanup.
+- Blockers: None for implementation; user engine4.7.2 unavailable locally.
+- Next action: User can F5 verify stable block-top standing and block/block compression on4.7.2. No further scheduled runs remain.
+
+## Completed block-top landing investigation
+- Goal/status: Diagnose block-top lost landing/sliding; complete, runtime unchanged.
+- Findings: Initial landing succeeds, then generic repulsion treats0.75px contact skin as penetration and requests upward separation even for support normals(0,-1). Center fixture hovers0.318px, floor0/90, jump pose; zero separation bias alone restores90/90 on-block contact/idle. Off-center downward impulse on block also creates instantaneous point angular velocity; automatic CharacterBody platform carry reads that same-tick induced velocity, translating rider sideways while floor collision largely cancels actual box motion next step. Log313 incoming x0 vs slide x-16.03 matches this pathway. First corner119 additionally has residual control68px/s and tilted normal(-.093,-.996), so it is not a pure centered landing.
+- Verification: Godot4.5.1 eight A/B probes (x360/343.2408, separation bias ON/OFF × dynamic platform carry ON/OFF), /tmp/block-landing-isolation.log, exit0. Center: default0/90 on-box vs biasOFF90/90. Near-edge: carryON falls to terrain (0/90 on-box; x318.36 default, x323.03 biasOFF); carryOFF stays x343.2408/on-box90/90 for both bias variants. Max auto platform X velocity22.63px/s; box post-physics spin remains tiny. Only known macOS CA warning. User engine4.7.2 not locally tested.
+- Decisions: Repair must distinguish supporting floor contacts from repelling/compressing contacts and avoid double-counting same-tick contact impulses in platform carry. Probe-only platform_floor_layers=1 is a diagnostic isolation, not an adopted gameplay setting. No need for another user log to establish these mechanisms.
+- Files changed: WORKLOG.md, AGENTS.md only. Probe at /tmp/block_landing_probe.gd; gameplay scripts/settings/specs untouched.
+- Blockers: None for diagnosis.
+- Next action: On repair request, add persistent centered/off-center landing regressions, remove separation target for support contact skin, coordinate rigid momentum transfer with platform carry, then rerun compression and full controller/gum suites.
+
+## Completed pushing run animation
+- Goal/status: Show run while pushing a block even when collision removes movement speed; complete.
+- Decisions: Ground run selection considers movement input as well as retained horizontal speed. Air/gum/landing pose priority and physics remain unchanged.
+- Files changed: scripts/player.gd, tools/verify_player.gd, specs/player-controller.md, AGENTS.md, WORKLOG.md.
+- Verification: Godot4.5.1 player suite PASS exit0 (/tmp/push-run-final-player.log), including grounded zero-displacement run assertion; controls PASS exit0 (/tmp/push-run-controls.log); git diff --check PASS. Existing macOS CA warning only. Blocked fixture corridor widened20→21px to leave collision-margin space and keep it grounded; initial exact-width frozen fixture lost floor and was unsuitable for grounded animation verification.
+- Refactoring: Reviewed animation priorities; kept one input-or-speed predicate, no new pushing state or physics branching. Existing blocked fixture reused with explicit grounded precondition; relevant suites rerun.
+- Blockers: None.
+- Next action: F5 hold left/right against a block to inspect run motion; release to return to idle once horizontal momentum stops.
+
 ## Completed rigid contact repulsion
 - Goal/status: Fix persistent two-block pinning with repulsion on contact, not only opposing deep-overlap recovery; implemented and locally verified; user4.7.2 verification pending.
 - Findings: Latest24-line user log reports opposing_bodies=2 every30ticks334–574, correction0; prior pair recovery executes but does not free user4.7.2. Its tiny support-refresh move can also consume intended motion. Need earlier single-contact response and actual server velocity/impulse diagnostics.

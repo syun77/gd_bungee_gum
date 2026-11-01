@@ -19,6 +19,12 @@ func rectangle(world: Node, point: Vector2, size: Vector2, rigid := false) -> Ph
 	world.add_child(body)
 	return body
 func verify() -> void:
+	if "--support-only" in OS.get_cmdline_user_args():
+		await verify_block_support()
+		await verify_moving_support(Vector2(50, 0))
+		await verify_moving_support(Vector2(-50, -20))
+		quit(1 if failures else 0)
+		return
 	if "--two-block-only" in OS.get_cmdline_user_args():
 		await verify_two_blocks()
 		await verify_two_blocks(true)
@@ -30,6 +36,9 @@ func verify() -> void:
 	await verify_two_blocks()
 	await verify_two_blocks(true)
 	await verify_contact_impact()
+	await verify_block_support()
+	await verify_moving_support(Vector2(50, 0))
+	await verify_moving_support(Vector2(-50, -20))
 	if failures == 0:
 		print("PASS: mirrored dynamic pressure, rotating gum pull, existing overlap, mass, floor/gravity and kick escape")
 	quit(1 if failures else 0)
@@ -127,8 +136,9 @@ func verify_two_blocks(pressure := false) -> void:
 	right.freeze = false
 	left.sleeping = true
 	right.sleeping = true
-	player._repel_rigid_contacts(1.0 / 60.0, Vector2.ZERO)
-	check(player.rigid_contact_normals.size() == 2, "Sleeping dynamic pair must produce independent contact constraints")
+	var pending: Array[Dictionary] = player._solve_rigid_contacts(1.0 / 60.0, Vector2.ZERO)
+	player._apply_rigid_impulses(pending)
+	check(pending.size() == 2, "Sleeping dynamic pair must produce independent contact constraints")
 	var left_velocity: Vector2 = PhysicsServer2D.body_get_state(left.get_rid(), PhysicsServer2D.BODY_STATE_LINEAR_VELOCITY)
 	var right_velocity: Vector2 = PhysicsServer2D.body_get_state(right.get_rid(), PhysicsServer2D.BODY_STATE_LINEAR_VELOCITY)
 	check(left_velocity.x < 0.0 and right_velocity.x > 0.0, "Both sleeping blocks must receive outward impulses")
@@ -186,14 +196,93 @@ func verify_contact_impact() -> void:
 	box.rotation = 0.0
 	PhysicsServer2D.body_set_state(box.get_rid(), PhysicsServer2D.BODY_STATE_ANGULAR_VELOCITY, 0.0)
 	PhysicsServer2D.body_set_state(box.get_rid(), PhysicsServer2D.BODY_STATE_LINEAR_VELOCITY, Vector2(-120, 0))
-	player._repel_rigid_contacts(1.0 / 60.0, Vector2.ZERO)
+	var pending: Array[Dictionary] = player._solve_rigid_contacts(1.0 / 60.0, Vector2.ZERO)
+	var unchanged: Vector2 = PhysicsServer2D.body_get_state(box.get_rid(), PhysicsServer2D.BODY_STATE_LINEAR_VELOCITY)
+	check(unchanged.is_equal_approx(Vector2(-120, 0)), "Solving must not inject velocities into same-tick platform carry")
+	player._apply_rigid_impulses(pending)
 	var after: Vector2 = PhysicsServer2D.body_get_state(box.get_rid(), PhysicsServer2D.BODY_STATE_LINEAR_VELOCITY)
 	check(absf(PhysicsServer2D.body_get_state(box.get_rid(), PhysicsServer2D.BODY_STATE_ANGULAR_VELOCITY)) > 0.001, "Off-center collision impulse must produce rigid angular response")
 	check(after.x > -120.0 and player.external_velocity.x < 0.0, "A single incoming block must receive an immediate collision impulse")
 	check(absf(box.mass * after.x + player.settings.player_mass * player.external_velocity.x + box.mass * 120.0) < 0.01, "Single contact preserves total linear momentum")
 	PhysicsServer2D.body_set_state(box.get_rid(), PhysicsServer2D.BODY_STATE_LINEAR_VELOCITY, Vector2(500, 0))
 	player.external_velocity = Vector2.ZERO
-	player._repel_rigid_contacts(1.0 / 60.0, Vector2.ZERO)
+	player._apply_rigid_impulses(player._solve_rigid_contacts(1.0 / 60.0, Vector2.ZERO))
 	after = PhysicsServer2D.body_get_state(box.get_rid(), PhysicsServer2D.BODY_STATE_LINEAR_VELOCITY)
 	check(after.is_equal_approx(Vector2(500, 0)), "Already separating block must not receive another repulsion impulse")
+	world.free()
+
+func verify_block_support() -> void:
+	for x in [360.0, 343.2408, 376.7592]:
+		var world := Node2D.new()
+		root.add_child(world)
+		rectangle(world, Vector2(360, 660), Vector2(600, 40))
+		var box = load("res://scenes/props/gum_box.tscn").instantiate()
+		box.position = Vector2(360, 620)
+		box.mass = 1.0
+		world.add_child(box)
+		for tick in 15:
+			await physics_frame
+			await process_frame
+		var player = load("res://scenes/characters/player.tscn").instantiate()
+		player.settings = load("res://resources/game_settings.tres").duplicate()
+		player.settings.pinning_diagnostics = false
+		player.settings.jump_diagnostics = false
+		player.settings.landing_diagnostics = false
+		player.position = Vector2(x, 520)
+		world.add_child(player)
+		var supported := 0
+		for tick in 150:
+			await physics_frame
+			player.simulate(1.0 / 60.0)
+			if tick >= 90:
+				supported += int(player.is_on_floor() and player.position.y < box.position.y)
+			await process_frame
+		print("support x=", x, " grounded=", supported, "/60 drift=", player.position.x - x)
+		check(supported == 60, "Centered/edge block landing must retain continuous support")
+		check(absf(player.position.x - x) < 0.5, "A grounded stationary block must not carry rider sideways from contact impulses")
+		check(absf(box.position.y - 20.0 - player.position.y) < 0.1, "Support must not hover at the contact skin")
+		check(player.sprite.animation == &"idle", "Stationary block support must settle to idle")
+		var before: float = player.position.y
+		await physics_frame
+		player.simulate(1.0 / 60.0, true)
+		await process_frame
+		for tick in 10:
+			await physics_frame
+			player.simulate(1.0 / 60.0)
+			await process_frame
+		check(player.position.y < before - 20.0, "Floor kick must leave block support")
+		world.free()
+
+func verify_moving_support(motion: Vector2) -> void:
+	var world := Node2D.new()
+	root.add_child(world)
+	var box := rectangle(world, Vector2(360, 620), Vector2(160, 40), true) as RigidBody2D
+	box.mass = 50.0
+	box.gravity_scale = 0.0
+	box.linear_damp = 0.0
+	box.lock_rotation = true
+	box.linear_velocity = motion
+	var player = load("res://scenes/characters/player.tscn").instantiate()
+	player.settings = load("res://resources/game_settings.tres").duplicate()
+	player.settings.pinning_diagnostics = false
+	player.settings.jump_diagnostics = false
+	player.settings.landing_diagnostics = false
+	player.position = Vector2(360, 560)
+	world.add_child(player)
+	var supported := 0
+	var relative_x := INF
+	var relative_drift := 0.0
+	for tick in 120:
+		await physics_frame
+		player.simulate(1.0 / 60.0)
+		if tick >= 60:
+			supported += int(player.is_on_floor())
+			var relative: float = player.position.x - box.position.x
+			if is_inf(relative_x):
+				relative_x = relative
+			relative_drift = maxf(relative_drift, absf(relative - relative_x))
+		await process_frame
+	print("moving support grounded=", supported, "/60 travel=", player.position.x - 360.0, " relative_drift=", relative_drift)
+	check(supported >= 58, "Real moving rigid platform must retain rider support")
+	check(signf(motion.x) * (player.position.x - 360.0) > 40.0 and relative_drift < 1.0, "Automatic platform carry must follow actual rigid motion")
 	world.free()

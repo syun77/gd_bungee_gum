@@ -302,7 +302,7 @@ func verify_pinning_diagnostics(game: Node2D) -> void:
 	var fixture := Node2D.new()
 	game.add_child(fixture)
 	for entry in [[Vector2(10000, 660), Vector2(200, 40), false],
-		[Vector2(9970, 600), Vector2(40, 120), false],
+		[Vector2(9969, 600), Vector2(40, 120), false],
 		[Vector2(10030, 620), Vector2(40, 40), true]]:
 		var body: PhysicsBody2D = RigidBody2D.new() if entry[2] else StaticBody2D.new()
 		body.position = entry[0]
@@ -330,6 +330,8 @@ func verify_pinning_diagnostics(game: Node2D) -> void:
 	var snapshot: Dictionary = player.pinning_diagnostic_history[-1]
 	assert(snapshot.move_axis == 1.0 and snapshot.incoming.x > 0.0, "Log must retain attempted motion before collision cleanup")
 	assert(absf(snapshot.displacement.x) < 0.1, "Fixture must reproduce blocked movement")
+	assert(player.is_on_floor(), "Blocked-animation fixture must remain grounded")
+	assert(player.sprite.animation == &"run", "Grounded movement input must keep run animation when a block prevents displacement")
 	var nearby: Array = player._pinning_nearby_bodies()
 	assert(nearby.size() >= 2, "Nearby query must expose wall and rigid block even if slide contacts omit wall")
 	game.settings.pinning_diagnostics = false

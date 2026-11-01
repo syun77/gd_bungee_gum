@@ -51,4 +51,4 @@ READY時に表示する命中予告の補助線（発射から回収完了まで
 
 `Pinning Diagnostics`（初期値ON）はプレイヤーと剛体のスライド接触、または深い接触で移動できない状態を調査する。剛体が接触一覧から欠落しても、接触深度1 px以上・衝突前速度10 px/s以上・1ステップの実変位0.1 px未満なら`stalled_penetration=true`として記録を継続する。`rigid_contact`、`deepest_contact`、`slide_count`も含む。`[PinningDiagnostic] CONTACT_STARTED`で直前8ステップの`HISTORY`と現在状態を出力し、接触中は30物理ティックごとに`PERSISTING`、移動／Z／X／上下入力またはガム状態・モードの変化時に`ACTION_CHANGED`、剛体接触も深い接触による停滞も報告されなくなると`CONTACT_ENDED`を出す。挟まったと断定する検出ではなく、通常のブロック接触も対象。入力、キック可否・猶予、移動前後位置・実変位、衝突前の入力／外部／合成速度、move_and_slide直後速度、衝突整理・摩擦後の入力／外部速度、床・壁・天井、safe_margin／max_slides、接触相手・法線・深度・位置・相手速度、剛体の質量・回転・速度・sleep/freeze、ガムの状態・張力・両端力・長さを含む。イベント時の`nearby`はプレイヤー衝突形状を2 px拡張した重なり検索（最大16件）で、スライド結果に現れない近接壁やブロックを補足する。近接候補は接触や挟まりの証明ではない。ガム切断後も剛体接触ログは継続する。物理挙動は変更せず、InspectorのDiagnosticsから無効化できる。
 
-`Player Contact`はブロック衝突時の反作用を調整する。本体カプセルのサイズを変更する設定ではない。`Pinning Diagnostics`の`CONTACT_IMPULSE`で接触点のインパルスと剛体速度の前後を確認できる。接触応答と検証条件は`player-controller.md`を参照。
+`Player Contact`は壁・天井相当のブロック接触の反作用を調整する。床相当の支持接触は実カプセルの衝突に任せ、接触余白による分離や反発を加えない。本体カプセルのサイズを変更する設定ではない。`Pinning Diagnostics`の`CONTACT_IMPULSE`で接触点のインパルスと剛体速度の前後を確認できる。接触応答と検証条件は`player-controller.md`を参照。
