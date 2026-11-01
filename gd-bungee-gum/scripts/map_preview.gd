@@ -1,5 +1,5 @@
 extends Node2D
-## Inspection camera only. Replace this scene wrapper when adding the player.
+## Standalone map inspection camera; gameplay uses game.tscn.
 
 @onready var camera: Camera2D = $Camera2D
 var overview := false

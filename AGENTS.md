@@ -22,7 +22,7 @@
 
 - Current setting/art direction is a pop-colored family restaurant: cream ceramic, coral/mint trim, painted frames and muted teal background. `theater_*` filenames remain the current resource identifiers. Edit both atlas copies together (`images/tilesets/` and `gd-bungee-gum/assets/tilesets/`); `restaurant_tileset_source.png` is the color-edit source.
 
-- The first editable map is `gd-bungee-gum/scenes/stages/theater_stage.tscn` (160 × 24 cells, 32 px grid). F6 opens the stage alone; F5 runs `scenes/map_preview.tscn` with arrows to pan, 1–6 to select a section and Tab for overview. Gameplay is not implemented yet.
+- The first editable map is `gd-bungee-gum/scenes/stages/theater_stage.tscn` (160 × 24 cells, 32 px grid). F6 opens the stage alone; F5 runs `scenes/game.tscn` with the Teto player (A/D or arrows, Space for contact kick-off, R for restart). Open `scenes/map_preview.tscn` with F6 for arrows to pan, 1–6 to select a section and Tab for overview.
 - Map layers have collision disabled; `TheaterStage/Terrain` owns merged rectangular static shapes on physics layer 1. When editing terrain tiles, update matching shapes and outline nodes together. `tools/build_theater_stage.gd` regenerates the scene/TileSet and overwrites manual edits; run only intentionally.
 - Local Godot executable: `/Applications/Godot_mono.app/Contents/MacOS/Godot` (4.5.1). For sandboxed headless runs, use `--log-file /tmp/<task>.log` to avoid a crash writing default user logs. Run the saved-map collision check with `--headless --path gd-bungee-gum --log-file /tmp/map-check.log --script res://tools/verify_theater_stage.gd`.
 
@@ -33,6 +33,8 @@
 - The Godot project root is `gd-bungee-gum/`; open `gd-bungee-gum/project.godot` in Godot and place engine project files under that directory.
 - Image assets are stored in the repository-root `images/` directory. Consult this directory when selecting or integrating game visuals.
 - Character references: `images/teto.png` is the front view; `teto_idle.png`, `teto_run.png`, and `teto_jump.png` are the intended idle, run, and jump sheets. See `specs/character-sprite-audit.md` for measured sizes and slicing issues before integration. Root-level `images/` is outside Godot’s `res://`.
+
+- Gum poses: `images/normalized/teto_gum_{fire,pull,hang}.png` and matching Godot copies under `assets/characters/teto/`; `gum_animations.tres` provides three eight-frame animations. See `specs/character-gum-animations.md`; poses do not drive physics.
 
 - Normalized Teto animation candidates live in `images/normalized/`: 1024 × 512 RGBA sheets, 4 × 2 cells of 256 px. Idle uses the first six cells; run/jump use eight. Ground baseline is cell y=232; see the sprite audit for generation caveats.
 
@@ -66,3 +68,5 @@
 - Store all project specification documents in the repository-root `specs/` directory. Create or update specifications there rather than placing them beside source files or in ad hoc documentation locations.
 - Keep specifications aligned with the current implementation whenever behavior or interfaces change.
 
+
+- Player feet are the local origin; `scenes/characters/player.tscn` uses normalized 256 px cells at 0.3125 scale, a fixed 20 × 52 px capsule and sprite y=-32.5. `tools/verify_player.gd` checks movement/animation and collision momentum using the same headless invocation as the map check.
