@@ -98,11 +98,21 @@ func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 		var normal := coyote_normal
 		if touching:
 			normal = get_floor_normal() if grounded else (get_wall_normal() if is_on_wall() else Vector2.DOWN)
+		var external_before := external_velocity
+		var compensation := Vector2.ZERO
 		if coyote_kick:
 			var falling_speed := maxf(-external_velocity.dot(normal), 0.0)
 			var gravity_fall := maxf(-coyote_gravity_velocity.dot(normal), 0.0)
-			external_velocity += normal * minf(falling_speed, gravity_fall)
-		external_velocity += normal * settings.kick_speed
+			compensation = normal * minf(falling_speed, gravity_fall)
+			external_velocity += compensation
+		var impulse := normal * settings.kick_speed
+		external_velocity += impulse
+		if settings.jump_diagnostics:
+			print("[JumpDiagnostic] KICK_APPLIED tick=%d feet=%s source=%s normal=%s angle_from_up_deg=%.3f impulse=%s compensation=%s external_before=%s external_after=%s control=%s launch=%s delta=%.6f" % [
+				Engine.get_physics_frames(), global_position,
+				"coyote" if coyote_kick else ("floor" if grounded else ("wall" if is_on_wall() else "ceiling")),
+				normal, rad_to_deg(Vector2.UP.angle_to(normal)), impulse, compensation,
+				external_before, external_velocity, control_velocity, control_velocity + external_velocity, delta])
 		kick_available = false
 		coyote_remaining = 0.0
 		coyote_gravity_velocity = Vector2.ZERO
@@ -139,14 +149,19 @@ func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 func _log_jump_state(event: String, incoming := Vector2.ZERO) -> void:
 	if not settings.jump_diagnostics:
 		return
-	var normals: Array[Vector2] = []
+	var contacts: Array[String] = []
 	for index in get_slide_collision_count():
-		normals.append(get_slide_collision(index).get_normal())
+		var collision := get_slide_collision(index)
+		var collider := collision.get_collider()
+		contacts.append("{collider=%s point=%s normal=%s depth=%.4f}" % [
+			str(collider.get_path()) if collider is Node else str(collider),
+			collision.get_position(), collision.get_normal(), collision.get_depth()])
 	var attached: bool = is_instance_valid(gum) and gum.connected()
-	print("[JumpDiagnostic] %s tick=%d feet=%s floor=%s wall=%s ceiling=%s available=%s z_held=%s x_held=%s control=%s external=%s incoming=%s normals=%s gum=%s coyote=%.3f" % [
+	print("[JumpDiagnostic] %s tick=%d feet=%s floor=%s wall=%s ceiling=%s available=%s z_held=%s x_held=%s control=%s external=%s incoming=%s contacts=%s gum=%s coyote=%.3f floor_normal=%s wall_normal=%s real_velocity=%s position_delta=%s" % [
 		event, Engine.get_physics_frames(), global_position, is_on_floor(), is_on_wall(), is_on_ceiling(),
 		kick_available, Input.is_action_pressed("jump"), Input.is_action_pressed("gum_action"),
-		control_velocity, external_velocity, incoming, normals, attached, coyote_remaining])
+		control_velocity, external_velocity, incoming, contacts, attached, coyote_remaining,
+		get_floor_normal(), get_wall_normal(), get_real_velocity(), get_position_delta()])
 
 func _apply_ground_friction(delta: float) -> void:
 	if not is_on_floor():

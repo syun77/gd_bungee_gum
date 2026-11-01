@@ -10,9 +10,9 @@ extends Resource
 @export_range(0.0, 5000.0) var ground_friction := 900.0
 @export_range(0.0, 5000.0) var gravity := 1100.0
 ## Contact kick-off impulse expressed as speed (px/s).
-@export_range(0.0, 2000.0) var kick_speed := 260.0
+@export_range(0.0, 2000.0) var kick_speed := 400.0
 ## Floor-departure kick grace (seconds); zero disables it.
-@export_range(0.0, 0.3, 0.01) var coyote_time := 0.1
+@export_range(0.0, 0.3, 0.01) var coyote_time := 0.2
 @export_range(0.01, 1000.0) var player_mass := 1.0
 
 @export_group("Gum Physics")
@@ -20,7 +20,7 @@ extends Resource
 @export_range(0.0, 100.0) var damping := 9.0
 @export_range(1.0, 1000.0) var contraction_speed := 180.0
 @export_range(1.0, 900.0) var minimum_length := 36.0
-@export_range(1.0, 3000.0) var maximum_length := 900.0
+@export_range(1.0, 3000.0) var maximum_length := 400.0
 @export_range(1.0, 10000.0) var maximum_tension := 2800.0
 @export_range(0.0, 200.0) var loosen_margin := 32.0
 
@@ -52,10 +52,10 @@ extends Resource
 @export_group("Camera Zoom")
 ## Camera2D scale: larger values show a closer view.
 @export_range(0.1, 4.0) var camera_normal_zoom := 1.5
-@export_range(0.1, 4.0) var camera_hold_zoom := 0.8
-@export_range(0.1, 4.0) var camera_long_gum_zoom := 0.65
+@export_range(0.1, 4.0) var camera_hold_zoom := 1.2
+@export_range(0.1, 4.0) var camera_long_gum_zoom := 1.0
 ## Continuous X hold time before requesting the wider view (seconds).
-@export_range(0.0, 2.0) var camera_hold_delay := 0.25
+@export_range(0.0, 2.0) var camera_hold_delay := 0.0
 ## Total wrapped path lengths (px) at which distance zoom starts / reaches its limit.
 @export_range(0.0, 3000.0) var camera_gum_zoom_start := 200.0
 @export_range(0.0, 3000.0) var camera_gum_zoom_end := 800.0

@@ -1,3 +1,23 @@
+## Completed settings baseline update
+- Goal/status: Promote current saved settings to script defaults; complete.
+- Completed: Matched six overridden defaults to game_settings.tres; aligned settings specification and durable default guidance. Saved resource remains unchanged.
+- Decisions: Preserve current runtime tuning and unrelated workspace edits; camera zoom1.2 uses normal decimal notation.
+- Files changed: scripts/game_settings.gd, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Verification: Godot4.5.1 headless comparison PASS for all41 script properties (new Resource versus saved resource), /tmp/settings-baseline.log; git diff --check PASS. Known unrelated macOS certificate warning only. Temporary probe removed.
+- Refactoring: Reviewed full settings schema and resource; only six differing defaults required changes, no additional configuration paths or runtime logic.
+- Blockers: None.
+- Next action: Continue tuning through resources/game_settings.tres as usual.
+
+## Completed corner jump diagnostics
+- Goal/status: Add logs identifying diagonal launch from terrain/block corners; complete.
+- Completed: KICK_APPLIED records selected normal/angle, kick/compensation, pre/post external and combined launch velocity. Existing jump states include collider paths, contact points/depths, floor/wall normals and actual displacement velocity.
+- Decisions: Physics unchanged; existing Jump Diagnostics toggle owns output. Pre-move contact/real-motion fields represent previous move_and_slide. Actual corner cause awaits user reproduction logs.
+- Files changed: gd-bungee-gum/scripts/player.gd, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Verification: Full headless verify_player.gd PASS, exit0 (/tmp/corner-jump.log), including both corner directions, coyote and wall jump cases. New log fields emitted successfully. git diff --check PASS; unrelated macOS certificate warning only.
+- Refactoring: Reviewed touched kick/contact logging flow; reused existing diagnostic toggle/events and collision iteration, preserving impulse order and avoiding duplicate normal arrays.
+- Blockers: None.
+- Next action: F5 reproduce corner jump and inspect/share same-tick ACCEPTED, KICK_APPLIED, AFTER_MOVE lines.
+
 ## Completed idle sprite correction
 - Goal/status: Replace shrinking idle motion with shallow knee bends; complete.
 - Completed: Built-in imagegen edit preserving character identity; normalized four upper-row poses at one0.56 nearest scale, sequenced0/1/2/3/2/1 into existing six-frame layout. Replaced normalized and runtime sheets together. Source original preserved;6fps/runtime controller unchanged.
