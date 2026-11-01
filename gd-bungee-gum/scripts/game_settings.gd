@@ -15,6 +15,16 @@ extends Resource
 @export_range(0.0, 0.3, 0.01) var coyote_time := 0.2
 @export_range(0.01, 1000.0) var player_mass := 1.0
 
+@export_group("Player Contact")
+## Contact skin around the unchanged player capsule (px).
+@export_range(0.0, 2.0) var contact_clearance := 0.75
+## Fraction of closing speed returned on impacts faster than 30 px/s.
+@export_range(0.0, 1.0) var contact_restitution := 0.1
+## Fraction of rigid penetration corrected per physics tick.
+@export_range(0.0, 1.0) var contact_penetration_response := 0.8
+## Maximum penetration-driven separation speed (px/s).
+@export_range(0.0, 1000.0) var contact_separation_speed := 120.0
+
 @export_group("Gum Physics")
 @export_range(0.0, 200.0) var stiffness := 35.0
 @export_range(0.0, 100.0) var damping := 9.0

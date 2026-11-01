@@ -1,3 +1,23 @@
+## Completed rigid contact repulsion
+- Goal/status: Fix persistent two-block pinning with repulsion on contact, not only opposing deep-overlap recovery; implemented and locally verified; user4.7.2 verification pending.
+- Findings: Latest24-line user log reports opposing_bodies=2 every30ticks334–574, correction0; prior pair recovery executes but does not free user4.7.2. Its tiny support-refresh move can also consume intended motion. Need earlier single-contact response and actual server velocity/impulse diagnostics.
+- Decisions: Introduce pre-move mass/angular-aware contact impulses for each movable rigid body, reciprocal player momentum, bounded penetration bias and restitution. Retain terrain recovery, remove superseded pair-only impulse/refresh path. Verify first-contact response and continuous two-body pressure.
+- Files changed: player.gd, game_settings.gd, verify_compression.gd, specs/player-controller.md, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Verification: New continuous two-block1500/3000-force fixture exposed lingering floor/escape failures with weak independent response. Coupled8-pass solver +0.75px skin passes3000-per-side test with loaded gap20.499px and post-release21.002px, bounded gravity and kick escape. Single impact/momentum/separation/custom-COM torque checks PASS (/tmp/contact-inertia.log). Final Godot4.5.1 all7 suites PASS exit0 (/tmp/repel-final-{compression,player,gum,controls,gum_path,camera,theater_stage}.log). Final loaded gap20.263px, preserved floor/gravity/kick escape; git diff --check PASS. Existing macOS CA warning only.
+- Blockers: User engine4.7.2 not locally installed; local Godot4.5.1 available.
+- Refactoring: Replaced pair-only query/impulse path with shared shape contact/impulse pass, renamed contact normals, reused probe shape, skip empty contacts and disabled shapes. Direct shape-pair queries avoid live body mask toggles; original terrain guard retained.
+- Next action: F5 repeat block/block compression on4.7.2. If still blocked, collect CONTACT_IMPULSE with actual server velocities, impulses and depth; tuning is Player Contact in shared resource.
+
+## Completed two-block compression repair
+- Goal/status: Extend compression handling to player trapped between dynamic blocks; complete; native4.7.2 verification pending.
+- Findings: User confirms wall case fixed. New log ends at player x483.91, HeavyBox500/6kg and LightBox458.87/1kg, only1.13px gap for20px capsule; heavy penetration13.99px, repeated4 contacts, lost floor and accumulated gravity. Existing recovery requires static terrain displacement, so cannot open dynamic-only gap.
+- Decisions: Derive individual rigid penetration vectors from physics-server queries; apply mass-aware equal/opposite separation impulses to both sides and refresh terrain support when opposing bodies compress player. Preserve original wall handling.
+- Files changed: player.gd, verify_compression.gd, verify_gum.gd (explicit diagnostic toggle in diagnostic fixture), specs/player-controller.md, AGENTS.md, WORKLOG.md.
+- Verification: Isolated sleeping-pair shape/impulse regression fails with pair response disabled (exit1), passes enabled (exit0); confirms outward impulses on both1kg/6kg bodies and pre-cleanup momentum balance. Local4.5 solver can naturally open gap differently from user4.7; full user freeze sequence is not reproduced. Final Godot4.5.1 all7 suites PASS exit0: compression/player/controls/path/camera/map (/tmp/pair-repair-final-*.log), gum (/tmp/pair-repair-gum-rerun.log). Gum diagnostic fixture explicitly enables/restores its flag, independent of saved Diagnostics OFF. git diff --check PASS; known macOS CA warning only.
+- Blockers: None.
+- Refactoring: Isolated opposing-contact query helper and shared reciprocal impulse application; single-body wall query skips pair tests. Account for already separating velocity to avoid redundant impulse. No rigid transform edits.
+- Next action: F5 pull a block toward player backed by another block, relax/detach and Z to confirm no persistent overlap on user4.7.2; logs retain opposing_bodies count.
+
 ## Completed pixel font research
 - Goal/status: Find Japanese pixel fonts suited to current restaurant game; research complete, no font installed or selected.
 - Completed: Checked official PixelMplus, Misaki and DotGothic16 sources/licenses; confirmed current viewport1280×768.

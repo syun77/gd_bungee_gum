@@ -147,3 +147,8 @@
 - Font research: Japanese UI candidates are PixelMplus12 (first trial24px), DotGothic16 and Misaki8×8; none is adopted or integrated. Official sources: github.com/itouhiro/PixelMplus, github.com/fontworks-fonts/DotGothic16, littlelimit.net/misaki.htm. Validate actual Japanese strings and pixel alignment before choosing.
 
 - Player compression recovery runs after move_and_slide only near unfrozen layer4 rigid bodies: terrain-only body_test_motion recovery with safe_margin+0.25 clearance (max8 iterations), equal/opposite mass-scaled contact impulse, terrain-only contact refresh and combined collision/floor normal cleanup. No rigid transform/gum edits. verify_compression.gd covers pressure, mirrors/mass/rotation/gum and pre-existing overlap, then kick escape. PinningDiagnostic COMPRESSION_RECOVERED is throttled30ticks.
+
+
+- Rigid contact response runs before player movement for single or multiple blocks: shape-pair contacts on a capsule skin0.75px,8 sequential impulse iterations using live mass/COM/inertia and point velocity; equal/opposite impulse at actual contact point. Tune Player Contact restitution0.1/penetration response0.8/separation cap120. Keep terrain-only recovery separate. CONTACT_IMPULSE logs actual server velocities/impulse; no mask changes in shape-pair detection. verify_compression covers sustained opposing3000 forces, single impact/momentum/torque/separating cases and escape.
+
+- Godot4.5.1 headless torque fixtures need a physics tick after unfreezing a RigidBody2D before checking inertia/angular impulse response. Contact lever arms use direct-state world COM offset, including automatic/custom COM, not the node's saved center_of_mass field.

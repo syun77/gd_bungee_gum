@@ -5,6 +5,7 @@ GodotのFileSystemで `res://resources/game_settings.tres` を選択し、Inspec
 | Inspectorのグループ | 主な項目 |
 | --- | --- |
 | Player Movement | 走行速度、地上／空中の入力加速度、地面の摩擦、重力、蹴り出し速度、Coyote Time（床離脱後の猶予秒数）、プレイヤー質量 |
+| Player Contact | 接触余白0.75 px、反発係数0.1、深度補正率0.8、分離速度上限120 px/s |
 | Gum Physics | ばね係数、減衰、収縮速度、最小／最大長、最大張力、手動延長／短縮速度、手動延長上限の安全余裕 |
 | Gum Flight | 先端速度、回収速度、回収表示の最大寿命 |
 | Gum Wrapping | 支点のクリアランス、解除離隔・確認ティック、支点数・経路修正の上限 |
@@ -49,3 +50,5 @@ READY時に表示する命中予告の補助線（発射から回収完了まで
 `Gum Diagnostics`（初期値ON）は切断時に`[GumDiagnostic] DETACH`を出力する。切断理由、状態／モード、両端位置、プレイヤー速度／外部速度、接続先パス・回転・ローカル接着点・剛体速度／質量、経路長・自然長・上限・経路点・ピボット数・修復回数・失敗理由を含む。`HISTORY`は力のリセット前に保存した直近8ステップ（前ステップの張力／力、今回のdelta／長さ入力）の履歴。動的障害物による切断はレイ区間、検出物、接続先自身かを示す`is_target`、衝突位置／法線／shapeも記録する。通常の接続中は出力せず、手動切断・飛行失敗・再起動も切断理由で区別する。GodotのOutputまたは標準出力ログで確認し、InspectorのDiagnosticsから無効化できる。経路更新失敗時の経路点／長さは最後に完成した経路の場合があるため、現在の両端位置・previous位置と併せて読む。
 
 `Pinning Diagnostics`（初期値ON）はプレイヤーと剛体のスライド接触、または深い接触で移動できない状態を調査する。剛体が接触一覧から欠落しても、接触深度1 px以上・衝突前速度10 px/s以上・1ステップの実変位0.1 px未満なら`stalled_penetration=true`として記録を継続する。`rigid_contact`、`deepest_contact`、`slide_count`も含む。`[PinningDiagnostic] CONTACT_STARTED`で直前8ステップの`HISTORY`と現在状態を出力し、接触中は30物理ティックごとに`PERSISTING`、移動／Z／X／上下入力またはガム状態・モードの変化時に`ACTION_CHANGED`、剛体接触も深い接触による停滞も報告されなくなると`CONTACT_ENDED`を出す。挟まったと断定する検出ではなく、通常のブロック接触も対象。入力、キック可否・猶予、移動前後位置・実変位、衝突前の入力／外部／合成速度、move_and_slide直後速度、衝突整理・摩擦後の入力／外部速度、床・壁・天井、safe_margin／max_slides、接触相手・法線・深度・位置・相手速度、剛体の質量・回転・速度・sleep/freeze、ガムの状態・張力・両端力・長さを含む。イベント時の`nearby`はプレイヤー衝突形状を2 px拡張した重なり検索（最大16件）で、スライド結果に現れない近接壁やブロックを補足する。近接候補は接触や挟まりの証明ではない。ガム切断後も剛体接触ログは継続する。物理挙動は変更せず、InspectorのDiagnosticsから無効化できる。
+
+`Player Contact`はブロック衝突時の反作用を調整する。本体カプセルのサイズを変更する設定ではない。`Pinning Diagnostics`の`CONTACT_IMPULSE`で接触点のインパルスと剛体速度の前後を確認できる。接触応答と検証条件は`player-controller.md`を参照。

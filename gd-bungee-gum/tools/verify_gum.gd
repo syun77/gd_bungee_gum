@@ -255,12 +255,15 @@ func verify() -> void:
 	check(gum.connected() and gum.tension > 0.0, "Rotating target self-intersection preserves contracting connection")
 	check((gum.player_force + gum.target_force).length() < 0.001, "Rotated target retains reciprocal force")
 	# The target must not mask a separate obstacle, even on this same ray.
+	var saved_diagnostics: bool = gum.settings.gum_diagnostics
+	gum.settings.gum_diagnostics = true
 	crossing = body_at(Vector2(100, -34), true)
 	crossing.freeze = true
 	await ticks(2)
 	gum.step(1.0 / 60.0)
 	check(not gum.connected() and gum.release_reason == "UNSUPPORTED OBSTACLE", "Separate dynamic blocker still releases rotated-target connection")
 	check(gum.diagnostic_obstruction.get("is_target", true) == false, "Release identifies separate blocker rather than attached target")
+	gum.settings.gum_diagnostics = saved_diagnostics
 	crossing.free()
 	rotating_target.free()
 	# Replay floor-side rotation from the reported PATH INVALID release.

@@ -17,7 +17,10 @@ var coyote_remaining := 0.0
 var coyote_gravity_velocity := Vector2.ZERO
 var landing_time := 0.0
 var gum: Node2D
+var contact_diagnostic_next_tick := 0
 var compression_diagnostic_next_tick := 0
+var rigid_contact_normals: Array[Vector2] = []
+var rigid_contact_probe := CapsuleShape2D.new()
 var pinning_diagnostic_active := false
 var pinning_diagnostic_next_tick := 0
 var pinning_diagnostic_input: Dictionary = {}
@@ -114,13 +117,15 @@ func simulate(delta: float, jump_requested := false) -> void:
 		coyote_gravity_velocity = Vector2.ZERO
 	# 外部速度は空中で保持し、接地後に床面方向の摩擦で減速する。
 	velocity = control_velocity + external_velocity
+	_repel_rigid_contacts(delta, velocity)
+	velocity = control_velocity + external_velocity
 	var incoming_velocity := velocity
 	var before_position := global_position
 	var before_control := control_velocity
 	var before_external := external_velocity
 	move_and_slide()
 	var slide_velocity := velocity
-	var collision_normals: Array[Vector2] = []
+	var collision_normals: Array[Vector2] = rigid_contact_normals.duplicate()
 	for index in get_slide_collision_count():
 		collision_normals.append(get_slide_collision(index).get_normal())
 	if _recover_rigid_compression(delta, incoming_velocity):
@@ -344,20 +349,101 @@ func _pinning_nearby_bodies() -> Array[Dictionary]:
 		result.append(body)
 	return result
 
-func _recover_rigid_compression(delta: float, incoming: Vector2) -> bool:
+func _nearby_movable_rigids() -> Array[RigidBody2D]:
 	var collider: CollisionShape2D = $CollisionShape2D
 	var query := PhysicsShapeQueryParameters2D.new()
 	query.shape = collider.shape
 	query.transform = collider.global_transform
 	query.margin = 2.0
-	query.collision_mask = 4
+	query.collision_mask = collision_mask & 4
 	query.exclude = [get_rid()]
 	var bodies: Array[RigidBody2D] = []
 	for hit in get_world_2d().direct_space_state.intersect_shape(query, 16):
 		if hit.collider is RigidBody2D and not hit.collider.freeze and hit.collider not in bodies:
 			bodies.append(hit.collider)
+	return bodies
+
+func _rigid_contacts(bodies: Array[RigidBody2D]) -> Array[Dictionary]:
+	var contacts: Array[Dictionary] = []
+	if bodies.is_empty():
+		return contacts
+	var collider: CollisionShape2D = $CollisionShape2D
+	var capsule: CapsuleShape2D = collider.shape
+	rigid_contact_probe.radius = capsule.radius + settings.contact_clearance
+	rigid_contact_probe.height = capsule.height + settings.contact_clearance * 2.0
+	# Direct shape pairs avoid changing live body masks/contact caches.
+	for body in bodies:
+		var deepest := 0.0
+		var normal := Vector2.ZERO
+		var point := Vector2.ZERO
+		for owner in body.get_shape_owners():
+			if body.is_shape_owner_disabled(owner):
+				continue
+			var transform := body.global_transform * body.shape_owner_get_transform(owner)
+			for index in body.shape_owner_get_shape_count(owner):
+				var shape: Shape2D = body.shape_owner_get_shape(owner, index)
+				var pairs := rigid_contact_probe.collide_and_get_contacts(collider.global_transform, shape, transform)
+				for i in range(0, pairs.size(), 2):
+					var separation: Vector2 = pairs[i + 1] - pairs[i]
+					if separation.length() > deepest:
+						deepest = separation.length()
+						normal = separation.normalized()
+						point = pairs[i + 1]
+		if deepest > 0.001:
+			contacts.append({"body": body, "depth": deepest, "normal": normal, "point": point})
+	return contacts
+
+func _repel_rigid_contacts(delta: float, incoming: Vector2) -> void:
+	rigid_contact_normals.clear()
+	var contacts := _rigid_contacts(_nearby_movable_rigids())
+	var original_external := external_velocity
+	for contact in contacts:
+		var body: RigidBody2D = contact.body
+		var normal: Vector2 = contact.normal
+		var point: Vector2 = contact.point
+		var physics := PhysicsServer2D.body_get_direct_state(body.get_rid())
+		var radius := point - (physics.transform.origin + physics.center_of_mass)
+		var point_velocity := physics.linear_velocity + Vector2(-radius.y, radius.x) * physics.angular_velocity
+		var closing_speed := (point_velocity - incoming).dot(normal)
+		var restitution: float = settings.contact_restitution if closing_speed > 30.0 else 0.0
+		var bias := minf(settings.contact_separation_speed, maxf(contact.depth - 0.05, 0.0) * settings.contact_penetration_response / delta)
+		contact.merge({"radius": radius, "inverse_mass": 1.0 / settings.player_mass + physics.inverse_mass + radius.cross(normal) ** 2 * physics.inverse_inertia,
+			"target_speed": bias + restitution * maxf(closing_speed, 0.0), "accumulated": 0.0,
+			"closing_speed": closing_speed, "body_velocity_before": physics.linear_velocity})
+		rigid_contact_normals.append(normal)
+	# Solve coupled contacts; one side's reaction changes the next side's closing speed.
+	for iteration in 8:
+		for contact in contacts:
+			var body: RigidBody2D = contact.body
+			var physics := PhysicsServer2D.body_get_direct_state(body.get_rid())
+			var radius: Vector2 = contact.radius
+			var point_velocity := physics.linear_velocity + Vector2(-radius.y, radius.x) * physics.angular_velocity
+			var player_velocity := incoming + external_velocity - original_external
+			var closing_speed: float = (point_velocity - player_velocity).dot(contact.normal)
+			var accumulated := maxf(contact.accumulated + (closing_speed + contact.target_speed) / contact.inverse_mass, 0.0)
+			var impulse: Vector2 = -contact.normal * (accumulated - contact.accumulated)
+			contact.accumulated = accumulated
+			if not impulse.is_zero_approx():
+				body.sleeping = false
+				body.apply_impulse(impulse, contact.point - body.global_position)
+				external_velocity -= impulse / settings.player_mass
+	var tick := Engine.get_physics_frames()
+	if settings.pinning_diagnostics and not contacts.is_empty() and tick >= contact_diagnostic_next_tick:
+		var diagnostics: Array[Dictionary] = []
+		for contact in contacts:
+			var body: RigidBody2D = contact.body
+			diagnostics.append({"body": str(body.get_path()), "point": contact.point, "normal": contact.normal,
+				"depth": contact.depth, "closing_speed": contact.closing_speed, "target_speed": contact.target_speed,
+				"impulse": -contact.normal * contact.accumulated, "body_velocity_before": contact.body_velocity_before,
+				"body_velocity_after": PhysicsServer2D.body_get_state(body.get_rid(), PhysicsServer2D.BODY_STATE_LINEAR_VELOCITY)})
+		print("[PinningDiagnostic] CONTACT_IMPULSE tick=", tick, " contacts=", diagnostics)
+		contact_diagnostic_next_tick = tick + 30
+
+func _recover_rigid_compression(delta: float, incoming: Vector2) -> bool:
+	var bodies := _nearby_movable_rigids()
 	if bodies.is_empty():
 		return false
+	var collider: CollisionShape2D = $CollisionShape2D
 	var saved_mask := collision_mask
 	collision_mask = saved_mask & ~4
 	var parameters := PhysicsTestMotionParameters2D.new()
@@ -370,7 +456,6 @@ func _recover_rigid_compression(delta: float, incoming: Vector2) -> bool:
 		collision_mask = saved_mask
 		return false
 	var start := global_position
-	# Leave a small clearance so subsequent tangent motion is not consumed by recovery.
 	parameters.margin += COMPRESSION_CLEARANCE
 	for iteration in 8:
 		parameters.from = global_transform
@@ -383,15 +468,13 @@ func _recover_rigid_compression(delta: float, incoming: Vector2) -> bool:
 	if correction.length_squared() > 0.000001:
 		for body in bodies:
 			var direction := correction.normalized()
-			var toward_body := body.global_position - collider.global_position
-			if toward_body.dot(direction) <= 0.0:
+			if (body.global_position - collider.global_position).dot(direction) <= 0.0:
 				continue
 			var approaching := maxf(-body.linear_velocity.dot(direction), 0.0)
 			var impulse := direction * body.mass * (correction.length() / delta + approaching)
 			body.sleeping = false
 			body.apply_central_impulse(impulse)
 			external_velocity -= impulse / settings.player_mass
-		# Refresh floor/wall classification after the terrain-only recovery.
 		velocity = Vector2(0.0, 0.01 if incoming.y >= 0.0 else -0.01)
 		move_and_slide()
 		var tick := Engine.get_physics_frames()
