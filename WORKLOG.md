@@ -1,3 +1,40 @@
+## Active gum wrapping design task
+- Goal: Redesign obstacle handling as corner wrapping.
+- Status: Source/spec review complete; drafting design, runtime unchanged.
+- Completed: Confirmed straight-ray obstruction release, shared 900 px limit, and merged rectangular Terrain shapes.
+- Decisions: Persistent ordered pivots on static terrain; total-path spring length; terrain reaction balances bent endpoint forces. Dynamic wrapping deferred explicitly.
+- Files changed: WORKLOG.md.
+- Verification: Source/spec inspection; document review pending.
+- Blockers: None.
+- Next action: Write wrapping specification and link target design separately from implemented behavior; review invariants and acceptance cases.
+
+## Completed Italian pudding asset task
+- Goal/status: Create photo-referenced Italian pudding collectible; complete.
+- Completed: Built-in imagegen generation, visible-bounds nearest-neighbor normalization and enlarged final visual review.
+- Decisions: 64×64 transparent RGBA; yellow custard, dark caramel cap/pool and white tan-rimmed plate; asset only.
+- Files changed: images/foods/italian_pudding.png; specs/food-item-assets.md (final prompt); AGENTS.md; WORKLOG.md.
+- Verification: Pillow confirms 64×64 RGBA, alpha 0–255 and transparent corners. Final silhouette/color contrast reviewed. Naming/docs consistency checked; git diff --check passed.
+- Blockers: None.
+- Next action: Use saved sprite; copy into res:// with nearest filtering when integrating collectibles.
+
+## Completed peperoncino asset task
+- Goal/status: Create photo-referenced peperoncino collectible; complete.
+- Completed: Built-in imagegen generation, visible-bounds nearest-neighbor normalization and enlarged final visual review.
+- Decisions: 64×64 transparent RGBA; yellow spaghetti, golden garlic slices, red chili, green parsley and white patterned bowl; asset only.
+- Files changed: images/foods/peperoncino.png; specs/food-item-assets.md (final prompt); AGENTS.md; WORKLOG.md.
+- Verification: Pillow confirms 64×64 RGBA, alpha 0–255 and transparent corners. Final silhouette and ingredient colors reviewed. Naming/docs consistency checked; git diff --check passed.
+- Blockers: None.
+- Next action: Use saved sprite; copy into res:// with nearest filtering when integrating collectibles.
+
+## Completed spinach asset task
+- Goal/status: Create photo-referenced sauteed spinach collectible; complete.
+- Completed: Built-in imagegen generation, visible-bounds nearest-neighbor normalization and enlarged final visual review.
+- Decisions: 64×64 transparent RGBA; dark cooked spinach, bright stems, four bacon pieces and white tan-rimmed bowl; asset only.
+- Files changed: images/foods/sauteed_spinach.png; specs/food-item-assets.md (final prompt); AGENTS.md; WORKLOG.md.
+- Verification: Pillow confirms 64×64 RGBA, alpha 0–255 and transparent corners. Final food silhouette reviewed. Naming/docs consistency checked; git diff --check passed.
+- Blockers: None.
+- Next action: Use saved sprite; copy into res:// with nearest filtering when integrating collectibles.
+
 ## Completed hamburger steak asset task
 - Goal/status: Create photo-referenced hamburger steak collectible; complete.
 - Completed: Built-in imagegen generation, visible-bounds nearest-neighbor normalization and enlarged final visual inspection.

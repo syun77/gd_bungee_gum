@@ -1,5 +1,38 @@
 # 回収用フード画像素材
 
+## イタリアンプリン
+
+- ファイル: `images/foods/italian_pudding.png`
+- 64 × 64 px、RGBA PNG、透過背景。単一の静止スプライト。
+- 黄色い台形状のプリン、濃いカラメルの上面とソース、細い茶色の縁がある白い皿を表現。
+- built-in imagegenで添付写真を参考に生成し、可視領域を基準に最近傍補間で正規化。表示はNearestフィルター。素材のみで回収処理・配置は未実装。
+
+最終生成プロンプト:
+
+> A tiny 16-bit pixel-art game collectible based on reference photo: Italian caramel pudding. One firm pale golden yellow custard pudding shaped as a short truncated cone, round dark reddish-brown caramel top seen as an ellipse, with a few chunky amber highlights. A pool of dark caramel sauce around its base, entirely contained in a shallow white oval ceramic plate with a thin tan rim. Slightly elevated three-quarter view, entire plate and pudding centered on square transparent canvas with padding. Simple chunky square pixel clusters on uniform 64x64 logical grid; complete dessert and plate about 56x38 logical pixels. Restrained palette, bold stepped warm dark outline, large clean yellow custard and brown caramel shapes, crisp nearest-neighbor enlarged pixel art. Actual transparent background alpha zero outside plate. NO glow, halo, shadow, backdrop, vignette, gradients, blur, antialiasing, photographic texture or fine noise. No whipped cream, fruit, mint, spoon, text, logos or extra garnish. Single static sprite.
+
+## ペペロンチーノ
+
+- ファイル: `images/foods/peperoncino.png`
+- 64 × 64 px、RGBA PNG、透過背景。単一の静止スプライト。
+- 黄色いスパゲッティ、金色のにんにくスライス、赤唐辛子、緑のパセリ、淡い色模様の白い器を表現。
+- built-in imagegenで添付写真を参考に生成し、可視領域を基準に最近傍補間で正規化。表示はNearestフィルター。素材のみで回収処理・配置は未実装。
+
+最終生成プロンプト:
+
+> A tiny 16-bit pixel-art game collectible based on reference photo: spaghetti aglio olio e peperoncino. Compact mound of pale golden yellow spaghetti loops lightly coated in olive oil, several clearly visible toasted golden garlic slices, a few short dark red chili pieces and sparse green parsley flecks. No creamy sauce, no cheese, no meat. In a shallow white ceramic bowl with subtle pale coral, cream and mint rectangular rim marks, slightly elevated three-quarter view, horizontal oval silhouette. Entire bowl centered on square transparent canvas with padding. Simple chunky square pixel clusters on uniform 64x64 logical grid, complete dish about 56x36 pixels. Restrained palette, bold stepped warm gray outline, large clean noodle loops, garlic slices and red chili accents readable at tiny size. Crisp nearest-neighbor enlarged pixel art. Actual transparent background alpha zero outside bowl. NO glow, halo, shadow, backdrop, vignette, gradients, blur, antialiasing, photographic texture or fine noise. No steam, text, logos, utensils or extra garnish. Single static sprite.
+
+## ほうれん草のソテー
+
+- ファイル: `images/foods/sauteed_spinach.png`
+- 64 × 64 px、RGBA PNG、透過背景。単一の静止スプライト。
+- 濃い緑の加熱したほうれん草、明るい茎、4切れのピンクのベーコン、細い茶色の縁がある白い器を表現。
+- built-in imagegenで添付写真を参考に生成し、可視領域を基準に最近傍補間で正規化。表示はNearestフィルター。素材のみで回収処理・配置は未実装。
+
+最終生成プロンプト:
+
+> A tiny 16-bit pixel-art game collectible based on the reference food: sauteed spinach with bacon. One shallow white ceramic bowl with thin tan rim, horizontal oval silhouette viewed slightly from above in three-quarter view. Compact mound of cooked DARK forest-green folded spinach leaves with several brighter green curved stems, topped by FOUR short pink bacon strips with creamy ivory fat ends. Keep spinach visibly cooked and dark, not salad lettuce. Simple chunky square pixel clusters on uniform 64x64 logical grid, complete bowl about 56x36 pixels. Restrained palette, bold stepped warm gray outline, large readable green leaf clusters and pink bacon accents, crisp nearest-neighbor enlarged pixel art. Entire complete bowl centered on square transparent canvas with padding. Actual transparent background alpha zero outside bowl. NO glow, halo, shadow, backdrop, vignette, gradients, blur, antialiasing, photo texture or fine noise. No steam, text, logos, utensils or additional garnish. Single static sprite.
+
 ## ハンバーグ・ステーキ
 
 - ファイル: `images/foods/hamburger_steak.png`

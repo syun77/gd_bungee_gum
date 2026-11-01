@@ -20,7 +20,7 @@
 
 ## Durable project knowledge
 
-- Food collectible art lives in `images/foods/`; `milano_doria.png`, `escargot_oven_baked.png`, `chicken_diavola.png`, `shrimp_salad.png`, `spicy_chicken.png`, `margherita_pizza.png`, `tarako_pasta.png`, and `hamburger_steak.png` are 64 × 64 transparent RGBA static sprites. Use nearest-neighbor filtering; see `specs/food-item-assets.md`.
+- Food collectible art lives in `images/foods/`; `milano_doria.png`, `escargot_oven_baked.png`, `chicken_diavola.png`, `shrimp_salad.png`, `spicy_chicken.png`, `margherita_pizza.png`, `tarako_pasta.png`, `hamburger_steak.png`, `sauteed_spinach.png`, `peperoncino.png`, and `italian_pudding.png` are 64 × 64 transparent RGBA static sprites. Use nearest-neighbor filtering; see `specs/food-item-assets.md`.
 
 - Current setting/art direction is a pop-colored family restaurant: cream ceramic, coral/mint trim, painted frames and muted teal background. `theater_*` filenames remain the current resource identifiers. Edit both atlas copies together (`images/tilesets/` and `gd-bungee-gum/assets/tilesets/`); `restaurant_tileset_source.png` is the color-edit source.
 
@@ -86,3 +86,5 @@
 - Shared runtime tuning lives in `resources/game_settings.tres` (schema: `scripts/game_settings.gd`), grouped for the Inspector. Game.Settings is assigned in game.tscn and passed to Player/Gum at ready; standalone Player has the same default asset. Aim Guide colors include alpha (0.9) and line width (2 px). See specs/game-settings.md.
 
 - Automatic gum release reasons appear in HUD: `OBSTRUCTED` for a straight ray blocked before the anchor (even another face of the same terrain body), `TOO FAR` beyond maximum_length (currently 900 px), `TARGET LOST` for removed targets. No wrapping; maximum tension only clamps force and does not break connections.
+
+- `specs/gum-wrapping.md` defines the target corner-wrapping design (not implemented): ordered static-terrain pivots, total-path spring length and terrain reaction forces. Current runtime still releases on obstruction; dynamic obstacle wrapping is outside the initial scope.
