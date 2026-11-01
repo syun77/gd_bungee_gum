@@ -50,7 +50,23 @@ func verify() -> void:
 	world.add_child(gum)
 	var wall := body_at(Vector2(220, -34))
 	await ticks(2)
+	gum.settings.attachment_range = 150.0
+	check(not gum.attach_at(wall.position), "Short firing range cannot hit within longer physical limit")
+	gum.update_aim(wall.position)
+	check(is_equal_approx(gum.origin().distance_to(gum.aim_point), 150.0), "Miss guide uses firing range")
+	gum.settings.attachment_range = 250.0
+	gum.settings.maximum_length = 180.0
+	gum.update_aim(wall.position)
+	check(not gum.aim_valid and not gum.attach_at(wall.position), "Physical limit rejects unreachable attachment despite longer firing range")
+	gum.settings.maximum_length = 400.0
 	check(gum.attach_at(wall.position), "Ray must attach to static terrain")
+	gum.relax()
+	player.position.x = -100.0
+	gum.step(1.0 / 60.0)
+	check(gum.connected() and gum.path.length > gum.settings.attachment_range, "Connection stretches beyond firing range")
+	player.position.x = 0.0
+	gum.settings.attachment_range = 400.0
+	check(gum.attach_at(wall.position), "Reset lab attachment")
 	check(absf(gum.rest_length - 200.0) < 0.1, "Attach uses current distance")
 	step_lab()
 	check(gum.tension == 0.0, "Fresh attachment must not exert force")
@@ -219,6 +235,7 @@ func verify() -> void:
 	# Saved-map ceiling/wrapping fixture intentionally uses a 900px range.
 	game.settings = game.settings.duplicate()
 	game.settings.maximum_length = 900.0
+	game.settings.attachment_range = 900.0
 	game.gum.settings = game.settings
 	game.player.settings = game.settings
 	await ticks(40)

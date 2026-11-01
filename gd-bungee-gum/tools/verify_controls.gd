@@ -28,6 +28,7 @@ func configure_ceiling_fixture() -> void:
 	# Ceiling gestures need a longer range than the saved 400px gameplay tuning.
 	game.settings = game.settings.duplicate()
 	game.settings.maximum_length = 900.0
+	game.settings.attachment_range = 900.0
 	player.settings = game.settings
 	gum.settings = game.settings
 

@@ -5,5 +5,5 @@
 [resource]
 resource_name = "Game Settings"
 script = ExtResource("1")
-manual_length_margin = 240.0
+attachment_range = 240.0
 camera_hold_zoom = 1.2000000000000002

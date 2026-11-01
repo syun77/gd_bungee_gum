@@ -1,3 +1,23 @@
+## Completed independent gum range
+- Goal/status: Separate firing range and connected physical length; complete.
+- Completed: Added attachment_range for ray/aim/Game aim vector; maximum_length retains wrapped break limit, HUD length ratio and manual cap. Over-limit initial hit rejected consistently by preview/attachment. Updated long-range fixtures and current specs.
+- Decisions: Both defaults400 px; existing saved tuning preserved. Short firing range can support a longer connected rope; physical limit still applies at attachment.
+- Files changed: game_settings/game/gum_connection scripts, verify_gum/controls/camera, settings/prototype/wrapping/keyboard specs, AGENTS.md, WORKLOG.md.
+- Verification: Godot4.5.1 gum/controls/camera suites PASS exit0 (/tmp/range-{gum,controls,camera}.log); independent short ray, miss preview, initial physical cap and extension beyond firing range covered. git diff --check PASS. Known unrelated macOS certificate warning only.
+- Refactoring: Reviewed every maximum_length consumer; ray/aim use only attachment_range, physics/path/manual/HUD use only maximum_length. Shared attachable predicate keeps aim and firing consistent.
+- Blockers: None.
+- Next action: Set Attachment Range and Maximum Length independently in resources/game_settings.tres via Inspector; F5 playtest desired tuning.
+
+## Completed gum glow implementation
+- Goal/status: Give gum a luminous core and soft halo; complete.
+- Completed: Four translucent halo layers, base silhouette and narrow bright core on line/pivots/endpoint; shared Inspector controls and spec updated. Gray loosen base retained.
+- Decisions: Renderer-independent CanvasItem drawing; no world lighting or physics changes.
+- Files changed: scripts/gum_connection.gd, scripts/game_settings.gd, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Verification: Godot4.5.1 verify_gum.gd PASS exit0 (/tmp/gum-glow.log); git diff --check PASS. Known unrelated macOS certificate warning. Native visual appearance not checked.
+- Refactoring: Reused one shape helper for halos/base/core; reviewed appearance settings and endpoint consistency, no physics coupling.
+- Blockers: None.
+- Next action: F5 inspect glow against restaurant background; tune Gum Glow Radius/Opacity/Core Brightness in shared settings if needed.
+
 ## Completed manual extension baseline update
 - Goal/status: Promote user-saved manual extension limit to defaults; complete.
 - Completed: Verified saved margin240 and inherited max400 (manual cap160); matched script default and all current specs/AGENTS. Kept saved resource unchanged. Made wrapped extension regression respect configured cap.

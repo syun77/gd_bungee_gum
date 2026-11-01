@@ -123,3 +123,7 @@
 
 
 - Manual gum tuning: extension180 px/s, shortening90 px/s, break margin240 px (manual cap160 at max400). Down immediately relaxes without clearing tension; existing above-cap natural length never snaps shorter on extension. Down wins over X, Up+Down relaxes/holds; X attached always consumes its release. Ceiling input/physics fixtures duplicate settings with max900 explicitly; saved gameplay settings stay400.
+
+- Gum glow is renderer-independent layered drawing in gum_connection.gd: four translucent halos plus base/core, shared by line/pivots/endpoint. Tune Gum Appearance glow radius/opacity/core brightness in game_settings; no world lighting or physics effect.
+
+- Gum firing/aim range is attachment_range (default400); connected wrapped path break limit and manual cap use maximum_length (default400). A hit beyond maximum_length is non-attachable even inside firing range. Long-range fixtures must set both explicitly.

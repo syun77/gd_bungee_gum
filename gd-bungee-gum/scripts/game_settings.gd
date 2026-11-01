@@ -20,6 +20,9 @@ extends Resource
 @export_range(0.0, 100.0) var damping := 9.0
 @export_range(1.0, 1000.0) var contraction_speed := 180.0
 @export_range(1.0, 900.0) var minimum_length := 36.0
+## Maximum straight-line firing distance (px), independent of connected path length.
+@export_range(1.0, 3000.0) var attachment_range := 400.0
+## Maximum connected path length, including wrapping (px).
 @export_range(1.0, 3000.0) var maximum_length := 400.0
 @export_range(1.0, 10000.0) var maximum_tension := 2800.0
 ## Manual relaxed-mode length changes (px/s).
@@ -52,6 +55,12 @@ extends Resource
 @export_range(1.0, 10.0) var gum_line_width := 2.0
 ## Additional width at maximum tension (px).
 @export_range(0.0, 10.0) var gum_tension_width := 4.0
+
+## Soft halo radius beyond the gum edge (px); zero disables the halo.
+@export_range(0.0, 24.0) var gum_glow_radius := 8.0
+@export_range(0.0, 1.0) var gum_glow_opacity := 0.12
+## White mixed into the narrow luminous core; zero keeps the base color.
+@export_range(0.0, 1.0) var gum_core_brightness := 0.65
 
 @export_group("Camera Zoom")
 ## Camera2D scale: larger values show a closer view.

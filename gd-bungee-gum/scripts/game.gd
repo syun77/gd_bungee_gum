@@ -73,7 +73,7 @@ func _update_camera(delta: float) -> void:
 	camera.zoom = camera.zoom.lerp(Vector2.ONE * target_zoom, blend)
 
 func _aim_target() -> Vector2:
-	return gum.origin() + aim_direction * gum.settings.maximum_length
+	return gum.origin() + aim_direction * gum.settings.attachment_range
 
 func _read_length_input(jump_requested: bool) -> float:
 	var up := Input.is_action_pressed("aim_up")

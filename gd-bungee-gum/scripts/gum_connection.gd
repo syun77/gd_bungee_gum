@@ -35,7 +35,7 @@ func cast_to(point: Vector2) -> Dictionary:
 	var offset := point - origin()
 	if offset.length_squared() < 0.01:
 		return {}
-	var end := origin() + offset.limit_length(settings.maximum_length)
+	var end := origin() + offset.limit_length(settings.attachment_range)
 	var query := PhysicsRayQueryParameters2D.create(origin(), end, 1 | 4, [player.get_rid()])
 	query.hit_from_inside = true
 	return get_world_2d().direct_space_state.intersect_ray(query)
@@ -44,7 +44,7 @@ func attachable(hit: Dictionary) -> bool:
 	if hit.is_empty():
 		return false
 	var body = hit.collider
-	return (body is StaticBody2D or body is RigidBody2D) and not body.is_in_group("gum_blocked")
+	return (body is StaticBody2D or body is RigidBody2D) and not body.is_in_group("gum_blocked") and origin().distance_to(hit.position) <= settings.maximum_length
 
 func attach_at(point: Vector2) -> bool:
 	# A miss keeps the existing connection; a successful shot replaces it atomically.
@@ -146,7 +146,7 @@ func step(delta: float, length_input := 0.0) -> void:
 func update_aim(point: Vector2) -> void:
 	var hit := cast_to(point)
 	aim_valid = attachable(hit)
-	aim_point = hit.position if not hit.is_empty() else origin() + (point - origin()).limit_length(settings.maximum_length)
+	aim_point = hit.position if not hit.is_empty() else origin() + (point - origin()).limit_length(settings.attachment_range)
 	queue_redraw()
 
 func _draw() -> void:
@@ -165,11 +165,23 @@ func _draw() -> void:
 	if mode == Mode.LOOSEN:
 		color = settings.gum_loosen_color
 	var points := _display_points()
+	var width := settings.gum_line_width + ratio * settings.gum_tension_width
+	# Wide translucent layers soften the silhouette without screen-wide bloom.
+	if settings.gum_glow_radius > 0.0 and settings.gum_glow_opacity > 0.0:
+		for layer in range(4, 0, -1):
+			var spread := settings.gum_glow_radius * layer / 4.0
+			var halo := Color(color, color.a * settings.gum_glow_opacity * (5.0 - layer) / 4.0)
+			_draw_gum_shape(points, halo, width, spread)
+	_draw_gum_shape(points, color, width, 0.0)
+	var core := color.lerp(Color(1.0, 1.0, 1.0, color.a), settings.gum_core_brightness)
+	_draw_gum_shape(points, core, maxf(1.0, width * 0.35), 0.0, 0.4)
+
+func _draw_gum_shape(points: PackedVector2Array, color: Color, width: float, spread: float, marker_scale: float = 1.0) -> void:
 	if points.size() > 1:
-		draw_polyline(points, color, settings.gum_line_width + ratio * settings.gum_tension_width, true)
+		draw_polyline(points, color, width + spread * 2.0, true)
 	for pivot in path.pivots:
-		draw_circle(to_local(pivot.position), 3.0, color)
-	draw_circle(to_local(endpoint()), 5.0, color)
+		draw_circle(to_local(pivot.position), 3.0 * marker_scale + spread, color, true, -1.0, true)
+	draw_circle(to_local(endpoint()), 5.0 * marker_scale + spread, color, true, -1.0, true)
 
 func _display_points() -> PackedVector2Array:
 	var result := PackedVector2Array()

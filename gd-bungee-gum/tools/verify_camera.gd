@@ -25,6 +25,7 @@ func verify() -> void:
 	var settings = game.settings
 	game.gum.settings = settings
 	settings.maximum_length = 900.0
+	settings.attachment_range = 900.0
 	settings.camera_hold_delay = 0.2
 	check(game.camera.zoom.is_equal_approx(Vector2.ONE * settings.camera_normal_zoom), "Spawn uses close normal zoom")
 	settings.camera_zoom_response = 0.0

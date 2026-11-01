@@ -21,7 +21,7 @@
 
 ## 力学と安全条件
 
-`game_settings.gd` のResourceを `resources/game_settings.tres` としてGameのSettingsに割り当て、PlayerとGumで共有する。初期値はばね係数35、減衰9、収縮180 px/s、自然長下限36 px、射程／最大接続長400 px、最大張力2800、手動延長180 px/s・短縮90 px/s、手動延長上限は最大長−240 px。下限より近くに接着した場合、収縮で自然長を伸ばさない。
+`game_settings.gd` のResourceを `resources/game_settings.tres` としてGameのSettingsに割り当て、PlayerとGumで共有する。初期値はばね係数35、減衰9、収縮180 px/s、自然長下限36 px、射程attachment_range 400 px／最大接続長maximum_length 400 px（独立設定）、最大張力2800、手動延長180 px/s・短縮90 px/s、手動延長上限は最大長−240 px。下限より近くに接着した場合、収縮で自然長を伸ばさない。
 
 物理起点はプレイヤーの足元から(0,-34)。レイは自分を除外し、地形レイヤー1と物体レイヤー4を調べる。StaticBody2DとRigidBody2Dへ接着でき、`gum_blocked` グループの対象には接着できない。最初の面が不適格でも奥の対象へは貫通しない。
 

@@ -38,3 +38,7 @@ X長押し中の補助線は **Aim Valid Color / Aim Invalid Color** で変更�
 角での斜めジャンプ調査では、`KICK_APPLIED`の`source`（floor/wall/ceiling/coyote）、キック方向`normal`、上向きからの符号付き角度`angle_from_up_deg`、加算速度`impulse`、猶予重力補正`compensation`、`external_before/after`、合成した`launch`を比較する。`ACCEPTED`と`AFTER_MOVE`の`contacts`には衝突相手のノードパス・接触点・法線・深さを記録する。`floor_normal`／`wall_normal`、実移動速度`real_velocity`と移動量`position_delta`も出力する。要求時のこれらの接触・実移動値は前回の移動結果、`AFTER_MOVE`は今回の結果。接地法線とキック方向の違い、残存する横速度、移動時の衝突の影響を分けて確認できる。床・コヨーテの`normal`は常に`(0, -1)`、`compensation`の横成分は0。
 
 手動長さ調整は`manual_extension_speed`（180 px/s）、`manual_shortening_speed`（90 px/s）、`manual_length_margin`（240 px）で調整する。自動収縮は`contraction_speed`（180 px/s）。手動延長上限は最大長から安全余裕を引き0〜最大長に制限する。保存基準では160 px。
+
+接続中のガムは同じ経路に半透明のハロー4層、基本色の線、細い明るい芯を重ねて発光感を出す。折り返し点と接着点にも適用する。Gum Appearance の **Gum Glow Radius**（初期8 px）、**Gum Glow Opacity**（0.12）、**Gum Core Brightness**（白の混合率0.65）で調整する。半径または不透明度0でハローを無効化できる。緩めモードの基本色は灰色寄りのまま。描画のみの効果で、周囲への照明や物理への影響はなく、ポストエフェクトに依存しない。
+
+**Attachment Range**（`attachment_range`、初期400 px）は発射レイと照準の射程。**Maximum Length**（`maximum_length`、初期400 px）は接続後に伸びられる総経路長の切断上限で、巻き付き経路を含む。両者は独立して編集できる。例えば射程400／最大長800なら400 px以内に接着し、その後800 pxまで伸びられる。手動自然長の上限はMaximum Length−Manual Length Margin。射程を最大長より長くしても、最大長を超える位置には接着できず照準も接着不可になる。
