@@ -44,6 +44,12 @@
 - Never record secrets, credentials, tokens, personal data, or other sensitive values.
 - If later evidence invalidates an entry, update or remove it immediately instead of appending contradictory guidance.
 
+- Gum fixed-step owner is `scripts/game.gd`: input → `Gum.step` → `Player.simulate` → camera/HUD. Player has no independent physics callback. Tune `resources/gum_settings.tres`; attachable terrain/props are physics layers 1/4, player is layer 2. Keep reciprocal forces and collision momentum cleanup together.
+- Gum controls: mouse aim, LMB attach, hold RMB contract, E/MMB detach. `tools/verify_gum.gd` covers real ray queries, rigid force/mass response and live Game integration. Input bindings use device -1 (any device); editor-saved device 16 bindings do not match Godot 4.5 synthetic keyboard events.
+- Assign the gum settings Resource through the scene's exported property; preloading its instance as a typed script property's default caused uninitialized Resource script values under Godot 4.5.1.
+
+- `specs/keyboard-controls-proposal.md` records the requested Z/X control proposal (not implemented): release-to-fire directional aiming, auto-contraction on attach, and explicit loosen/contract toggle. Keep proposals distinct from the currently implemented mouse controls until adopted.
+
 ## Persistent progress and session recovery
 
 - Use the repository-root `WORKLOG.md` as the durable handoff and recovery record for all work.

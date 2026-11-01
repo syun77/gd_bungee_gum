@@ -1,5 +1,11 @@
 extends CharacterBody2D
-## Feet-origin controller. External momentum persists independently of steering.
+## Feet-origin controller. Game calls simulate() once after gum forces each physics tick.
+const GUM_HANDS := {
+	&"gum_fire": [Vector2(180, 143), Vector2(176, 142), Vector2(185, 140), Vector2(196, 135), Vector2(207, 122), Vector2(216, 123), Vector2(214, 123), Vector2(211, 123)],
+	&"gum_pull": [Vector2(220, 109), Vector2(216, 109), Vector2(217, 109), Vector2(218, 110), Vector2(220, 106), Vector2(217, 106), Vector2(217, 104), Vector2(219, 102)],
+	&"gum_hang": [Vector2(171, 40), Vector2(171, 40), Vector2(171, 40), Vector2(173, 40), Vector2(171, 40), Vector2(171, 40), Vector2(171, 40), Vector2(172, 40)],
+}
+
 
 @export var run_speed := 220.0
 @export var ground_acceleration := 1600.0
@@ -11,12 +17,42 @@ var external_velocity := Vector2.ZERO
 var control_velocity := Vector2.ZERO
 var kick_available := true
 var landing_time := 0.0
+var gum: Node2D
+var fire_time := 0.0
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
+
+func _ready() -> void:
+	var poses: SpriteFrames = preload("res://assets/characters/teto/gum_animations.tres")
+	sprite.sprite_frames = sprite.sprite_frames.duplicate()
+	for animation in poses.get_animation_names():
+		sprite.sprite_frames.add_animation(animation)
+		sprite.sprite_frames.set_animation_speed(animation, poses.get_animation_speed(animation))
+		sprite.sprite_frames.set_animation_loop(animation, poses.get_animation_loop(animation))
+		for index in poses.get_frame_count(animation):
+			sprite.sprite_frames.add_frame(animation, poses.get_frame_texture(animation, index), poses.get_frame_duration(animation, index))
+
+func fire_gum() -> void:
+	fire_time = 8.0 / 12.0
+	sprite.stop()
+	sprite.play("gum_fire")
+
+func cancel_gum_action() -> void:
+	fire_time = 0.0
+
+func gum_visual_origin() -> Vector2:
+	# Drawing-only hand samples in the 256px cells; physical attachment stays at chest.
+	var hands: Array = GUM_HANDS.get(sprite.animation, [])
+	if hands.is_empty():
+		return global_position + Vector2(-12 if sprite.flip_h else 12, -34)
+	var offset: Vector2 = hands[sprite.frame] - Vector2(128, 128)
+	if sprite.flip_h:
+		offset.x = -offset.x
+	return sprite.to_global(offset)
 
 func apply_external_force(force: Vector2, delta: float) -> void:
 	external_velocity += force / mass * delta
 
-func _physics_process(delta: float) -> void:
+func simulate(delta: float) -> void:
 	# 接触判定は直前の move_and_slide() の結果。今回の移動後に更新される。
 	var grounded := is_on_floor()
 	var touching := grounded or is_on_wall() or is_on_ceiling()
@@ -49,6 +85,7 @@ func _physics_process(delta: float) -> void:
 	if not grounded and is_on_floor():
 		landing_time = 0.12
 	landing_time = maxf(landing_time - delta, 0.0)
+	fire_time = maxf(fire_time - delta, 0.0)
 	_update_animation(direction)
 
 func _update_animation(direction: float) -> void:
@@ -56,6 +93,16 @@ func _update_animation(direction: float) -> void:
 	# 外部速度で流されているときは、向きと実際の進行方向が逆になる。
 	if direction != 0.0:
 		sprite.flip_h = direction < 0.0
+	if is_instance_valid(gum) and (fire_time > 0.0 or gum.connected()):
+		var aim: Vector2 = (gum.endpoint() if gum.connected() else gum.aim_point) - gum.origin()
+		sprite.flip_h = aim.x < 0.0
+		if fire_time > 0.0:
+			sprite.play("gum_fire")
+			return
+		if not is_on_floor() and gum.tension > 10.0:
+			var above: bool = gum.endpoint().y < gum.origin().y - 40.0
+			sprite.play("gum_hang" if above and velocity.length() < 130.0 else "gum_pull")
+			return
 	if not is_on_floor():
 		sprite.play("jump")
 		sprite.pause()

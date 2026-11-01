@@ -1,8 +1,13 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/stages/theater_stage.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/characters/player.tscn" id="2"]
 [ext_resource type="Script" path="res://scripts/game.gd" id="3"]
+
+[ext_resource type="Script" path="res://scripts/gum_connection.gd" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/props/gum_box.tscn" id="5"]
+
+[ext_resource type="Resource" path="res://resources/gum_settings.tres" id="6"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("3")
@@ -10,6 +15,27 @@ script = ExtResource("3")
 [node name="TheaterStage" parent="." instance=ExtResource("1")]
 
 [node name="Player" parent="." instance=ExtResource("2")]
+
+[node name="Gum" type="Node2D" parent="."]
+z_index = 5
+script = ExtResource("4")
+settings = ExtResource("6")
+
+[node name="LightBox" parent="." instance=ExtResource("5")]
+position = Vector2(360, 610)
+
+[node name="HeavyBox" parent="." instance=ExtResource("5")]
+position = Vector2(500, 610)
+mass = 6.0
+modulate = Color(0.9, 0.6, 0.7, 1)
+
+[node name="PuzzleLightBox" parent="." instance=ExtResource("5")]
+position = Vector2(2048, 616)
+
+[node name="PuzzleHeavyBox" parent="." instance=ExtResource("5")]
+position = Vector2(2864, 296)
+mass = 6.0
+modulate = Color(0.9, 0.6, 0.7, 1)
 
 [node name="Camera2D" type="Camera2D" parent="."]
 limit_left = 0
@@ -25,4 +51,11 @@ offset_top = 12.0
 theme_override_colors/font_shadow_color = Color(0.1, 0.1, 0.1, 1)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
-text = "BUNGEE GUM / CHARACTER PROTOTYPE\nA/D or Left/Right: run    Space: contact kick-off    R: restart"
+text = "BUNGEE GUM\nA/D or arrows: run   Space: kick-off   Mouse: aim   LMB: attach   Hold RMB: contract   E/MMB: detach   R: restart"
+
+[node name="Status" type="Label" parent="HUD"]
+offset_left = 24.0
+offset_top = 66.0
+theme_override_colors/font_shadow_color = Color(0.1, 0.1, 0.1, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2

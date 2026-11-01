@@ -1,5 +1,24 @@
 # Work Log
 
+## Completed Z/X control specification review
+- Goal/status: Evaluate requested two-button controls; specification proposal complete, runtime unchanged.
+- Completed: Added state/action table, eight-direction release-to-fire aiming, automatic contraction, explicit loosen/contract mode, Z detach/contact kick-off, input ownership/priority/cancellation and acceptance cases.
+- Decisions: Recommended airborne Z releases with retained momentum, without adding a free air jump. Loosen mode extends rest length once to current distance+32 px (bounded), then holds it, allowing tension to return for swings. Toggle mode is independent of physical slack. These are proposals, not implementation changes or confirmed final choices.
+- Files changed: specs/keyboard-controls-proposal.md; reference in specs/bungee-gum-prototype.md; AGENTS.md; WORKLOG.md.
+- Verification: Reviewed against current spring code and game/stage/implementation specs; explicitly identified design statements to update on adoption. Reviewed full proposal for consistent edge-trigger behavior and physical invariants; git diff --check passed. No runtime tests needed for document-only changes.
+- Blockers: None.
+- Next action: On adoption, implement input gesture state and contraction mode; update all authoritative control docs, HUD and tests. Current executable retains mouse/Space/E controls.
+
+## Completed Bungee Gum action
+- Goal/status: Implement one physics-based gum connection; complete for player action prototype.
+- Completed: Mouse aim, LMB attach, hold RMB contraction, E/MMB release; local endpoint tracking, unilateral damped spring, equal/opposite rigid force, retained player momentum; max-length/deletion/occlusion release; tension line/reticle/HUD; gum fire/pull/hang poses with drawing-only hand offsets; light/heavy boxes at entrance and section markers.
+- Decisions: Game owns input→gum force→Player.simulate→camera/HUD; Player no longer self-updates. Settings Resource assigned through scene property. R reconstructs entire current map; section checkpoints, combat/exit and full-map traversal acceptance remain future work.
+- Files changed: project.godot, player/game scripts/scenes; gum_connection.gd, gum_settings.gd, resources/gum_settings.tres, scenes/props/gum_box.tscn, tools/verify_gum.gd and engine UIDs; specs/bungee-gum-prototype.md, player-controller.md, character-gum-animations.md, godot-implementation-plan.md; AGENTS.md and WORKLOG.md.
+- Refactoring: Moved hand samples into constants, separated HUD formatting, constrained settings inspector ranges, kept physics and visual origins distinct; cancel firing pose on connection release. Input device=16 did not match local Godot 4.5 events; changed existing bindings to any-device (-1) and reran physical-key checks without changing assigned keys.
+- Verification: Final gum check passed: mouse bindings/release, terrain/dynamic rays, blocked targets, slack, contraction/hold, force cap, exact detach momentum, occlusion, max length, rotating local point and angular point velocity, equal/opposite force, light/heavy real rigid acceleration, off-center torque, deleted target, 180-tick swing, live Game ceiling lift/poses/detach. Player regression and map checks passed; git diff --check passed. Only unrelated sandbox certificate warnings in headless runs. Native rendered preview could not launch in sandbox (exit 134); actual screen appearance/feel remains unverified.
+- Blockers: None for action implementation.
+- Next action: F5 playtest: aim at ceiling and LMB, hold RMB, release with E to swing/fly; compare mint/light and coral/heavy entrance boxes. Tune settings after playtest; add section checkpoints and stage-clear progression separately.
+
 ## Completed arrow-key fix
 - Goal/status: Correct left/right arrows while preserving A/D; complete.
 - Completed: Set physical Left=4194319, Right=4194321 in project.godot. Updated player comments and AGENTS guidance. Added physical-event regression checks for A/D, both arrows and PageUp exclusion.

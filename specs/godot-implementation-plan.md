@@ -4,7 +4,7 @@
 
 Godot 4系とGDScriptで、横視点2Dの短いステージを作る。まず1本のガムによる接着・張力・収縮・解除を完成させ、その同じ仕組みで移動、物体操作、物理弾の投げ返しを成立させる。
 
-本書は実装前の設計であり、動作確認済みの実装ではない。ゲーム方針は `game-direction.md`、力学の要件は `physics-foundation.md`、ステージ構成は `stage-action-concept.md` に従う。Godotの具体的なマイナーバージョンはプロジェクト作成時に固定する。
+本書は全体の設計と合格条件を定義する。現在の実装範囲は `bungee-gum-prototype.md` を参照。単一接続・プレイヤー・物理箱は実装済みで、区画進行・投射物・クリア判定を含む全合格条件は未完了。ゲーム方針は `game-direction.md`、力学の要件は `physics-foundation.md`、ステージ構成は `stage-action-concept.md` に従う。Godotの具体的なマイナーバージョンはプロジェクト作成時に固定する。
 
 ## シーンと責務
 
