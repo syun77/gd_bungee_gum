@@ -134,3 +134,5 @@ move_and_slide()
 - [CharacterBody2D](https://docs.godotengine.org/en/stable/classes/class_characterbody2d.html): スクリプトで速度を与えるプレイヤー制御。
 - [RigidBody2D](https://docs.godotengine.org/en/stable/classes/class_rigidbody2d.html): 継続的な力、接着点への力、CCD。
 - [Ray-casting](https://docs.godotengine.org/en/stable/tutorials/physics/ray-casting.html): 固定更新中の照準・接着判定。
+
+床離脱時の入力猶予（コヨーテタイム）は共有設定`coyote_time`（初期値0.10秒、0で無効）で制御する。床接触中に残り時間と床法線を更新し、非接地ティックで時間を減らす。非接触でも残り時間があれば最後の床法線方向へ一度だけ接地キックを加算できる。床・壁・天井でのキックを含め、成功したキックは猶予を消費する。壁／天井の離脱では猶予を補充せず、通常ジャンプ後の二段ジャンプや入力先行受付は設けない。Zのガム切断はキック判定より先に行う。

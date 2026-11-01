@@ -97,3 +97,13 @@
 - Landing Diagnostics defaults ON: [LandingDiagnostic] logs CONTROL_COLLISION_RESOLVED / HIGH_SPEED_LANDING (30-tick detail throttle), plus persistent unexpected control-Y diagnostics; includes incoming/control/external velocity, discarded Y, normals and gum state. See specs/game-settings.md.
 
 - Runtime camera zoom is owned by Game._update_camera after Player.simulate; Camera Zoom settings in game_settings.tres control normal/held-X/path-length scales, hold delay, distance thresholds and exponential response. Uses wrapped total path length; physical X hold is independent of gesture state. Verify with tools/verify_camera.gd.
+
+- Jump Diagnostics defaults ON: `[JumpDiagnostic]` logs each Z request (ACCEPTED / REJECTED_NO_CONTACT / REJECTED_NOT_REARMED), AFTER_MOVE and pre-reset REARMED state. Contact eligibility resets on floor contact or a fully non-contact tick; request contact uses previous move_and_slide results. Toggle in shared Diagnostics settings; see specs/game-settings.md.
+
+- Floor kick eligibility recovers on floor contact even with continuous wall contact; wall/ceiling-only contact does not rearm. verify_player.gd checks three consecutive jumps on saved-stage left wall without any fully non-contact tick.
+
+- Gum line color currently encodes tension only (pink→red), not CONTRACT/LOOSEN; width also follows tension and sag follows actual slack. When changing state feedback, distinguish fixed-length LOOSEN mode from zero tension; either mode can be taut or slack.
+
+- Floor coyote grace uses shared Player Movement/coyote_time (default0.10s,0 disables), last floor normal and fixed-step countdown. Any successful contact/coyote kick consumes it; wall/ceiling do not refill. verify_player.gd covers walk-off/expiry/disabled/consumed/no-repeat cases. JumpDiagnostic includes coyote seconds and ACCEPTED_COYOTE.
+
+- For gum feedback, user prefers subdued gray-like loosen color over prominent blue-violet; pink-gray #B8A6AD is an unimplemented candidate requiring in-game readability checks.

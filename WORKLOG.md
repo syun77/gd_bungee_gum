@@ -1,11 +1,48 @@
-## Active jump diagnostic task
-- Goal/status: Add logs for intermittent repeated contact kick-off failure; implementation in progress.
-- Completed: Read prior work and controller. Kick eligibility resets only after a tick without floor/wall/ceiling contact; Z requests are sampled by Game before Player.simulate.
-- Decisions: Preserve behavior; log accepted/rejected requests, eligibility rearming and post-move contact/velocity.
-- Files: Pending player/settings/spec changes; existing workspace edits preserved.
-- Verification: Pending.
+## Active coyote time implementation
+- Goal/status: Add floor departure grace for contact kick-off; in progress.
+- Decisions: Default0.10s, floor-only grace with last floor normal; any successful kick consumes grace. No wall/ceiling grace, extra airborne jumps or input buffering. Existing Z detach ordering and momentum addition retained. Shared setting0 disables grace.
+- Completed: Read controller, shared settings, prior wall fix and authoritative control docs. User tuning kick350/maximum_length400 preserved.
+- Files/tests: Pending runtime, regression and aligned specs.
 - Blockers: None.
-- Next action: Implement diagnostics and run player/controls checks.
+- Next action: Implement timer and verify actual walk-off, expiry, disable and consumed-jump cases on physics ticks.
+
+## Completed gum mode visibility review
+- Goal/status: Evaluate loosen-mode feedback and subdued gray candidate; review complete, runtime unchanged.
+- Findings: Line currently interpolates pink→red solely by tension; width follows tension and sag actual slack. Either CONTRACT or LOOSEN can be taut/slack. Reviewed actual cream/coral/mint atlas and muted teal stage direction.
+- Recommendation: Prefer opaque pink-gray #B8A6AD for LOOSEN over blue-violet; low saturation reduces prominence while retaining gum identity. Pure medium gray is a neutral fallback; pale gray risks blending into cream and dark gray into teal. Candidate needs in-game zoomed-out visibility validation; consider a subtle dark outline if terrain overlap is weak. Keep mode hue stable when tension returns, tension in width and slack in sag. Exact colors unvalidated; existing controls spec remains tension-color authority until implementation.
+- Files changed: WORKLOG.md, AGENTS.md only; runtime unchanged. Existing active coyote-time work preserved.
+- Verification: Read draw/mode/force/HUD/settings/control spec, viewed atlas and checked scene colors. Documentation consistency review; no runtime tests for analysis.
+- Blockers: In-game candidate readability untested.
+- Next action: If implementing, update shared appearance settings, draw/HUD and aligned specs; verify both modes at zero/high tension and normal/wide camera zoom.
+
+## Completed wall landing jump fix
+- Goal/status: Restore jump after continuous wall-to-floor contact; complete; final cleanup rerun passed.
+- Completed: Floor contact now restores kick eligibility even with wall contact. Added saved-stage left-wall regression: three floor jumps, each with uninterrupted terrain contact through landing. Existing no-air-jump, momentum and corner regressions preserved. Updated controller/diagnostic specs and durable guidance.
+- Decisions: Keep edge-trigger Z, existing impulse and wall/ceiling-only lock. No settings changes in this task; user tuning preserved.
+- Files changed: scripts/player.gd, tools/verify_player.gd, specs/player-controller.md, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Verification: Before fix, new regression rejects second jump with REJECTED_NOT_REARMED and assertion failure (/tmp/wall-jump-before.log). After fix, full player suite PASS (/tmp/wall-jump-after.log). Final cleanup rerun PASS (/tmp/wall-jump-final.log). git diff --check PASS. Local Godot4.5.1; user log4.7.2 not available locally. Known macOS certificate warning only.
+- Refactoring: Reviewed full contact/rearm/impulse flow; retained one simple reset condition. Kept manual test simulation owner disabled across both real-tick regressions to avoid interleaved Game simulation.
+- Blockers: None; native user-version play feel unverified.
+- Next action: F5 repeat jumps while holding toward a wall.
+
+## Completed supplied jump log analysis
+- Goal/status: Analyze wall-associated loss of contact kick-off from supplied runtime log; cause confirmed in log and current controller, runtime unchanged.
+- Evidence: tick2204 accepts floor+wall kick; AFTER_MOVE remains wall contact and available=false. No rearm before tick2241 landing. tick2248 rejects NOT_REARMED with floor+wall; tick2277 and subsequent requests still reject on floor alone. Eligibility resets only when all floor/wall/ceiling contacts are absent, so continuous wall-to-floor contact latches it false.
+- Decision: Ground contact must restore floor kick eligibility independently of full contact loss; preserve edge-trigger Z and no free air impulse. Separate no-contact rejections at ticks560/723 are not this latch failure.
+- Files changed: WORKLOG.md and AGENTS.md only; no runtime changes requested in this analysis.
+- Verification: Read supplied log and scripts/player.gd eligibility/impulse sequence; no engine test needed for analysis.
+- Blockers: None for diagnosis; proposed correction not yet implemented or regression-tested.
+- Next action: On implementation, reproduce continuous wall-contact jump/landing on real physics ticks, restore floor eligibility, verify repeated floor jumps and airborne rejection.
+
+## Completed jump diagnostic task
+- Goal/status: Add logs for intermittent repeated contact kick-off failure; complete, movement behavior unchanged.
+- Completed: Default-ON Jump Diagnostics logs Z request acceptance or no-contact/not-rearmed rejection, post-move state and eligibility rearming. Includes physics tick, feet, floor/wall/ceiling, eligibility, held Z/X, control/external/incoming velocities, collision normals and gum connection after Z detach.
+- Decisions: Keep existing contact and impulse rules. Eligibility resets only after a non-contact tick; logs expose that gate without assuming it is the reported cause. Requests use previous move_and_slide contact results. Holding Z does not repeat requests.
+- Files changed: scripts/player.gd, scripts/game_settings.gd, specs/game-settings.md, AGENTS.md, WORKLOG.md. Existing workspace changes preserved.
+- Verification: Headless verify_player.gd PASS; accepted, after-move, rearm and airborne-rejection output confirmed in /tmp/jump-diagnostic-player.log. verify_controls.gd FAIL on upward gum attachment and dependent X contraction checks (/tmp/jump-diagnostic-controls.log); Z accepted/rearm output confirmed. Current resource maximum_length=400; no gum behavior/settings changes made in this task. git diff --check PASS. Known unrelated macOS certificate warning.
+- Refactoring: Reviewed full touched simulation/log flow; isolated formatting in one opt-out helper, no duplicate physics decisions or extra per-frame output. Existing player/control checks exercise physical behavior.
+- Blockers: Actual intermittent user event has not been captured.
+- Next action: Reproduce with F5 and collect [JumpDiagnostic] lines around failure from Godot Output.
 
 ## Completed camera zoom task
 - Goal/status: Close normal camera, held-X and gum-path distance zoom-out; complete.

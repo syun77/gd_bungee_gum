@@ -11,6 +11,8 @@ extends Resource
 @export_range(0.0, 5000.0) var gravity := 1100.0
 ## Contact kick-off impulse expressed as speed (px/s).
 @export_range(0.0, 2000.0) var kick_speed := 260.0
+## Floor-departure kick grace (seconds); zero disables it.
+@export_range(0.0, 0.3, 0.01) var coyote_time := 0.1
 @export_range(0.01, 1000.0) var player_mass := 1.0
 
 @export_group("Gum Physics")

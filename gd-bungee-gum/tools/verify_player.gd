@@ -88,6 +88,8 @@ func verify() -> void:
 	await ticks(25)
 	assert(player.position.x >= 73.0)
 	assert(absf(player.external_velocity.x) < 0.1, "Wall must clear inward external momentum")
+	await verify_coyote_time(game)
+	await verify_wall_landing_jump(game)
 	await verify_corner_landing(game)
 	print("PASS: physical A/D/arrow bindings and PageUp exclusion, spawn, floor alignment, idle/run/jump/landing, no air jump, wall momentum cleanup, ground friction and retained air momentum")
 	quit()
@@ -126,3 +128,87 @@ func verify_corner_landing(game: Node2D) -> void:
 		assert(player.sprite.animation == &"idle" and player.landing_time == 0.0)
 	recovery.queue_free()
 	print("PASS: high-speed corner landing in both directions, horizontal intent and stable grounded idle")
+
+func verify_wall_landing_jump(game: Node2D) -> void:
+	game.set_physics_process(false)
+	var player = game.get_node("Player")
+	player.position = Vector2(74, 640)
+	player.control_velocity = Vector2.ZERO
+	player.external_velocity = Vector2.ZERO
+	Input.action_press("move_left")
+	for tick in 8:
+		await physics_frame
+		player.simulate(1.0 / 60.0)
+	assert(player.is_on_floor() and player.is_on_wall())
+	for attempt in 3:
+		await physics_frame
+		player.simulate(1.0 / 60.0, false, true)
+		assert(not player.is_on_floor() and player.external_velocity.y < -100.0,
+			"Each floor jump must work after landing against a wall")
+		assert(player.is_on_wall(), "Reproduction must retain wall contact at takeoff")
+		var landed := false
+		for tick in 120:
+			await physics_frame
+			player.simulate(1.0 / 60.0)
+			assert(player.is_on_floor() or player.is_on_wall() or player.is_on_ceiling(),
+				"Reproduction must never have a fully non-contact tick")
+			if player.is_on_floor():
+				landed = true
+				break
+		assert(landed, "Wall jump must land before next attempt")
+	Input.action_release("move_left")
+	print("PASS: three floor jumps with continuous wall contact through landing")
+
+func verify_coyote_time(game: Node2D) -> void:
+	game.set_physics_process(false)
+	var player = game.get_node("Player")
+	var platform := StaticBody2D.new()
+	var collider := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(96, 40)
+	collider.shape = shape
+	platform.position = Vector2(10000, 660)
+	platform.add_child(collider)
+	game.add_child(platform)
+	var original_grace: float = game.settings.coyote_time
+	for scenario in ["within", "expired", "disabled", "consumed"]:
+		game.settings.coyote_time = 0.0 if scenario == "disabled" else 0.1
+		player.position = Vector2(10000, 630)
+		player.control_velocity = Vector2.ZERO
+		player.external_velocity = Vector2.ZERO
+		for tick in 12:
+			await physics_frame
+			player.simulate(1.0 / 60.0)
+		assert(player.is_on_floor(), "Coyote fixture must start on real floor")
+		if scenario == "consumed":
+			await physics_frame
+			player.simulate(1.0 / 60.0, false, true)
+			assert(not player.is_on_floor())
+		else:
+			Input.action_press("move_right")
+			for tick in 60:
+				await physics_frame
+				player.simulate(1.0 / 60.0)
+				if not player.is_on_floor():
+					break
+			Input.action_release("move_right")
+			assert(not player.is_on_floor(), "Must walk off platform")
+		for tick in (10 if scenario == "expired" else 2):
+			await physics_frame
+			player.simulate(1.0 / 60.0)
+		var before: Vector2 = player.external_velocity
+		await physics_frame
+		player.simulate(1.0 / 60.0, false, true)
+		var expected := before + Vector2(0, game.settings.gravity / 60.0)
+		if scenario == "within":
+			expected += player.coyote_normal * game.settings.kick_speed
+		assert(player.external_velocity.is_equal_approx(expected), "Coyote impulse eligibility: " + scenario)
+		assert(player.coyote_remaining == 0.0, "Grace must be consumed or expired")
+		# Repeated airborne requests cannot use the same grace twice.
+		before = player.external_velocity
+		await physics_frame
+		player.simulate(1.0 / 60.0, false, true)
+		assert(player.external_velocity.is_equal_approx(before + Vector2(0, game.settings.gravity / 60.0)))
+	game.settings.coyote_time = original_grace
+	platform.queue_free()
+	print("PASS: real walk-off coyote kick, expiry, disabled grace, consumed floor kick and no repeated air impulse")
