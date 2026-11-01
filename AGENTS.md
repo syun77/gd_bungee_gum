@@ -122,4 +122,4 @@
 
 
 
-- Manual gum tuning: extension180 px/s, shortening90 px/s, break margin40 px (manual cap360 at max400). Down immediately relaxes without clearing tension; existing above-cap natural length never snaps shorter on extension. Down wins over X, Up+Down relaxes/holds; X attached always consumes its release. Ceiling input/physics fixtures duplicate settings with max900 explicitly; saved gameplay settings stay400.
+- Manual gum tuning: extension180 px/s, shortening90 px/s, break margin240 px (manual cap160 at max400). Down immediately relaxes without clearing tension; existing above-cap natural length never snaps shorter on extension. Down wins over X, Up+Down relaxes/holds; X attached always consumes its release. Ceiling input/physics fixtures duplicate settings with max900 explicitly; saved gameplay settings stay400.

@@ -37,4 +37,4 @@ X長押し中の補助線は **Aim Valid Color / Aim Invalid Color** で変更�
 
 角での斜めジャンプ調査では、`KICK_APPLIED`の`source`（floor/wall/ceiling/coyote）、キック方向`normal`、上向きからの符号付き角度`angle_from_up_deg`、加算速度`impulse`、猶予重力補正`compensation`、`external_before/after`、合成した`launch`を比較する。`ACCEPTED`と`AFTER_MOVE`の`contacts`には衝突相手のノードパス・接触点・法線・深さを記録する。`floor_normal`／`wall_normal`、実移動速度`real_velocity`と移動量`position_delta`も出力する。要求時のこれらの接触・実移動値は前回の移動結果、`AFTER_MOVE`は今回の結果。接地法線とキック方向の違い、残存する横速度、移動時の衝突の影響を分けて確認できる。床・コヨーテの`normal`は常に`(0, -1)`、`compensation`の横成分は0。
 
-手動長さ調整は`manual_extension_speed`（180 px/s）、`manual_shortening_speed`（90 px/s）、`manual_length_margin`（40 px）で調整する。自動収縮は`contraction_speed`（180 px/s）。手動延長上限は最大長から安全余裕を引き0〜最大長に制限する。保存基準では360 px。
+手動長さ調整は`manual_extension_speed`（180 px/s）、`manual_shortening_speed`（90 px/s）、`manual_length_margin`（240 px）で調整する。自動収縮は`contraction_speed`（180 px/s）。手動延長上限は最大長から安全余裕を引き0〜最大長に制限する。保存基準では160 px。

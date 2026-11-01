@@ -26,7 +26,7 @@ extends Resource
 @export_range(1.0, 1000.0) var manual_extension_speed := 180.0
 @export_range(1.0, 1000.0) var manual_shortening_speed := 90.0
 ## Reserve between manual natural-length cap and path break limit (px).
-@export_range(1.0, 500.0) var manual_length_margin := 40.0
+@export_range(1.0, 500.0) var manual_length_margin := 240.0
 
 @export_group("Gum Wrapping")
 @export_range(0.25, 4.0) var wrap_clearance := 1.0

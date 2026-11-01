@@ -1,3 +1,13 @@
+## Completed manual extension baseline update
+- Goal/status: Promote user-saved manual extension limit to defaults; complete.
+- Completed: Verified saved margin240 and inherited max400 (manual cap160); matched script default and all current specs/AGENTS. Kept saved resource unchanged. Made wrapped extension regression respect configured cap.
+- Decisions: Preserve all other tuning, including extension180/shortening90 and above-cap attachment behavior.
+- Files changed: game_settings.gd, verify_gum.gd, relevant control/settings/physics specs, AGENTS.md, WORKLOG.md. User resource edit preserved.
+- Verification: Godot4.5.1 settings comparison PASS (all43 saved/default properties, cap160/break400; /tmp/manual-baseline.log). Full gum and physical controls suites PASS exit0 (/tmp/manual-limit-gum.log, /tmp/manual-limit-controls.log). git diff --check PASS; known unrelated macOS CA warning only. Temporary comparison script removed.
+- Refactoring: Reviewed settings consumption and all current numeric documentation; wrapped test computes cap-aware expectation without hardcoded margin. No runtime logic change beyond default tuning.
+- Blockers: None.
+- Next action: Continue gameplay using confirmed manual cap160 px and break limit400 px.
+
 ## Completed manual gum controls implementation
 - Goal/status: Implement approved Up/Down/X controls and unattached-only X camera zoom; complete; final refactor verification passed.
 - Completed: Explicit relax/contract, continuous natural-length adjustment, per-key firing release gates, no-op attached X release consumption, camera timing reset, shared tuning, multiline HUD and authoritative specs. Removed superseded proposal file and toggle/margin API. Fixed ceiling fixture range by duplicating settings explicitly.

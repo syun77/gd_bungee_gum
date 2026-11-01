@@ -117,7 +117,8 @@ func verify() -> void:
 	gum.relax()
 	check(gum.rest_length == before_relax, "Wrapped relax preserves natural length and tension")
 	gum.step(0.1, 1.0)
-	check(is_equal_approx(gum.rest_length, before_relax + gum.settings.manual_extension_speed * 0.1), "Wrapped extension adjusts total natural length")
+	var expected_length: float = maxf(before_relax, minf(gum.manual_length_limit(), before_relax + gum.settings.manual_extension_speed * 0.1))
+	check(is_equal_approx(gum.rest_length, expected_length), "Wrapped extension adjusts total natural length within manual cap")
 	var wrapped_velocity: Vector2 = player.external_velocity
 	gum.detach()
 	check(player.external_velocity == wrapped_velocity and gum.path.pivots.is_empty(), "Wrapped detach clears pivots and preserves momentum")
