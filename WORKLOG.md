@@ -2,14 +2,14 @@
 
 ## Active task
 
-- Goal: Verify the dimensions and suitability of the four Teto character images.
+- Goal: Use the imagegen skill to normalize idle/run/jump sprite sheets while preserving source images.
 - Status: Complete.
-- Completed: Measured PNG dimensions, alpha bounds, and candidate frame grids; visually inspected all four images; recorded findings in `specs/character-sprite-audit.md` and durable asset guidance in `AGENTS.md`. Original images are unchanged.
-- Key decisions: Final screen-relative scale cannot be approved before viewport/player dimensions exist. Idle is 6 columns; run and jump appear to be 4 × 2. Run has fractional equal-grid cells; jump retains annotations; animation scales/origins need normalization.
-- Files changed: `AGENTS.md`, `WORKLOG.md`, `specs/character-sprite-audit.md`.
-- Commands/tests: Python3/Pillow image and per-cell alpha measurements and visual inspection completed. `python` is unavailable; used `python3`. Final documentation consistency review and `git diff --check` passed.
-- Blockers: No blockers to this audit; in-engine size/playback validation requires a player scene and chosen reference resolution.
-- Next action: Choose reference viewport and player display height, then clean and repack the sheets with a shared scale and origin before Godot integration.
+- Completed: Created three built-in imagegen edits; inspected each; used ImageMagick for integer frame packing and nearest-neighbor scaling. Saved all three project assets in `images/normalized/`. Updated audit and durable asset guidance.
+- Key decisions: 1024 × 512 transparent RGBA sheets with 256 × 256 cells; idle six frames plus two empty, run/jump eight. Visible ground bottom y=232; jump airborne offsets retained. Front reference and originals unchanged. AI edits redraw details and idle includes bent-knee poses; runtime playback remains a tuning step.
+- Files changed: Three PNGs in `images/normalized/`, `AGENTS.md`, `specs/character-sprite-audit.md`, `WORKLOG.md`.
+- Commands/tests: Python3/Pillow read-only checks confirmed sizes, alpha, occupied/empty cells, no edge clipping and ground baseline; ImageMagick packing completed; output visual review and `git diff --check` passed. Reviewed touched documentation for consistent frame counts and current guidance.
+- Blockers: None. No Godot player scene exists for runtime playback validation.
+- Next action: Import normalized sheets into Godot and tune playback/body origins at the chosen viewport scale.
 
 ## Completed foundation
 
