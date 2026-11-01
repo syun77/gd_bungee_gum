@@ -1,5 +1,43 @@
 # Work Log
 
+## Active chicken asset task
+- Goal: Create photo-referenced diavola chicken collectible in images/foods/.
+- Status: Generating.
+- Completed: Read food asset conventions and inspected photo.
+- Decisions: 64×64 transparent sprite; chicken/onion topping, corn, potatoes and black platter on red-brown base.
+- Files changed: WORKLOG.md.
+- Verification: Pending.
+- Blockers: None.
+- Next action: Generate, normalize and inspect final sprite.
+
+## Completed escargot asset task
+- Goal/status: Create photo-referenced escargot collectible in images/foods/; complete.
+- Completed: Built-in imagegen generation; nearest-neighbor normalization; inspected enlarged final sprite with six wells and herb butter.
+- Decisions: 64×64 transparent RGBA static sprite matching food asset convention; outer white serving plate omitted. Gameplay integration outside scope.
+- Files changed: images/foods/escargot_oven_baked.png; specs/food-item-assets.md (including final prompt); AGENTS.md; WORKLOG.md.
+- Verification: Pillow confirms 64×64 RGBA, alpha range 0–255 and four transparent corners; final visual review passed. Reviewed naming/docs for consistency; git diff --check passed.
+- Blockers: None.
+- Next action: Use saved sprite; copy into res:// with nearest filtering when integrating collectibles.
+
+## Completed food asset task
+- Goal/status: Create the supplied Milan-style doria as a collectible pixel-art PNG; complete.
+- Completed: Generated and refined using built-in imagegen; normalized with nearest-neighbor sampling; visually inspected enlarged final sprite.
+- Decisions: 64×64 transparent RGBA static sprite, oval terracotta dish, cheese/meat sauce, no spoon/tray. Asset only; existing control implementation work untouched.
+- Files changed: images/foods/milano_doria.png; specs/food-item-assets.md (including final prompt); AGENTS.md; WORKLOG.md.
+- Verification: Pillow confirms 64×64 RGBA, transparent corners and alpha range 0–255. Final enlarged preview reviewed for readable silhouette. Reviewed asset naming/documentation; git diff --check passed.
+- Blockers: None.
+- Next action: Use the saved sprite; future gameplay integration copies it into Godot res:// and uses nearest filtering.
+
+## Completed Z/X implementation
+- Goal/status: Apply approved keyboard controls; complete.
+- Completed: Physical Z jump/detach and X aim/release-to-fire; normalized retained eight-way aim; aim movement suppression; auto-contract on attach; fixed-length loosen (+32px)/contract toggle; canceled/broken toggle gestures wait for X release; Z priority; HUD and authoritative docs aligned. Proposal promoted to specs/keyboard-controls.md.
+- Decisions: Air Z preserves momentum without impulse; contact Z detaches before kick-off. A/D remain movement aliases outside aim. Removed obsolete mouse/Space/E actions and boolean step(contract) interface; all callers updated.
+- Files changed: project.godot; scenes/game.tscn; scripts/game.gd, gum_connection.gd, gum_settings.gd, player.gd; tools/verify_controls.gd (+UID), verify_gum.gd, verify_player.gd; specs/keyboard-controls.md (replaces proposal), bungee-gum-prototype.md, game-direction.md, stage-action-concept.md, godot-implementation-plan.md, player-controller.md; AGENTS.md; WORKLOG.md. Concurrent food asset work preserved.
+- Refactoring: Separate gesture/status/aim-target helpers; separate connection validation and mode toggle from force integration; one fixed-step owner and mode independent of tension. Player owns aim facing, initial aim follows facing at first selection.
+- Verification: Final verify_controls.gd passed physical Z/X, all eight directions, opposing/neutral aim retention, movement suppression, release shot, auto-contract, toggle/hold, air release/ground kick, Z priority, canceled/broken gesture safety and miss. verify_gum.gd passed physics/live Game regression plus regained tension in loosen mode. verify_player.gd and verify_theater_stage.gd passed. git diff --check passed. Only known sandbox certificate warnings. Interactive visual/feel verification not performed.
+- Blockers: None.
+- Next action: F5 playtest Z/X controls; tune loosen_margin and contraction after feel review. Stage checkpoints/clear progression remain future work.
+
 ## Completed Z/X control specification review
 - Goal/status: Evaluate requested two-button controls; specification proposal complete, runtime unchanged.
 - Completed: Added state/action table, eight-direction release-to-fire aiming, automatic contraction, explicit loosen/contract mode, Z detach/contact kick-off, input ownership/priority/cancellation and acceptance cases.

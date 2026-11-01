@@ -31,6 +31,10 @@ func _ready() -> void:
 		for index in poses.get_frame_count(animation):
 			sprite.sprite_frames.add_frame(animation, poses.get_frame_texture(animation, index), poses.get_frame_duration(animation, index))
 
+func face_aim(direction: Vector2) -> void:
+	if direction.x != 0.0:
+		sprite.flip_h = direction.x < 0.0
+
 func fire_gum() -> void:
 	fire_time = 8.0 / 12.0
 	sprite.stop()
@@ -52,20 +56,20 @@ func gum_visual_origin() -> Vector2:
 func apply_external_force(force: Vector2, delta: float) -> void:
 	external_velocity += force / mass * delta
 
-func simulate(delta: float) -> void:
+func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 	# 接触判定は直前の move_and_slide() の結果。今回の移動後に更新される。
 	var grounded := is_on_floor()
 	var touching := grounded or is_on_wall() or is_on_ceiling()
 	if not touching:
 		kick_available = true
 	# project.godot の物理キー割り当てを使用。A／左矢印=-1、D／右矢印=+1。
-	var direction := Input.get_axis("move_left", "move_right")
+	var direction := 0.0 if aiming else Input.get_axis("move_left", "move_right")
 	var acceleration := ground_acceleration if grounded else air_acceleration
 	# 入力を離しても減速し、反対入力でも即反転しない。地上では最高速から停止まで
 	# 約0.14秒、逆方向の最高速までは約0.28秒。空中では約0.63秒／1.26秒。
 	control_velocity.x = move_toward(control_velocity.x, direction * run_speed, acceleration * delta)
 	external_velocity.y += gravity * delta
-	if Input.is_action_just_pressed("kick_off") and touching and kick_available:
+	if jump_requested and touching and kick_available:
 		var normal := get_floor_normal() if grounded else (get_wall_normal() if is_on_wall() else Vector2.DOWN)
 		external_velocity += normal * kick_speed
 		kick_available = false

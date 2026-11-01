@@ -1,6 +1,7 @@
 extends Node2D
 ## Rules own the connection; physics resolves both endpoints' motion.
 const Settings = preload("res://scripts/gum_settings.gd")
+enum Mode { NONE, CONTRACT, LOOSEN }
 @export var settings: Settings
 var player: CharacterBody2D
 var target: PhysicsBody2D
@@ -12,7 +13,8 @@ var target_force := Vector2.ZERO
 var aim_point := Vector2.ZERO
 var aim_valid := false
 var release_reason := "READY"
-var contracting := false
+var mode := Mode.NONE
+var aiming := false
 
 func origin() -> Vector2:
 	return player.global_position + Vector2(0, -34)
@@ -49,6 +51,7 @@ func attach_at(point: Vector2) -> bool:
 	tension = 0.0
 	player_force = Vector2.ZERO
 	target_force = Vector2.ZERO
+	mode = Mode.CONTRACT
 	release_reason = "ATTACHED"
 	return true
 
@@ -58,7 +61,7 @@ func detach(reason := "RELEASED") -> void:
 	tension = 0.0
 	player_force = Vector2.ZERO
 	target_force = Vector2.ZERO
-	contracting = false
+	mode = Mode.NONE
 	release_reason = reason
 
 func target_point_velocity() -> Vector2:
@@ -68,27 +71,36 @@ func target_point_velocity() -> Vector2:
 		return body.linear_velocity + Vector2(-radius.y, radius.x) * body.angular_velocity
 	return Vector2.ZERO
 
-func step(delta: float, contract: bool) -> void:
-	player_force = Vector2.ZERO
-	target_force = Vector2.ZERO
-	tension = 0.0
-	contracting = false
+func validate_connection() -> void:
 	if not connected():
-		if target != null or release_reason == "ATTACHED":
+		if target != null or mode != Mode.NONE:
 			detach("TARGET LOST")
 		return
 	var offset := endpoint() - origin()
-	var distance := offset.length()
-	if distance > settings.maximum_length:
+	if offset.length() > settings.maximum_length:
 		detach("TOO FAR")
-		return
-	# Stop just before the adhesion surface, so it cannot occlude itself. The ray still
-	# includes the target: another face of a large body can obstruct this connection.
-	if distance > 4.0 and not cast_to(endpoint() - offset.normalized() * 3.0).is_empty():
+	elif offset.length() > 4.0 and not cast_to(endpoint() - offset.normalized() * 3.0).is_empty():
 		detach("OBSTRUCTED")
+
+func toggle_mode() -> void:
+	if not connected():
 		return
-	contracting = contract
-	if contract:
+	if mode == Mode.CONTRACT:
+		mode = Mode.LOOSEN
+		rest_length = minf(settings.maximum_length, maxf(rest_length, origin().distance_to(endpoint()) + settings.loosen_margin))
+	else:
+		mode = Mode.CONTRACT
+
+func step(delta: float) -> void:
+	player_force = Vector2.ZERO
+	target_force = Vector2.ZERO
+	tension = 0.0
+	validate_connection()
+	if not connected():
+		return
+	var offset := endpoint() - origin()
+	var distance := offset.length()
+	if mode == Mode.CONTRACT:
 		# A shot closer than minimum_length must not lengthen on contraction.
 		rest_length = maxf(minf(rest_length, settings.minimum_length), rest_length - settings.contraction_speed * delta)
 	if distance <= rest_length or distance < 0.01:
@@ -115,8 +127,9 @@ func _draw() -> void:
 	var start := to_local(player.gum_visual_origin())
 	var aim := to_local(aim_point)
 	var aim_color := Color(0.45, 1.0, 0.75, 0.8) if aim_valid else Color(1, 0.7, 0.6, 0.6)
-	draw_dashed_line(start, aim, Color(aim_color, 0.25), 1.0, 6.0)
-	draw_arc(aim, 7.0, 0, TAU, 20, aim_color, 1.5)
+	if aiming:
+		draw_dashed_line(start, aim, Color(aim_color, 0.25), 1.0, 6.0)
+		draw_arc(aim, 7.0, 0, TAU, 20, aim_color, 1.5)
 	if not connected():
 		return
 	var end := to_local(endpoint())

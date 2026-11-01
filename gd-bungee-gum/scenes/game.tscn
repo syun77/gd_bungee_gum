@@ -51,7 +51,7 @@ offset_top = 12.0
 theme_override_colors/font_shadow_color = Color(0.1, 0.1, 0.1, 1)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
-text = "BUNGEE GUM\nA/D or arrows: run   Space: kick-off   Mouse: aim   LMB: attach   Hold RMB: contract   E/MMB: detach   R: restart"
+text = "BUNGEE GUM\nArrows / A,D: run   Z: jump + detach   Hold X + arrows: aim   Release X: fire   X attached: loosen / contract   R: restart"
 
 [node name="Status" type="Label" parent="HUD"]
 offset_left = 24.0

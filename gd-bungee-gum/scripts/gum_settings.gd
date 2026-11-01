@@ -6,3 +6,4 @@ extends Resource
 @export_range(1.0, 900.0) var minimum_length := 36.0
 @export_range(1.0, 3000.0) var maximum_length := 900.0
 @export_range(1.0, 10000.0) var maximum_tension := 2800.0
+@export_range(0.0, 200.0) var loosen_margin := 32.0

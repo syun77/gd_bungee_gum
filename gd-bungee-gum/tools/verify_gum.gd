@@ -33,22 +33,13 @@ func body_at(point: Vector2, rigid := false) -> PhysicsBody2D:
 		(body as RigidBody2D).linear_damp = 0.0
 	return body
 
-func verify_mouse_bindings() -> void:
-	for binding in [[MOUSE_BUTTON_LEFT, "gum_attach"], [MOUSE_BUTTON_RIGHT, "gum_contract"], [MOUSE_BUTTON_MIDDLE, "gum_detach"]]:
-		var press := InputEventMouseButton.new()
-		press.button_index = binding[0]
-		press.pressed = true
-		Input.parse_input_event(press)
-		Input.flush_buffered_events()
-		check(Input.is_action_pressed(binding[1]), "Mouse binding: " + binding[1])
-		var release := InputEventMouseButton.new()
-		release.button_index = binding[0]
-		Input.parse_input_event(release)
-		Input.flush_buffered_events()
-		check(not Input.is_action_pressed(binding[1]), "Mouse release: " + binding[1])
+func step_lab(contract := false) -> void:
+	# Select a mode explicitly to isolate the force-law cases below.
+	if gum.connected():
+		gum.mode = gum.Mode.CONTRACT if contract else gum.Mode.LOOSEN
+	gum.step(1.0 / 60.0)
 
 func verify() -> void:
-	verify_mouse_bindings()
 	world = Node2D.new()
 	root.add_child(world)
 	player = load("res://scenes/characters/player.tscn").instantiate()
@@ -61,21 +52,31 @@ func verify() -> void:
 	await ticks(2)
 	check(gum.attach_at(wall.position), "Ray must attach to static terrain")
 	check(absf(gum.rest_length - 200.0) < 0.1, "Attach uses current distance")
-	gum.step(1.0 / 60.0, false)
+	step_lab()
 	check(gum.tension == 0.0, "Fresh attachment must not exert force")
+	check(gum.mode == gum.Mode.LOOSEN, "Lab force isolation selected fixed-length mode")
+	gum.mode = gum.Mode.CONTRACT
+	gum.toggle_mode()
+	var loose_length: float = gum.rest_length
+	player.position.x = -80.0
+	gum.step(1.0 / 60.0)
+	check(gum.mode == gum.Mode.LOOSEN and gum.rest_length == loose_length and gum.tension > 0.0, "Fixed-length loosen regains spring support when stretched")
+	gum.toggle_mode()
+	check(gum.mode == gum.Mode.CONTRACT, "Toggle resumes contract even with nonzero tension")
+	player.position.x = 0.0
 	gum.rest_length = 300.0
 	player.velocity = Vector2(-500, 0)
-	gum.step(1.0 / 60.0, false)
+	step_lab()
 	check(gum.tension == 0.0, "Slack spring has no damping force")
 	gum.rest_length = 200.0
 	player.velocity = Vector2.ZERO
-	gum.step(1.0 / 60.0, true)
+	step_lab(true)
 	check(gum.rest_length < 200.0 and gum.tension > 0.0, "Contraction must generate pull")
 	var saved_length: float = gum.rest_length
-	gum.step(1.0 / 60.0, false)
+	step_lab()
 	check(gum.rest_length == saved_length, "Releasing contraction holds length")
 	player.velocity = Vector2(-10000, 0)
-	gum.step(1.0 / 60.0, false)
+	step_lab()
 	check(gum.tension == gum.settings.maximum_tension, "Tension is capped")
 	player.velocity = Vector2.ZERO
 	var saved_velocity: Vector2 = player.external_velocity
@@ -84,7 +85,7 @@ func verify() -> void:
 	gum.attach_at(wall.position)
 	var blocker := body_at(Vector2(100, -34))
 	await ticks(2)
-	gum.step(1.0 / 60.0, false)
+	step_lab()
 	check(not gum.connected() and gum.release_reason == "OBSTRUCTED", "Terrain obstruction must release")
 	blocker.add_to_group("gum_blocked")
 	check(not gum.attach_at(wall.position), "Blocked first hit must not attach behind it")
@@ -92,7 +93,7 @@ func verify() -> void:
 	await ticks(2)
 	gum.attach_at(wall.position)
 	player.position.x = -1000.0
-	gum.step(1.0 / 60.0, false)
+	step_lab()
 	check(not gum.connected() and gum.release_reason == "TOO FAR", "Maximum length releases without teleport")
 	player.position = Vector2.ZERO
 	wall.free()
@@ -113,7 +114,7 @@ func verify() -> void:
 	gum.rest_length = 150.0
 	player.external_velocity = Vector2.ZERO
 	player.velocity = Vector2.ZERO
-	gum.step(1.0 / 60.0, false)
+	step_lab()
 	check((gum.player_force + gum.target_force).length() < 0.001, "Endpoint forces must be equal and opposite")
 	await ticks(2)
 	check(box.linear_velocity.x < 0.0 and player.external_velocity.x > 0.0, "Actual rigid integration pulls box and player together")
@@ -125,7 +126,7 @@ func verify() -> void:
 	await ticks(2)
 	gum.attach_at(box.position)
 	gum.rest_length = 150.0
-	gum.step(1.0 / 60.0, false)
+	step_lab()
 	await ticks(2)
 	check(player.external_velocity.x > absf(box.linear_velocity.x), "Heavy box accelerates less than player")
 	# An off-center hit must create actual torque, not only linear movement.
@@ -135,11 +136,11 @@ func verify() -> void:
 	await ticks(2)
 	gum.attach_at(Vector2(220, -60))
 	gum.rest_length = 150.0
-	gum.step(1.0 / 60.0, false)
+	step_lab()
 	await ticks(2)
 	check(absf(box.angular_velocity) > 0.001, "Off-center gum force rotates rigid body")
 	box.free()
-	gum.step(1.0 / 60.0, false)
+	step_lab()
 	check(not gum.connected() and gum.tension == 0.0, "Deleted endpoint releases safely")
 	# Swing from a fixed ceiling point using the same force->controller sequence as Game.
 	var ceiling := body_at(Vector2(0, -260))
@@ -149,7 +150,7 @@ func verify() -> void:
 	await ticks(2)
 	check(gum.attach_at(ceiling.position), "Ceiling attachment for swing")
 	for index in 180:
-		gum.step(1.0 / 60.0, index < 40)
+		step_lab(index < 40)
 		player.simulate(1.0 / 60.0)
 		await ticks(1)
 	check(gum.connected() and player.position.is_finite(), "Swing/contraction remains connected and finite")
@@ -165,19 +166,17 @@ func verify() -> void:
 	var game_player: CharacterBody2D = game.get_node("Player")
 	check(game_gum.attach_at(Vector2(160, 100)), "Game can attach to restaurant ceiling")
 	game_player.fire_gum()
-	Input.action_press("gum_contract")
 	await ticks(10)
 	check(game_player.get_node("AnimatedSprite2D").animation == &"gum_fire", "Fire pose integrated with controller")
 	await ticks(90)
 	check(game_player.position.y < 600.0, "Game coordinator contracts and lifts player")
 	check(game_player.get_node("AnimatedSprite2D").animation in [&"gum_pull", &"gum_hang"], "Taut airborne connection uses gum pose")
-	Input.action_release("gum_contract")
-	Input.action_press("gum_detach")
+	Input.action_press("jump")
 	await ticks(2)
 	check(not game_gum.connected(), "Detach input handled by coordinator")
 	check(game_player.get_node("AnimatedSprite2D").animation == &"jump", "Detach returns to airborne animation")
-	Input.action_release("gum_detach")
+	Input.action_release("jump")
 	game.free()
 	if failures == 0:
-		print("PASS: mouse bindings, gum ray/blocked hit, slack, contraction/hold, release momentum, occlusion, maximum length, rotating endpoint, reciprocal forces and light/heavy rigid response, target deletion; live Game lift/poses/detach")
+		print("PASS: gum ray/blocked hit, slack, contraction/hold, release momentum, occlusion, maximum length, rotating endpoint, reciprocal forces and light/heavy rigid response, target deletion; live Game lift/poses/detach")
 	quit(1 if failures else 0)
