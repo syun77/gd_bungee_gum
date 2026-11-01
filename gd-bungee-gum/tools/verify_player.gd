@@ -88,6 +88,7 @@ func verify() -> void:
 	await ticks(25)
 	assert(player.position.x >= 73.0)
 	assert(absf(player.external_velocity.x) < 0.1, "Wall must clear inward external momentum")
+	await verify_floor_kick_direction(game)
 	await verify_coyote_time(game)
 	await verify_coyote_gravity_compensation(game)
 	await verify_wall_landing_jump(game)
@@ -203,9 +204,9 @@ func verify_coyote_time(game: Node2D) -> void:
 		player.simulate(1.0 / 60.0, false, true)
 		var expected := before + Vector2(0, game.settings.gravity / 60.0)
 		if scenario == "within":
-			var normal: Vector2 = player.coyote_normal
+			var normal := Vector2.UP
 			var correction := minf(maxf(-expected.dot(normal), 0.0), maxf(-gravity_budget.dot(normal), 0.0))
-			expected += normal * (game.settings.kick_speed + correction)
+			expected += Vector2.UP * (game.settings.kick_speed + correction)
 		assert(player.external_velocity.is_equal_approx(expected), "Coyote impulse eligibility: " + scenario)
 		assert(player.coyote_remaining == 0.0, "Grace must be consumed or expired")
 		# Repeated airborne requests cannot use the same grace twice.
@@ -223,10 +224,10 @@ func verify_coyote_gravity_compensation(game: Node2D) -> void:
 	var original_diagnostics: bool = game.settings.jump_diagnostics
 	game.settings.jump_diagnostics = false
 	game.settings.coyote_time = 0.2
-	for normal in [Vector2.UP, Vector2(0.6, -0.8)]:
+	for horizontal_speed in [-140.0, 0.0, 140.0]:
 		for dt in [1.0 / 60.0, 1.0 / 120.0]:
 			for delay in [2, 6, 10]:
-				for normal_speed in [0.0, -500.0, 30.0, 300.0]:
+				for vertical_speed in [0.0, 500.0, -30.0, -300.0]:
 					# Isolate airborne momentum after departure; the platform test covers real contact.
 					player.position = Vector2(12000, 0)
 					player.external_velocity = Vector2.ZERO
@@ -234,11 +235,9 @@ func verify_coyote_gravity_compensation(game: Node2D) -> void:
 					await physics_frame
 					player.simulate(dt)
 					assert(not player.is_on_floor() and not player.is_on_wall())
-					player.coyote_normal = normal
 					player.coyote_remaining = 0.2
 					player.coyote_gravity_velocity = Vector2.ZERO
-					var tangent: Vector2 = normal.orthogonal()
-					var initial: Vector2 = normal * normal_speed + tangent * 140.0
+					var initial := Vector2(horizontal_speed, vertical_speed)
 					player.external_velocity = initial
 					for tick in delay:
 						await physics_frame
@@ -247,15 +246,51 @@ func verify_coyote_gravity_compensation(game: Node2D) -> void:
 					player.simulate(dt, false, true)
 					var gravity_change := Vector2(0, game.settings.gravity * dt * (delay + 1))
 					var expected: Vector2 = initial + gravity_change
-					var inward := maxf(-expected.dot(normal), 0.0)
-					var correction := minf(inward, -gravity_change.dot(normal))
-					expected += normal * (game.settings.kick_speed + correction)
+					var inward := maxf(expected.y, 0.0)
+					var correction := minf(inward, gravity_change.y)
+					expected += Vector2.UP * (game.settings.kick_speed + correction)
 					assert(player.external_velocity.distance_to(expected) < 0.01,
 						"Compensate gravity only; preserve tangent/outward/excess falling momentum")
-					if normal_speed == 0.0:
-						assert(absf(player.external_velocity.dot(normal) - game.settings.kick_speed) < 0.01,
+					assert(is_equal_approx(player.external_velocity.x, horizontal_speed), "Kick and compensation must preserve horizontal momentum")
+					if vertical_speed == 0.0:
+						assert(absf(-player.external_velocity.y - game.settings.kick_speed) < 0.01,
 							"Pure-gravity launch speed must not depend on grace timing")
 					assert(player.coyote_gravity_velocity == Vector2.ZERO)
 	game.settings.coyote_time = original_grace
 	game.settings.jump_diagnostics = original_diagnostics
-	print("PASS: coyote gravity compensation across timings, timesteps, slopes and external momentum")
+	print("PASS: coyote gravity compensation across timings, timesteps and horizontal/upward/excess downward momentum")
+
+func verify_floor_kick_direction(game: Node2D) -> void:
+	game.set_physics_process(false)
+	var player = game.get_node("Player")
+	var platform := StaticBody2D.new()
+	var collider := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(96, 40)
+	collider.shape = shape
+	platform.add_child(collider)
+	platform.position = Vector2(14000, 660)
+	game.add_child(platform)
+	for side in [-1.0, 1.0]:
+		for coyote in [false, true]:
+			player.position = Vector2(14000 + side * 51, 630)
+			player.external_velocity = Vector2.ZERO
+			player.control_velocity = Vector2.ZERO
+			for tick in 12:
+				await physics_frame
+				player.simulate(1.0 / 60.0)
+			assert(player.is_on_floor(), "Corner fixture must be grounded")
+			assert(absf(player.get_floor_normal().x) > 0.1, "Must exercise a tilted capsule corner normal")
+			if coyote:
+				player.position += Vector2(side * 30, -5)
+				for tick in 3:
+					await physics_frame
+					player.simulate(1.0 / 60.0)
+				assert(not player.is_on_floor() and player.coyote_remaining > 0.0)
+			var before: Vector2 = player.external_velocity
+			await physics_frame
+			player.simulate(1.0 / 60.0, false, true)
+			assert(absf(player.external_velocity.x - before.x) < 0.01, "Corner floor/coyote kick must add no horizontal velocity")
+			assert(player.external_velocity.y < -300.0 and not player.is_on_floor())
+	platform.queue_free()
+	print("PASS: left/right tilted corner floor and delayed coyote launches add no horizontal velocity")

@@ -31,8 +31,8 @@ X長押し中の補助線は **Aim Valid Color / Aim Invalid Color** で変更�
 
 `Jump Diagnostics`がONの場合、Zの押下要求ごとに`[JumpDiagnostic]`を出力する。`ACCEPTED`は接地キック実行、`ACCEPTED_COYOTE`は床離脱猶予中のキック、`REJECTED_NO_CONTACT`は接触なし、`REJECTED_NOT_REARMED`は前回のキック後に床接触または完全な非接触ティックを経ていないための拒否。直後の`AFTER_MOVE`には同じ物理ティックの移動後状態と衝突前速度を記録する。`REARMED`は床接触または完全な非接触による再使用可能化の直前状態を示す。座標・床／壁／天井接触・使用可否・Z/X保持・入力／外部速度・衝突法線・ガム接続を含む。要求時の接触は前回の`move_and_slide()`の結果。Zは押下エッジ入力のため、押し続けても要求ログは繰り返さない。ガム接続状態はGameによるZの切断処理後。
 
-`Coyote Time`は初期値0.20秒（0で無効）。ジャンプ診断の`coyote`は残り秒数を示す。床法線方向へ速度を加算し、成功時に残り時間を0にする。
+`Coyote Time`は初期値0.20秒（0で無効）。ジャンプ診断の`coyote`は残り秒数を示す。床・コヨーテでは真上へ速度を加算し、成功時に残り時間を0にする。
 
-コヨーテキックでは、猶予中に重力で増えた床法線逆向きの速度だけを補正してから`Kick Speed`を加算する。`Coyote Time`を延ばしても重力による相殺は増えないが、入力までに落ちた位置は戻さない。補正量用の追加設定はない。
+コヨーテキックでは、猶予中に重力で増えた下向き速度だけを補正してから`Kick Speed`を加算する。`Coyote Time`を延ばしても重力による相殺は増えないが、入力までに落ちた位置は戻さない。補正量用の追加設定はない。
 
-角での斜めジャンプ調査では、`KICK_APPLIED`の`source`（floor/wall/ceiling/coyote）、選択法線`normal`、上向きからの符号付き角度`angle_from_up_deg`、加算速度`impulse`、猶予重力補正`compensation`、`external_before/after`、合成した`launch`を比較する。`ACCEPTED`と`AFTER_MOVE`の`contacts`には衝突相手のノードパス・接触点・法線・深さを記録する。`floor_normal`／`wall_normal`、実移動速度`real_velocity`と移動量`position_delta`も出力する。要求時のこれらの接触・実移動値は前回の移動結果、`AFTER_MOVE`は今回の結果。法線由来の横加速、残存する横速度、移動時の衝突の影響を分けて確認できる。ログ追加によるキック方向・物理ルールの変更はない。
+角での斜めジャンプ調査では、`KICK_APPLIED`の`source`（floor/wall/ceiling/coyote）、キック方向`normal`、上向きからの符号付き角度`angle_from_up_deg`、加算速度`impulse`、猶予重力補正`compensation`、`external_before/after`、合成した`launch`を比較する。`ACCEPTED`と`AFTER_MOVE`の`contacts`には衝突相手のノードパス・接触点・法線・深さを記録する。`floor_normal`／`wall_normal`、実移動速度`real_velocity`と移動量`position_delta`も出力する。要求時のこれらの接触・実移動値は前回の移動結果、`AFTER_MOVE`は今回の結果。接地法線とキック方向の違い、残存する横速度、移動時の衝突の影響を分けて確認できる。床・コヨーテの`normal`は常に`(0, -1)`、`compensation`の横成分は0。

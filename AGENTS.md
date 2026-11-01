@@ -104,14 +104,18 @@
 
 - Gum LOOSEN color is opaque pink-gray #B8A6AD independent of tension (Gum Loosen Color); CONTRACT retains pink→red tension colors. Line/pivots/endpoint share color; width follows tension and sag actual slack. Either mode can be taut or slack.
 
-- Floor coyote grace uses shared Player Movement/coyote_time (default0.20s,0 disables), last floor normal and fixed-step countdown. Any successful contact/coyote kick consumes it; wall/ceiling do not refill. verify_player.gd covers walk-off/expiry/disabled/consumed/no-repeat cases. JumpDiagnostic includes coyote seconds and ACCEPTED_COYOTE.
+- Floor coyote grace uses shared Player Movement/coyote_time (default0.20s,0 disables), world-up kick and fixed-step countdown. Any successful contact/coyote kick consumes it; wall/ceiling do not refill. verify_player.gd covers walk-off/expiry/disabled/consumed/no-repeat cases. JumpDiagnostic includes coyote seconds and ACCEPTED_COYOTE.
 
 - User prefers subdued gray-like loosen feedback over prominent blue-violet.
 
-- Coyote kicks cancel only accumulated gravity velocity inward along the remembered floor normal, capped by current inward external speed, before adding kick_speed. coyote_gravity_velocity follows collision projection and resets on floor/expiry/kick; tangent, outward and excess external momentum remain. verify_player.gd covers delay/timestep/slope/external-speed combinations.
+- Coyote kicks cancel only accumulated downward gravity velocity along world up, capped by current downward external speed, before adding kick_speed. coyote_gravity_velocity follows collision projection and resets on floor/expiry/kick; horizontal, upward and excess downward external momentum remain. verify_player.gd covers delay/timestep/horizontal-and-vertical-speed combinations.
 
 - Idle sheet uses six-frame shallow knee-bend ping-pong poses (0/1/2/3/2/1),6fps; keep normalized/runtime copies identical, baseline y232 and one common scale across poses. See specs/character-sprite-audit.md.
 
 - Corner-jump diagnostics use existing Jump Diagnostics: KICK_APPLIED records selected normal/angle and exact launch velocity changes; ACCEPTED/AFTER_MOVE include collider paths, contact points/depths and real displacement. Contact/real-motion fields before movement describe the previous move_and_slide result.
 
 - Settings script defaults match the saved tuning baseline: kick_speed400, coyote_time0.2, maximum_length400, camera_hold_zoom1.2, camera_long_gum_zoom1.0, camera_hold_delay0. Keep specs/game-settings.md default descriptions aligned.
+
+
+
+- Floor and coyote kicks add world-up velocity; wall/ceiling retain contact kicks. Contact normals still own collision/friction, never floor launch direction. verify_player.gd includes real left/right tilted corner floor and delayed-coyote launches.

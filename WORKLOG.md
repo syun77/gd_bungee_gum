@@ -1,3 +1,31 @@
+## Completed vertical floor/coyote kick implementation
+- Goal/status: Apply approved world-up floor/coyote kicks and bounded vertical gravity compensation; complete.
+- Completed: Removed saved floor-normal launch state. Floor/coyote add world-up kick; coyote correction uses only downward external/gravity Y with minimum cap. Collision-projected gravity tracker, contact/friction normals and wall/ceiling priority retained. Specs and durable guidance aligned.
+- Files changed: player.gd, verify_player.gd, keyboard-controls/player-controller/game-settings/godot-implementation-plan specs, AGENTS.md, WORKLOG.md.
+- Decisions: Preserve existing horizontal/upward/excess downward momentum; no settings changes. Logs distinguish selected kick direction from floor_normal.
+- Verification: Full player suite PASS before/after cleanup, final exit0 (/tmp/vertical-refactor.log). Includes actual left/right tilted capsule corner floor/delayed-coyote launches,144 momentum/timing/timestep cases, grace eligibility, continuous-wall floor jumps and corner landing. Physical controls suite with unchanged saved max-length400 fails unreachable-ceiling fixture; temporary duplicated settings max900 passes full suite exit0 (/tmp/vertical-controls-fixture.log); temporary script removed. git diff --check PASS. Known unrelated macOS certificate warning only.
+- Refactoring: Named kick_direction separately from collision normals, removed unused coyote_normal and all callers, kept one impulse path and existing gravity projection lifecycle.
+- Blockers: None; local Godot4.5.1 verified, native4.7.2 play feel pending.
+- Next action: F5 compare stationary left/right box corner jumps and delayed coyote inputs; existing sideways gum/run momentum should remain.
+
+## Completed vertical floor/coyote kick design review
+- Goal/status: Analyze consequences of world-up grounded kicks and coyote coupling; complete, runtime unchanged.
+- Findings: coyote_normal captures every grounded floor normal including capsule corners. Both coyote impulse and gravity compensation use that normal, so stale corner tilt adds horizontal velocity even after leaving floor; changing impulse alone leaves lateral compensation. For pure110px/s downward gravity and normal(0.302513,-0.953145), compensation adds about31.7px/s horizontally in addition to kick121px/s.
+- Recommendation: Separate contact normals from launch direction; world-up floor+coyote impulse and world-up bounded gravity correction. Preserve existing external X/outward/excess downward momentum; keep wall/ceiling contact precedence unless explicitly redesigning it. Review slope clearance/height, edge-to-wall transitions and near-ceiling collisions; vertical impulse does not guarantee vertical trajectory with retained momentum.
+- Files changed: WORKLOG.md, AGENTS.md only.
+- Verification: Read current normal capture, eligibility, compensation and96-case test matrix. Analytical reasoning only; no engine tests/runtime changes requested.
+- Blockers: None for analysis; terrain/slope play feel needs implementation-time regression and playtest.
+- Next action: On implementation request, align floor/coyote direction and compensation, update specs/tests and add both corner directions, timed coyote, slope/momentum and wall precedence regressions.
+
+## Completed supplied corner jump log analysis
+- Goal/status: Identify diagonal corner launch from supplied Godot4.7.2 log; analysis complete, runtime unchanged.
+- Findings: tick536 LightBox corner normal(0.302513,-0.953145),17.609deg from up, multiplied by kick400 produces horizontal+121.0054px/s from zero input/external X. Pre-move launch already(121.0054,-362.9247); no post-move contacts. tick288 left corner similarly produces-14.24452px/s; flat floor ticks219/362 impulse X0. Capsule corner contact normal is used directly by grounded kick. tick219 minor0.0738px side correction from LightBox is separate.
+- Decisions: Cause is floor-normal launch policy acting on capsule/box corner contact, not gum, coyote or horizontal input. Geometric origin inferred from capsule/contact coordinates; log directly proves velocity injection. Recommend world-up grounded/coyote kick while retaining existing external momentum and wall/ceiling kick rules if vertical floor jump is desired; slope/coyote compensation policy and regressions must align when implementing.
+- Files changed: WORKLOG.md, AGENTS.md only.
+- Verification: Compared supplied ACCEPTED/KICK_APPLIED/AFTER_MOVE and current player.gd normal selection/impulse; no runtime changes or engine test required.
+- Blockers: Terrain-corner sample absent; supplied corner cases are LightBox.
+- Next action: On requested fix, define grounded/slope/coyote launch direction, update implementation/specs and add stationary box-corner regressions in both directions.
+
 ## Completed settings baseline update
 - Goal/status: Promote current saved settings to script defaults; complete.
 - Completed: Matched six overridden defaults to game_settings.tres; aligned settings specification and durable default guidance. Saved resource remains unchanged.

@@ -13,7 +13,6 @@ var external_velocity := Vector2.ZERO
 var control_velocity := Vector2.ZERO
 var kick_available := true
 var coyote_remaining := 0.0
-var coyote_normal := Vector2.UP
 var coyote_gravity_velocity := Vector2.ZERO
 var landing_time := 0.0
 var gum: Node2D
@@ -66,7 +65,6 @@ func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 	var touching := grounded or is_on_wall() or is_on_ceiling()
 	if grounded:
 		coyote_remaining = settings.coyote_time
-		coyote_normal = get_floor_normal()
 		coyote_gravity_velocity = Vector2.ZERO
 	else:
 		coyote_remaining = maxf(minf(coyote_remaining, settings.coyote_time) - delta, 0.0)
@@ -95,23 +93,23 @@ func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 			result = "ACCEPTED_COYOTE" if coyote_kick else "ACCEPTED"
 		_log_jump_state(result)
 	if jump_requested and can_kick:
-		var normal := coyote_normal
-		if touching:
-			normal = get_floor_normal() if grounded else (get_wall_normal() if is_on_wall() else Vector2.DOWN)
+		var kick_direction := Vector2.UP
+		if touching and not grounded:
+			kick_direction = get_wall_normal() if is_on_wall() else Vector2.DOWN
 		var external_before := external_velocity
 		var compensation := Vector2.ZERO
 		if coyote_kick:
-			var falling_speed := maxf(-external_velocity.dot(normal), 0.0)
-			var gravity_fall := maxf(-coyote_gravity_velocity.dot(normal), 0.0)
-			compensation = normal * minf(falling_speed, gravity_fall)
+			var falling_speed := maxf(external_velocity.y, 0.0)
+			var gravity_fall := maxf(coyote_gravity_velocity.y, 0.0)
+			compensation = Vector2.UP * minf(falling_speed, gravity_fall)
 			external_velocity += compensation
-		var impulse := normal * settings.kick_speed
+		var impulse := kick_direction * settings.kick_speed
 		external_velocity += impulse
 		if settings.jump_diagnostics:
 			print("[JumpDiagnostic] KICK_APPLIED tick=%d feet=%s source=%s normal=%s angle_from_up_deg=%.3f impulse=%s compensation=%s external_before=%s external_after=%s control=%s launch=%s delta=%.6f" % [
 				Engine.get_physics_frames(), global_position,
 				"coyote" if coyote_kick else ("floor" if grounded else ("wall" if is_on_wall() else "ceiling")),
-				normal, rad_to_deg(Vector2.UP.angle_to(normal)), impulse, compensation,
+				kick_direction, rad_to_deg(Vector2.UP.angle_to(kick_direction)), impulse, compensation,
 				external_before, external_velocity, control_velocity, control_velocity + external_velocity, delta])
 		kick_available = false
 		coyote_remaining = 0.0
