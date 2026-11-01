@@ -2,14 +2,14 @@
 
 ## Active task
 
-- Goal: Use the imagegen skill to normalize idle/run/jump sprite sheets while preserving source images.
-- Status: Complete.
-- Completed: Created three built-in imagegen edits; inspected each; used ImageMagick for integer frame packing and nearest-neighbor scaling. Saved all three project assets in `images/normalized/`. Updated audit and durable asset guidance.
-- Key decisions: 1024 × 512 transparent RGBA sheets with 256 × 256 cells; idle six frames plus two empty, run/jump eight. Visible ground bottom y=232; jump airborne offsets retained. Front reference and originals unchanged. AI edits redraw details and idle includes bent-knee poses; runtime playback remains a tuning step.
-- Files changed: Three PNGs in `images/normalized/`, `AGENTS.md`, `specs/character-sprite-audit.md`, `WORKLOG.md`.
-- Commands/tests: Python3/Pillow read-only checks confirmed sizes, alpha, occupied/empty cells, no edge clipping and ground baseline; ImageMagick packing completed; output visual review and `git diff --check` passed. Reviewed touched documentation for consistent frame counts and current guidance.
-- Blockers: None. No Godot player scene exists for runtime playback validation.
-- Next action: Import normalized sheets into Godot and tune playback/body origins at the chosen viewport scale.
+- Goal: Create tileset PNG assets in `images/` using the proposed art specification.
+- Status: Image deliverable complete as a manual-placement first edition; full autotile acceptance remains unverified.
+- Completed: Used built-in imagegen for generation and a grid correction attempt; packed selected source cells with ImageMagick into a 512 × 512 RGBA atlas; saved original, coordinate JSON and asset notes.
+- Key decisions: 32 px cells, 16 columns, 105 occupied cells. AI output differs from planned 99-cell inventory; no claim of 47-mask completeness or seamless terrain. Neighbor masks remain null. No engine integration.
+- Files changed: `images/tilesets/theater_tileset.png`, `images/tilesets/theater_tileset_source.png`, `specs/theater-tileset-atlas.json`, `specs/theater-tileset-assets.md`, `specs/README.md`, `AGENTS.md`, `WORKLOG.md`.
+- Commands/tests: ImageMagick crop/nearest-neighbor resize/alpha threshold/montage completed. Pillow read-only checks passed for 512 × 512, RGBA, binary alpha, all 105 occupied cells and 151 empty cells. Final atlas visually inspected. Documentation reviewed for actual counts and limitations.
+- Blockers: None for saved images. Autotile completeness and runtime collisions need further artwork and prototype verification.
+- Next action: Use the coordinate table for hand placement; before autotile registration, audit the 47 masks, add missing shapes and validate terrain joins in a test map.
 
 ## Completed foundation
 

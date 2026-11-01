@@ -20,6 +20,10 @@
 
 ## Durable project knowledge
 
+- `images/tilesets/theater_tileset.png` is a 512 × 512 RGBA manual-placement atlas (32 px cells, 16 columns, 105 occupied cells). See `specs/theater-tileset-assets.md` and `specs/theater-tileset-atlas.json`; 47-pattern autotiling and seamless joins are not yet validated.
+
+- `specs/tileset-specification.md` defines the proposed initial tileset art direction, 32 px grid, asset separation, and visual acceptance checks; scale and stage dimensions remain subject to prototype validation.
+
 - The Godot project root is `gd-bungee-gum/`; open `gd-bungee-gum/project.godot` in Godot and place engine project files under that directory.
 - Image assets are stored in the repository-root `images/` directory. Consult this directory when selecting or integrating game visuals.
 - Character references: `images/teto.png` is the front view; `teto_idle.png`, `teto_run.png`, and `teto_jump.png` are the intended idle, run, and jump sheets. See `specs/character-sprite-audit.md` for measured sizes and slicing issues before integration. Root-level `images/` is outside Godot’s `res://`.
