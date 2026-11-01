@@ -1,5 +1,23 @@
 # Work Log
 
+## Completed arrow-key fix
+- Goal/status: Correct left/right arrows while preserving A/D; complete.
+- Completed: Set physical Left=4194319, Right=4194321 in project.godot. Updated player comments and AGENTS guidance. Added physical-event regression checks for A/D, both arrows and PageUp exclusion.
+- Decisions: Movement tuning and momentum behavior remain unchanged.
+- Files changed: project.godot, scripts/player.gd, tools/verify_player.gd, AGENTS.md, WORKLOG.md.
+- Refactoring: Reviewed affected input/comments; press and release use distinct InputEventKey instances to follow Godot event ownership requirements.
+- Verification: Final headless player check passed (physical key mappings, spawn, animation, air-jump rejection and wall momentum cleanup); git diff --check passed. Only unrelated sandbox certificate warning emitted.
+- Blockers: None.
+- Next action: Run F5 and verify arrow controls interactively.
+
+## Latest movement investigation
+- Goal/status: Investigate horizontal movement and add script comments; complete. Runtime behavior unchanged.
+- Findings: OS.get_keycode_string confirms 4194321=Right and 4194323=PageUp: current physical arrow bindings disagree with HUD. A/D works. Reversing input at +220 leaves +193.3 px/s on the first tick while facing instantly flips left. External +300 persists without input; left control -220 still results in rightward +80. Parent camera update precedes child player update.
+- Files changed: scripts/player.gd and game.gd comments; AGENTS.md; WORKLOG.md. Temporary movement probe removed.
+- Verification: Headless movement probe measured input reversal, release and injected external momentum. Final player check passed; git diff --check passed. Reviewed comments for accuracy and duplication; no runtime refactor needed for this comment-only task. Existing check uses action_press and cannot detect physical key mapping errors. Sandbox certificate warning remains unrelated.
+- Blockers: None. No interactive visual check performed.
+- Follow-up: Arrow bindings corrected and verified in the completed fix above.
+
 ## Latest completed task
 - Goal: Implement playable Teto with idle, run and contact kick-off/jump animation.
 - Status: Complete.
