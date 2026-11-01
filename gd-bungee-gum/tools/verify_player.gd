@@ -88,5 +88,41 @@ func verify() -> void:
 	await ticks(25)
 	assert(player.position.x >= 73.0)
 	assert(absf(player.external_velocity.x) < 0.1, "Wall must clear inward external momentum")
+	await verify_corner_landing(game)
 	print("PASS: physical A/D/arrow bindings and PageUp exclusion, spawn, floor alignment, idle/run/jump/landing, no air jump, wall momentum cleanup, ground friction and retained air momentum")
 	quit()
+
+func verify_corner_landing(game: Node2D) -> void:
+	game.set_physics_process(false)
+	var player = game.get_node("Player")
+	# Recovery floor below the step's right side isolates landing from the stage pit.
+	var recovery := StaticBody2D.new()
+	var collider := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(400, 40)
+	collider.shape = shape
+	recovery.position = Vector2(1000, 660)
+	recovery.add_child(collider)
+	game.add_child(recovery)
+	await physics_frame
+	for direction in [1.0, -1.0]:
+		# Step at x576 (rightward), mirrored contact at x800 (leftward).
+		player.position = Vector2(520 if direction > 0 else 856, 550)
+		player.control_velocity = Vector2(220 * direction, 0)
+		player.external_velocity = Vector2(700 * direction, 0)
+		player.velocity = player.control_velocity + player.external_velocity
+		var action := "move_right" if direction > 0 else "move_left"
+		Input.action_press(action)
+		var grounded_ticks := 0
+		for tick in 180:
+			await physics_frame
+			if tick == 8:
+				Input.action_release(action)
+			player.simulate(1.0 / 60.0)
+			assert(player.control_velocity.y == 0.0, "Corner collision must not retain vertical input velocity")
+			if tick >= 150 and player.is_on_floor():
+				grounded_ticks += 1
+		assert(grounded_ticks == 30, "High-speed corner traversal must settle without repeated lift-off")
+		assert(player.sprite.animation == &"idle" and player.landing_time == 0.0)
+	recovery.queue_free()
+	print("PASS: high-speed corner landing in both directions, horizontal intent and stable grounded idle")

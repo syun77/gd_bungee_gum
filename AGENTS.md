@@ -85,6 +85,13 @@
 
 - Shared runtime tuning lives in `resources/game_settings.tres` (schema: `scripts/game_settings.gd`), grouped for the Inspector. Game.Settings is assigned in game.tscn and passed to Player/Gum at ready; standalone Player has the same default asset. Aim Guide colors include alpha (0.9) and line width (2 px). See specs/game-settings.md.
 
-- Automatic gum release reasons appear in HUD: `OBSTRUCTED` for a straight ray blocked before the anchor (even another face of the same terrain body), `TOO FAR` beyond maximum_length (currently 900 px), `TARGET LOST` for removed targets. No wrapping; maximum tension only clamps force and does not break connections.
 
-- `specs/gum-wrapping.md` defines the target corner-wrapping design (not implemented): ordered static-terrain pivots, total-path spring length and terrain reaction forces. Current runtime still releases on obstruction; dynamic obstacle wrapping is outside the initial scope.
+
+- Static corner wrapping is implemented in `gum_path.gd` / `gum_terrain_geometry.gd`; see specs/gum-wrapping.md. Collision-derived union corners (62 in saved stage), ordered pivots, <=1px endpoint sweep, total-path spring/length limit and terrain reactions. Dynamic obstacle wrapping is unsupported and releases explicitly. Run tools/verify_gum_path.gd alongside gum/controls/player/map suites.
+
+- Wrapping geometry uses edge-relative convex half-plane containment: Geometry2D.is_point_in_polygon misclassified near-edge points at section-04 coordinates, dropping valid shelf corners. Keep translated-shape and saved-map shelf pivot regressions in verify_gum_path.gd.
+
+
+
+- Player input velocity stays horizontal, including after collision projection; external velocity retains physical sliding/momentum. verify_player.gd covers both high-speed corner directions on actual physics ticks and stable landing.
+- Landing Diagnostics defaults ON: [LandingDiagnostic] logs CONTROL_COLLISION_RESOLVED / HIGH_SPEED_LANDING (30-tick detail throttle), plus persistent unexpected control-Y diagnostics; includes incoming/control/external velocity, discarded Y, normals and gum state. See specs/game-settings.md.

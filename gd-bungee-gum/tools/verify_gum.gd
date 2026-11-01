@@ -206,6 +206,31 @@ func verify() -> void:
 	check(not game_gum.connected(), "Detach input handled by coordinator")
 	check(game_player.get_node("AnimatedSprite2D").animation == &"jump", "Detach returns to airborne animation")
 	Input.action_release("jump")
+	game.set_physics_process(false)
+	game_player.position = Vector2(750,450)
+	game_player.external_velocity = Vector2.ZERO
+	game_player.velocity = Vector2.ZERO
+	check(game_gum.attach_at(Vector2(750,100)), "Live map attachment beside overhead shelf")
+	game_player.position.x = 1000.0
+	game_gum.step(1.0/60.0)
+	check(game_gum.connected() and not game_gum.path.pivots.is_empty(), "Live map shelf wraps instead of cutting")
+	check(game_gum.player_force.x < 0.0 and game_gum.player_force.y < 0.0, "Live map force follows first shelf corner")
+	for tick in 120:
+		game_gum.step(1.0/60.0)
+		game_player.simulate(1.0/60.0)
+		await ticks(1)
+	check(game_gum.connected() and game_player.position.is_finite(), "Live map corner contraction remains stable")
+	game_gum.detach()
+	game_player.position = Vector2(2700,514)
+	game_player.external_velocity = Vector2(200,-50)
+	game_player.velocity = game_player.external_velocity
+	check(game_gum.attach_at(Vector2(2742,100)), "Section 04 ceiling anchor before shelf contact")
+	game_gum.mode = game_gum.Mode.LOOSEN
+	game_gum.rest_length = 250.0
+	game_player.position.x = 2760.0
+	game_gum.step(1.0/60.0)
+	check(game_gum.connected() and game_gum.support_point().is_equal_approx(Vector2(2751,385)), "Section 04 chooses contacted shelf bottom-left, not lower floor")
+	check(game_gum.player_force.y < 0 and game_player.external_velocity.y < -50, "Section 04 contact tension pulls upward without false downward kick")
 	game.free()
 	if failures == 0:
 		print("PASS: gum ray/blocked hit, slack, contraction/hold, release momentum, corner wrapping/terrain reactions/path limit, dynamic obstruction, maximum length, rotating endpoint, reciprocal forces and light/heavy rigid response, target deletion; live Game lift/poses/detach")

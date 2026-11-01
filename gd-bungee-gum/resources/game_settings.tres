@@ -35,3 +35,4 @@ gum_taut_color = Color(1.0, 0.2, 0.28, 1.0)
 gum_line_width = 2.0
 gum_tension_width = 4.0
 restart_y = 900.0
+landing_diagnostics = true

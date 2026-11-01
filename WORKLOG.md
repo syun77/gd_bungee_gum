@@ -1,12 +1,50 @@
-## Active gum wrapping implementation
-- Goal: Implement specs/gum-wrapping.md.
-- Status: Core geometry/path/forces integrated; extending tests and reviewing final design alignment.
-- Completed: Collision polygon union exposed-edge corners, stable ordered pivots, sampled endpoint sweep, local visibility routing, hysteretic unwrap, total-path forces/reactions, HUD pivots and Inspector tuning. Existing gum and controls suites pass; dedicated path suite passes four-sided wrapping, 300-tick stability, union boundaries, sweep, deletion, budgets and force derivative/balance.
-- Decisions: Static rectangle/convex-polygon corners; unsupported geometry/dynamic intersections safely release. Sweep uses <=1px endpoint samples with 4096 hard cap. Rendering uses collision-safe polyline.
-- Files changed: scripts/gum_{terrain_geometry,path,connection}.gd, game.gd, game_settings.gd, resources/game_settings.tres; tools/verify_gum.gd and verify_gum_path.gd; WORKLOG.md. Design documents from preceding task retained.
-- Verification: /tmp/wrap-{gum,controls,path}.log PASS; map geometry ~6ms build, steady route ~0.24ms/tick in headless lab. Certificate warning unrelated.
-- Blockers: None; manual visual playtest pending.
-- Next action: Expand integration/failure tests, refactor touched area, align implementation docs and run full relevant suite.
+## Completed landing fix
+- Goal/status: Fix repeated lift-off after corner impacts and retain diagnostic logging; complete.
+- Changes: Input velocity is refreshed horizontally and keeps only projected X after collision. External sliding/momentum, gum forces, floor contact authority and animations remain physics-driven. Diagnostic logs report collision correction and high-speed landing with incoming velocity/discarded control Y, normals, ground state and gum information; detail throttled30 ticks, existing anomaly persistence logging retained, defaults ON.
+- Files: scripts/player.gd; tools/verify_player.gd; removed obsolete tools/diagnose_landing.gd; specs/player-controller.md, godot-implementation-plan.md, game-settings.md; AGENTS.md; WORKLOG.md. Existing unrelated/session edits preserved.
+- Verification: Headless player/gum/controls/gum_path/theater_stage suites all PASS; /tmp/landing-fix-*.log. Player regression uses actual physics ticks, both corner directions, releases movement after8 ticks, requires zero control Y throughout and30/30 final grounded ticks plus idle. Mirrored-side recovery floor is test-only to isolate the stage pit. Correction and high-speed landing log output verified. Existing retained air momentum/floor friction checks pass. git diff --check passed; unrelated macOS certificate warning only.
+- Refactoring: Reviewed full movement/collision/logging flow and test lifecycle; keep legitimate momentum in external_velocity and horizontal intent in control_velocity, reuse existing logger with explicit event types, remove superseded bug reproducer and stale AGENTS guidance. All relevant checks run after final runtime edits.
+- Blockers: None; native play feel remains unverified.
+- Next action: F5 try high-speed gum traversal into terrain corners; capture [LandingDiagnostic] from Godot Output if instability recurs.
+
+## Completed landing diagnostic logging
+- Goal/status: End investigation without fixing behavior; add runtime logging for recurrence. Complete.
+- Completed: Player emits [LandingDiagnostic] on unexpected |control Y|>1 px/s, first6 floor transitions, then every60 physics ticks while persistent, and clearance. Records feet/control/external velocities, ground change/count, animation, landing/fire timers, gum state/reason/tension and collision normals. Normal play is quiet. Shared Diagnostics/Landing Diagnostics setting defaults ON.
+- Files changed: scripts/player.gd, game_settings.gd; resources/game_settings.tres; specs/game-settings.md; AGENTS.md; WORKLOG.md. Existing runtime defect intentionally retained.
+- Verification: diagnose_landing.gd reproduces unchanged defect and control intervention; /tmp/landing-logging.log contains onset/6 transitions/2 summaries/clearance. verify_player.gd PASS with no diagnostic noise (/tmp/landing-logging-player.log). git diff --check passed; unrelated macOS certificate warning only.
+- Refactoring: Logging isolated after animation update, bounded detail events and periodic summaries, same shared settings resource; no physics or animation changes.
+- Blockers: None.
+- Next action: Stop here as requested; on recurrence collect [LandingDiagnostic] entries from Godot Output or engine log. Fix remains a separate future task.
+
+## Completed persistent landing investigation
+- Goal/status: Investigate post-gum foot-tapping / failure to settle; root cause reproduced, runtime unchanged as requested.
+- Findings: Player.simulate updates only control_velocity.x, but collision cleanup calls control_velocity.slide(normal), creating persistent control_velocity.y at capsule/step corner impacts. At landing external down velocity is cleared while upward control Y survives; next tick lifts off again, repeatedly resetting landing_time. Grounded comes from engine is_on_floor, not a retained gum flag.
+- Reproduction: tools/diagnose_landing.gd, actual physics_frame ticks at 60Hz; saved stage, feet (520,550), control (220,0), external (700,0), right held 8 ticks then released. Corner hits ticks3–4 yield control Y=-47.53929 px/s. Last60 ticks have12 grounded and24 ground/air transitions; gum disconnected and fire_time0 throughout. Clearing ONLY control Y in diagnostic restores30/30 grounded ticks and idle. Foot tapping here is repeated jump/landing frames, not a stuck run flag.
+- Files changed: tools/diagnose_landing.gd (repro plus controlled intervention), AGENTS.md, WORKLOG.md. Temporary exploratory probe removed; production code untouched.
+- Verification: Godot headless --path gd-bungee-gum --log-file /tmp/landing-diagnosis.log --script res://tools/diagnose_landing.gd PASS/REPRODUCED and control experiment PASS; known unrelated macOS certificate warning. Reviewed diagnostic timing to ensure simulate runs within real physics ticks; git diff --check passed.
+- Decisions: Investigate only. A fix should prevent persistent vertical intent velocity while preserving legitimate external collision momentum; do not mask by forcing grounded or merely changing animation.
+- Blockers: Exact user's unseen event not captured, but matching persistent landing defect is verified and causally isolated.
+- Next action: On fix request, redesign horizontal control collision response, promote this case into verify_player.gd regression, and rerun player/gum/controls/path/map checks.
+
+## Completed incorrect wrap pivot fix
+- Goal/status: Fix section-04 shelf contact selecting lower floor and pulling player down; complete.
+- Root cause: Geometry2D.is_point_in_polygon classified (2751.99,352) as inside shelf starting x2752; exposed-boundary filtering removed both left shelf corners. Dijkstra then chose lower floor (2753,575), changing tension downward. Saved-map anchor (2742,128), origin moving x2700→2756 at y480 reproduced it exactly.
+- Changes/decisions: Use edge-relative convex half-plane containment with scalar cross products for union boundary and visibility midpoint checks. Correct support becomes shelf corner (2751,385). Force model/tuning unchanged. Added translated rectangle near-edge tests and four anchors' sequential saved-map regressions for correct shelf pivots, upward pull and no length jump. Live Game regression verifies actual upward force/external velocity.
+- Files changed: scripts/gum_terrain_geometry.gd; tools/verify_gum_path.gd, verify_gum.gd, verify_theater_stage.gd; specs/gum-wrapping.md; AGENTS.md; WORKLOG.md. Temporary probe removed. Prior task's other changes preserved.
+- Verification: Final headless gum/path/controls/player/map suites PASS (/tmp/wrap-fix-*.log). Saved map now exposes 62 corners; independent Python rectangle-union quadrant count confirms 62 from 24 rectangles. Prior task's recorded 50 corners was an incorrect extraction missing 12 corners, not the intended map geometry. git diff --check passed. Known macOS certificate warning only.
+- Refactoring: Reviewed containment assumptions: registered polygons are convex and normalized counterclockwise; expanded visibility polygons retain this property. One containment helper used for both boundary and visibility, no coordinate-specific workaround.
+- Blockers: None. Manual rendered replay of screenshot sequence remains unverified.
+- Next action: F5 retest section 04 shelf crossing; expected support is contacted shelf left corner, never lower floor merely from shelf contact.
+
+## Completed gum wrapping implementation
+- Goal/status: Implement specs/gum-wrapping.md; complete for static-terrain prototype scope.
+- Completed: Collision-derived exposed union corners, ordered pivots, <=1px endpoint-motion sampling (4096 cap), local visibility routing, hysteretic unwrap, total-path spring/damping/length cap, balanced terrain reactions, safe unsupported-obstacle releases, collision-checked slack rendering, pivot/HUD display and first-support animation direction. Inspector wrapping settings added; current specs aligned.
+- Decisions: Rectangle/convex-polygon static terrain; dynamic boxes remain endpoints, not pivots. Sampling preserves side through persistent local pivots; subpixel geometry/extreme-speed behavior needs extra validation. Original endpoint/local adhesion, reciprocal forces and release momentum retained.
+- Files: scripts/gum_connection.gd, gum_path.gd, gum_terrain_geometry.gd, game.gd, player.gd, game_settings.gd; resources/game_settings.tres; tools/verify_gum_path.gd, verify_gum.gd, verify_controls.gd, verify_theater_stage.gd; specs/gum-wrapping.md, bungee-gum-prototype.md, keyboard-controls.md, godot-implementation-plan.md, physics-foundation.md, game-settings.md; AGENTS.md; WORKLOG.md. Unrelated asset work preserved.
+- Verification: Final Godot headless gum/path/controls/player/map suites all PASS; logs /tmp/wrap-{gum,path,controls,player,map}.log. Path suite includes four-sided wrap/unwrap, 300-tick stability, overlapping/shared-edge unions, holes, multiple obstacles, endpoint sweep, deletion, unsupported shapes, both budgets, analytical path speed and terrain force balance. Gum suite covers wrapped loosen, exact release momentum, total-path max, dynamic obstruction and live saved-map shelf wrap/120-tick contraction. Saved map has 50 convex corners; build ~6ms, steady path ~0.25ms/tick in this headless run. git diff --check passed. Known unrelated macOS certificate warning only.
+- Refactoring: Kept geometry/path/input/force responsibilities separate, one support_point interface for animation, removed obsolete obstruction-release test reason, clear path/reactions on detach and share root scope for path updates. Full relevant checks rerun after final edits.
+- Blockers: None for implementation. Native rendered visual/feel, full-stage clear and render-fps comparisons remain unverified.
+- Next action: F5 playtest shelf wrapping/unwrap and tune Gum Wrapping Inspector settings if needed; dynamic-corner wrapping is a separate feature.
 
 ## Completed gum wrapping design task
 - Goal/status: Redesign obstacle handling as corner wrapping; design complete, runtime unchanged.

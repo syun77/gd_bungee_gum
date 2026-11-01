@@ -43,7 +43,7 @@ func _collect(node: Node, result: Array[CollisionShape2D]) -> void:
 
 func inside(point: Vector2) -> bool:
 	for polygon in polygons:
-		if Geometry2D.is_point_in_polygon(point, polygon):
+		if _contains(point, polygon):
 			return true
 	return false
 
@@ -116,7 +116,7 @@ func visible(a: Vector2, b: Vector2, margin := 0.0) -> bool:
 					cuts.append(start.distance_to(hit) / maxf(start.distance_to(end), 0.001))
 			cuts.sort()
 			for i in range(cuts.size()-1):
-				if cuts[i+1] - cuts[i] > 0.000001 and Geometry2D.is_point_in_polygon(start.lerp(end, (cuts[i]+cuts[i+1])/2), test):
+				if cuts[i+1] - cuts[i] > 0.000001 and _contains(start.lerp(end, (cuts[i]+cuts[i+1])/2), test):
 					return false
 	return true
 
@@ -125,3 +125,13 @@ func _boundary_distance(point: Vector2, polygon: PackedVector2Array) -> float:
 	for i in polygon.size():
 		distance = minf(distance, Geometry2D.get_closest_point_to_segment(point, polygon[i], polygon[(i+1)%polygon.size()]).distance_to(point))
 	return distance
+
+func _contains(point: Vector2, polygon: PackedVector2Array) -> bool:
+	# All registered polygons are convex and counterclockwise. Work relative to
+	# each edge; absolute-coordinate ray parity loses boundary precision far from 0.
+	for i in polygon.size():
+		var edge := polygon[(i + 1) % polygon.size()] - polygon[i]
+		var relative := point - polygon[i]
+		if float(edge.x) * float(relative.y) - float(edge.y) * float(relative.x) < -0.00001:
+			return false
+	return true

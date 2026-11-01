@@ -28,6 +28,9 @@ func connected() -> bool:
 func endpoint() -> Vector2:
 	return target.to_global(target_local_point) if connected() else origin()
 
+func support_point() -> Vector2:
+	return path.points[1] if connected() and path.points.size() > 1 else aim_point
+
 func cast_to(point: Vector2) -> Dictionary:
 	var offset := point - origin()
 	if offset.length_squared() < 0.01:

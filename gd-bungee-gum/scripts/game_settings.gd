@@ -48,3 +48,7 @@ extends Resource
 @export_group("Stage Rules")
 ## Restart below this world-space Y coordinate (px).
 @export var restart_y := 900.0
+
+@export_group("Diagnostics")
+## Log unexpected vertical control velocity and subsequent floor transitions.
+@export var landing_diagnostics := true

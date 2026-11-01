@@ -120,7 +120,7 @@ func verify() -> void:
 	gum.attach_at(Vector2(160, 100))
 	key(KEY_X, true)
 	await ticks(2)
-	gum.detach("OBSTRUCTED")
+	gum.detach("TARGET LOST")
 	await ticks(1)
 	key(KEY_X, false)
 	await ticks(2)

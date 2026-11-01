@@ -15,6 +15,11 @@ var kick_available := true
 var landing_time := 0.0
 var gum: Node2D
 var fire_time := 0.0
+var landing_diagnostic_active := false
+var landing_diagnostic_next_tick := 0
+var landing_diagnostic_transitions := 0
+var landing_diagnostic_details := 0
+var landing_diagnostic_next_impact_tick := 0
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 func _ready() -> void:
@@ -62,7 +67,8 @@ func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 	var direction := 0.0 if aiming else Input.get_axis("move_left", "move_right")
 	var acceleration := settings.ground_acceleration if grounded else settings.air_acceleration
 	# 入力速度は設定の加速度で目標速度へ近づけ、無入力ではゼロへ減速する。
-	control_velocity.x = move_toward(control_velocity.x, direction * settings.run_speed, acceleration * delta)
+	var removed_control_y := control_velocity.y
+	control_velocity = Vector2(move_toward(control_velocity.x, direction * settings.run_speed, acceleration * delta), 0.0)
 	external_velocity.y += settings.gravity * delta
 	if jump_requested and touching and kick_available:
 		var normal := get_floor_normal() if grounded else (get_wall_normal() if is_on_wall() else Vector2.DOWN)
@@ -70,6 +76,7 @@ func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 		kick_available = false
 	# 外部速度は空中で保持し、接地後に床面方向の摩擦で減速する。
 	velocity = control_velocity + external_velocity
+	var incoming_velocity := velocity
 	move_and_slide()
 	# 衝突面へ向かう成分を両速度から除去する。床の法線に微小な横成分がある場合、
 	# slide() により外部横速度にも微小値が生じる（実測で約0.02 px/s）。
@@ -78,7 +85,11 @@ func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 		if external_velocity.dot(normal) < 0.0:
 			external_velocity = external_velocity.slide(normal)
 		if control_velocity.dot(normal) < 0.0:
-			control_velocity = control_velocity.slide(normal)
+			var projected_control := control_velocity.slide(normal)
+			if absf(projected_control.y) > absf(removed_control_y):
+				removed_control_y = projected_control.y
+			# Input intent stays horizontal; collision momentum belongs to external_velocity.
+			control_velocity.x = projected_control.x
 	_apply_ground_friction(delta)
 	velocity = control_velocity + external_velocity
 	if not grounded and is_on_floor():
@@ -86,6 +97,7 @@ func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 	landing_time = maxf(landing_time - delta, 0.0)
 	fire_time = maxf(fire_time - delta, 0.0)
 	_update_animation(direction)
+	_log_landing_state(grounded, incoming_velocity, removed_control_y)
 
 func _apply_ground_friction(delta: float) -> void:
 	if not is_on_floor():
@@ -101,13 +113,13 @@ func _update_animation(direction: float) -> void:
 	if direction != 0.0:
 		sprite.flip_h = direction < 0.0
 	if is_instance_valid(gum) and (fire_time > 0.0 or gum.connected()):
-		var aim: Vector2 = (gum.endpoint() if gum.connected() else gum.aim_point) - gum.origin()
+		var aim: Vector2 = gum.support_point() - gum.origin()
 		sprite.flip_h = aim.x < 0.0
 		if fire_time > 0.0:
 			sprite.play("gum_fire")
 			return
 		if not is_on_floor() and gum.tension > 10.0:
-			var above: bool = gum.endpoint().y < gum.origin().y - 40.0
+			var above: bool = gum.support_point().y < gum.origin().y - 40.0
 			sprite.play("gum_hang" if above and velocity.length() < 130.0 else "gum_pull")
 			return
 	if not is_on_floor():
@@ -120,3 +132,48 @@ func _update_animation(direction: float) -> void:
 		sprite.frame = 6
 	else:
 		sprite.play("run" if absf(velocity.x) > 12.0 else "idle")
+
+func _log_landing_state(was_grounded: bool, incoming_velocity: Vector2, removed_control_y: float) -> void:
+	if not settings.landing_diagnostics:
+		landing_diagnostic_active = false
+		return
+	var unexpected_vertical := absf(control_velocity.y) > 1.0
+	var event := ""
+	var tick := Engine.get_physics_frames()
+	if unexpected_vertical and not landing_diagnostic_active:
+		landing_diagnostic_active = true
+		landing_diagnostic_transitions = 0
+		landing_diagnostic_details = 0
+		landing_diagnostic_next_tick = tick + 60
+		event = "VERTICAL_CONTROL_DETECTED"
+	elif landing_diagnostic_active:
+		if was_grounded != is_on_floor():
+			landing_diagnostic_transitions += 1
+			if landing_diagnostic_details < 6:
+				landing_diagnostic_details += 1
+				event = "LANDED" if is_on_floor() else "LEFT_FLOOR"
+		if not unexpected_vertical:
+			landing_diagnostic_active = false
+			event = "CLEARED"
+		elif tick >= landing_diagnostic_next_tick:
+			event = "PERSISTING"
+			landing_diagnostic_next_tick = tick + 60
+	if event.is_empty() and tick >= landing_diagnostic_next_impact_tick:
+		if absf(removed_control_y) > 1.0:
+			event = "CONTROL_COLLISION_RESOLVED"
+		elif not was_grounded and is_on_floor() and incoming_velocity.length() > 300.0:
+			event = "HIGH_SPEED_LANDING"
+		if not event.is_empty():
+			landing_diagnostic_next_impact_tick = tick + 30
+	if event.is_empty():
+		return
+	var normals: Array[Vector2] = []
+	for i in get_slide_collision_count():
+		normals.append(get_slide_collision(i).get_normal())
+	var attached: bool = is_instance_valid(gum) and gum.connected()
+	var gum_status: String = gum.release_reason if is_instance_valid(gum) else "NO GUM"
+	var gum_tension: float = gum.tension if attached else 0.0
+	print("[LandingDiagnostic] %s tick=%d feet=%s control=%s external=%s floor=%s->%s transitions=%d animation=%s landing=%.3f fire=%.3f gum=%s reason=%s tension=%.1f incoming=%s removed_control_y=%.3f normals=%s" % [
+		event, tick, global_position, control_velocity, external_velocity,
+		was_grounded, is_on_floor(), landing_diagnostic_transitions,
+		sprite.animation, landing_time, fire_time, attached, gum_status, gum_tension, incoming_velocity, removed_control_y, normals])

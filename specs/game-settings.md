@@ -6,8 +6,10 @@ GodotのFileSystemで `res://resources/game_settings.tres` を選択し、Inspec
 | --- | --- |
 | Player Movement | 走行速度、地上／空中の入力加速度、地面の摩擦、重力、蹴り出し速度、プレイヤー質量 |
 | Gum Physics | ばね係数、減衰、収縮速度、最小／最大長、最大張力、緩め余裕長 |
+| Gum Wrapping | 支点のクリアランス、解除離隔・確認ティック、支点数・経路修正の上限 |
 | Aim Guide | 接着可／不可の色と透明度、補助線の太さ・破線長、照準円の半径・太さ |
 | Gum Appearance | 弛緩／最大張力の色、線の太さと張力による追加幅 |
+| Diagnostics | Landing Diagnostics：着地不安定の調査ログ（初期値ON） |
 | Stage Rules | 落下時に再スタートするY座標 |
 
 X長押し中の補助線は **Aim Valid Color / Aim Invalid Color** で変更する。カラーピッカーの **A（アルファ）** が透明度で、1が不透明。初期値は両方0.9、**Aim Line Width** は2 px。色とアルファは照準円にも適用する。描画側は `scripts/gum_connection.gd` の `_draw()`。
@@ -15,3 +17,7 @@ X長押し中の補助線は **Aim Valid Color / Aim Invalid Color** で変更�
 `scenes/game.tscn` のGameノードのSettingsが設定の参照元。Gameは起動時に同じResourceをPlayerとGumへ渡す。Player単体のシーンにも既定ファイルを割り当てる。パラメータをスクリプト側へコピーせず参照しており、接続解除時の運動量保持や双方への力の適用方式は変わらない。
 
 マップ形状・カメラ範囲・個別の箱の質量など、配置に属する値は各シーンで編集する。アニメーションのコマや衝突用カプセルも各アセット／シーンで管理する。
+
+巻き付き時の最大長・緩め余裕長・自然長は総経路長に適用する。初期設定はクリアランス1 px、解除離隔2 pxを2ティック確認、支点16個・修正32回まで。
+
+`Landing Diagnostics`がONの場合、横移動用速度に1 px/sを超える上下成分が生じたとき、`[LandingDiagnostic]`ログをGodotのOutputと標準ログへ出す。発生時、最初の接地変化6回、以後60物理ティックごとの要約、解消時を記録する。座標・両速度・接地変化・アニメーション・着地／発射タイマー・ガム接続と張力・衝突法線を含む。衝突時に入力用の縦成分を除外した際はCONTROL_COLLISION_RESOLVED、高速着地時はHIGH_SPEED_LANDINGを出力する（詳細は30ティック間隔）。衝突前の速度と除外した縦成分も含む。通常の待機・歩行では出力しない。

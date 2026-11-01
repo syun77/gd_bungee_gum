@@ -25,6 +25,10 @@ func verify() -> void:
 		query.position = stage.get_node("PlacementMarkers/" + name).position
 		query.collision_mask = 1
 		assert(stage.get_world_2d().direct_space_state.intersect_point(query).is_empty(), "Marker inside terrain: " + name)
+	var geometry = load("res://scripts/gum_terrain_geometry.gd").new()
+	geometry.refresh(stage, 1.0)
+	assert(not geometry.unsupported, "Stage contains unsupported gum wrapping geometry")
+	assert(geometry.corners.size() == 62, "Collision union must expose 62 convex corners")
 	print("PASS: saved scene, 1222 tile centers covered by static collision, 24 shapes, six clear placement markers.")
 	stage.queue_free()
 	quit()
