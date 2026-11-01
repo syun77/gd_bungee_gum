@@ -1,0 +1,32 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/game_settings.gd" id="1"]
+
+[resource]
+resource_name = "Game Settings"
+script = ExtResource("1")
+run_speed = 220.0
+ground_acceleration = 1600.0
+air_acceleration = 350.0
+ground_friction = 900.0
+gravity = 1100.0
+kick_speed = 260.0
+player_mass = 1.0
+stiffness = 35.0
+damping = 9.0
+contraction_speed = 180.0
+minimum_length = 36.0
+maximum_length = 900.0
+maximum_tension = 2800.0
+loosen_margin = 32.0
+aim_valid_color = Color(0.45, 1.0, 0.75, 0.9)
+aim_invalid_color = Color(1.0, 0.7, 0.6, 0.9)
+aim_line_width = 2.0
+aim_dash_length = 6.0
+aim_reticle_radius = 7.0
+aim_reticle_width = 1.5
+gum_slack_color = Color(1.0, 0.52, 0.8, 1.0)
+gum_taut_color = Color(1.0, 0.2, 0.28, 1.0)
+gum_line_width = 2.0
+gum_tension_width = 4.0
+restart_y = 900.0

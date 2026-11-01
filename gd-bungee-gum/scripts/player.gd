@@ -7,12 +7,8 @@ const GUM_HANDS := {
 }
 
 
-@export var run_speed := 220.0
-@export var ground_acceleration := 1600.0
-@export var air_acceleration := 350.0
-@export var gravity := 1100.0
-@export var kick_speed := 260.0
-@export_range(0.01, 1000.0) var mass := 1.0
+const Settings = preload("res://scripts/game_settings.gd")
+@export var settings: Settings
 var external_velocity := Vector2.ZERO
 var control_velocity := Vector2.ZERO
 var kick_available := true
@@ -54,7 +50,7 @@ func gum_visual_origin() -> Vector2:
 	return sprite.to_global(offset)
 
 func apply_external_force(force: Vector2, delta: float) -> void:
-	external_velocity += force / mass * delta
+	external_velocity += force / settings.player_mass * delta
 
 func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 	# 接触判定は直前の move_and_slide() の結果。今回の移動後に更新される。
@@ -64,17 +60,15 @@ func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 		kick_available = true
 	# project.godot の物理キー割り当てを使用。A／左矢印=-1、D／右矢印=+1。
 	var direction := 0.0 if aiming else Input.get_axis("move_left", "move_right")
-	var acceleration := ground_acceleration if grounded else air_acceleration
-	# 入力を離しても減速し、反対入力でも即反転しない。地上では最高速から停止まで
-	# 約0.14秒、逆方向の最高速までは約0.28秒。空中では約0.63秒／1.26秒。
-	control_velocity.x = move_toward(control_velocity.x, direction * run_speed, acceleration * delta)
-	external_velocity.y += gravity * delta
+	var acceleration := settings.ground_acceleration if grounded else settings.air_acceleration
+	# 入力速度は設定の加速度で目標速度へ近づけ、無入力ではゼロへ減速する。
+	control_velocity.x = move_toward(control_velocity.x, direction * settings.run_speed, acceleration * delta)
+	external_velocity.y += settings.gravity * delta
 	if jump_requested and touching and kick_available:
 		var normal := get_floor_normal() if grounded else (get_wall_normal() if is_on_wall() else Vector2.DOWN)
-		external_velocity += normal * kick_speed
+		external_velocity += normal * settings.kick_speed
 		kick_available = false
-	# 左右入力が変更するのは control_velocity のみ。外部の横速度に摩擦はなく、
-	# 無入力でも滑り続ける。外部速度+300、左入力-220なら右へ約80 px/sで進む。
+	# 外部速度は空中で保持し、接地後に床面方向の摩擦で減速する。
 	velocity = control_velocity + external_velocity
 	move_and_slide()
 	# 衝突面へ向かう成分を両速度から除去する。床の法線に微小な横成分がある場合、
@@ -85,12 +79,21 @@ func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 			external_velocity = external_velocity.slide(normal)
 		if control_velocity.dot(normal) < 0.0:
 			control_velocity = control_velocity.slide(normal)
+	_apply_ground_friction(delta)
 	velocity = control_velocity + external_velocity
 	if not grounded and is_on_floor():
 		landing_time = 0.12
 	landing_time = maxf(landing_time - delta, 0.0)
 	fire_time = maxf(fire_time - delta, 0.0)
 	_update_animation(direction)
+
+func _apply_ground_friction(delta: float) -> void:
+	if not is_on_floor():
+		return
+	var normal := get_floor_normal()
+	var tangent := normal.orthogonal()
+	var speed := external_velocity.dot(tangent)
+	external_velocity += tangent * (move_toward(speed, 0.0, settings.ground_friction * delta) - speed)
 
 func _update_animation(direction: float) -> void:
 	# 絵の左右向きは実速度ではなく入力に即追従する。方向転換の減速中や

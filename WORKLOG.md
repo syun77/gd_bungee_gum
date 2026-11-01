@@ -1,14 +1,57 @@
-# Work Log
-
-## Active chicken asset task
-- Goal: Create photo-referenced diavola chicken collectible in images/foods/.
+## Active tarako pasta asset task
+- Goal: Create photo-referenced Sicilian-style tarako pasta collectible in images/foods/.
 - Status: Generating.
-- Completed: Read food asset conventions and inspected photo.
-- Decisions: 64×64 transparent sprite; chicken/onion topping, corn, potatoes and black platter on red-brown base.
+- Completed: Read handoff and food conventions; inspected photo.
+- Decisions: 64×64 transparent sprite; yellow pasta, pink sauce and dark shredded nori in white bowl.
 - Files changed: WORKLOG.md.
 - Verification: Pending.
 - Blockers: None.
-- Next action: Generate, normalize and inspect final sprite.
+- Next action: Generate, normalize and visually inspect.
+
+## Completed margherita pizza asset task
+- Goal/status: Create photo-referenced buffalo mozzarella margherita collectible; complete.
+- Completed: Built-in imagegen generation, visible-bounds nearest-neighbor normalization and enlarged final visual review.
+- Decisions: 64×64 transparent RGBA; whole pizza on white plate, red sauce and five white mozzarella patches. Lifted slice omitted for compact silhouette; asset only.
+- Files changed: images/foods/margherita_pizza.png; specs/food-item-assets.md (final prompt); AGENTS.md; WORKLOG.md.
+- Verification: Pillow confirms 64×64 RGBA, alpha 0–255 and transparent corners; final preview checked. Reviewed naming/docs consistency; git diff --check passed.
+- Blockers: None.
+- Next action: Use saved sprite; copy into res:// with nearest filtering when integrating collectibles.
+
+## Completed game settings task
+- Goal/status: Explain faint X guide and centralize editor tuning; complete.
+- Findings/decisions: Guide alpha was hardcoded to 0.25 at width 1 px in Gum._draw. Game Settings now groups player movement/friction/mass, gum physics, aim guide, gum colors/width and restart Y; guide defaults alpha 0.9, width 2 px. Explicit values stored in .tres.
+- Files: gd-bungee-gum/scripts/game_settings.gd (+preserved UID), resources/game_settings.tres replace gum_settings files; scripts/player.gd, game.gd, gum_connection.gd; scenes/game.tscn and characters/player.tscn; tools/verify_player.gd and verify_gum.gd; specs/game-settings.md, player-controller.md, bungee-gum-prototype.md, godot-implementation-plan.md; AGENTS.md, WORKLOG.md.
+- Verification: Godot headless player/gum/controls suites passed. Final player check also verifies shared Resource identity and changed run_speed actually affecting movement. Logs /tmp/settings-{player,gum,controls}.log. git diff --check passed; no obsolete gum_settings references in current runtime/specs. Known sandbox certificate warning only. Visual feel not assessed.
+- Refactoring: One typed shared schema; Game assigns its resource to both systems, standalone player scene uses same default asset. Removed duplicated tuning exports and stale timing comments; updated callers/docs, no compatibility paths.
+- Blockers: None. Existing food/friction work preserved.
+- Next action: In Godot select res://resources/game_settings.tres, edit Inspector groups, save and rerun F5; see specs/game-settings.md.
+
+## Completed shrimp salad asset task
+- Goal/status: Create shrimp salad collectible in images/foods/; complete.
+- Completed: Built-in imagegen generation/refinement, clean cutout regeneration, visible-bounds nearest-neighbor normalization and final enlarged visual review.
+- Decisions: 64×64 transparent RGBA; pink shrimp, lettuce, two tomatoes, cabbage and white patterned bowl; asset only.
+- Files changed: images/foods/shrimp_salad.png; specs/food-item-assets.md (final prompt); AGENTS.md; WORKLOG.md.
+- Verification: Pillow confirms 64×64 RGBA, alpha 0–255 and transparent corners; final silhouette reviewed. Naming/docs reviewed; git diff --check passed.
+- Blockers: None.
+- Next action: Use saved sprite; future Godot integration copies into res:// with nearest filtering.
+
+## Completed ground-friction investigation
+- Goal/status: Investigate and fix persistent sliding after landing; complete.
+- Findings/decision: External horizontal velocity had no floor friction (retained velocity, not retained acceleration). Apply 900 px/s² tangent deceleration after move_and_slide/collision cleanup, including landing tick; preserve airborne momentum. Ground contact comes from the completed move, so departing kick-offs are excluded naturally.
+- Files changed: gd-bungee-gum/scripts/player.gd, gd-bungee-gum/tools/verify_player.gd; specs/player-controller.md, specs/godot-implementation-plan.md; AGENTS.md; WORKLOG.md. Existing food asset changes preserved.
+- Verification: Godot 4.5.1 headless verify_player.gd passed both sliding directions, gradual stop, air retention and landing alongside existing movement/collision checks; verify_gum.gd and verify_controls.gd passed. Logs: /tmp/friction-{player,gum,controls}.log. Only known sandbox certificate warning. git diff --check passed.
+- Refactoring: Isolated floor-tangent damping in _apply_ground_friction; reviewed fixed-step ordering and docs. Removed a redundant normal-velocity gate: tiny floor collision normal differences could otherwise skip friction. Final runtime checks passed after simplification.
+- Blockers: None; interactive feel not assessed.
+- Next action: F5 playtest stopping distance and tune exported ground_friction if desired.
+
+## Completed chicken asset task
+- Goal/status: Create photo-referenced diavola chicken collectible in images/foods/; complete.
+- Completed: Built-in imagegen generation, nearest-neighbor normalization and enlarged final visual inspection.
+- Decisions: 64×64 transparent RGBA static sprite; chicken/onion topping, corn, two potatoes, black platter and red-brown base; asset only.
+- Files changed: images/foods/chicken_diavola.png; specs/food-item-assets.md (final prompt included); AGENTS.md; WORKLOG.md.
+- Verification: Pillow confirms 64×64 RGBA and transparent corners; alpha range 0–255. Final preview checked for readable food/platter silhouettes. Reviewed naming and documentation consistency; git diff --check passed.
+- Blockers: None.
+- Next action: Use saved asset; copy into res:// with nearest filtering when integrating collectibles.
 
 ## Completed escargot asset task
 - Goal/status: Create photo-referenced escargot collectible in images/foods/; complete.

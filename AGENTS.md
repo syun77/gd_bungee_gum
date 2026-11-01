@@ -20,7 +20,7 @@
 
 ## Durable project knowledge
 
-- Food collectible art lives in `images/foods/`; `milano_doria.png` and `escargot_oven_baked.png` are 64 × 64 transparent RGBA static sprites. Use nearest-neighbor filtering; see `specs/food-item-assets.md`.
+- Food collectible art lives in `images/foods/`; `milano_doria.png`, `escargot_oven_baked.png`, `chicken_diavola.png`, `shrimp_salad.png`, `spicy_chicken.png`, and `margherita_pizza.png` are 64 × 64 transparent RGBA static sprites. Use nearest-neighbor filtering; see `specs/food-item-assets.md`.
 
 - Current setting/art direction is a pop-colored family restaurant: cream ceramic, coral/mint trim, painted frames and muted teal background. `theater_*` filenames remain the current resource identifiers. Edit both atlas copies together (`images/tilesets/` and `gd-bungee-gum/assets/tilesets/`); `restaurant_tileset_source.png` is the color-edit source.
 
@@ -46,7 +46,7 @@
 - Never record secrets, credentials, tokens, personal data, or other sensitive values.
 - If later evidence invalidates an entry, update or remove it immediately instead of appending contradictory guidance.
 
-- Gum fixed-step owner is `scripts/game.gd`: input → `Gum.step` → `Player.simulate` → camera/HUD. Player has no independent physics callback. Tune `resources/gum_settings.tres`; attachable terrain/props are physics layers 1/4, player is layer 2. Keep reciprocal forces and collision momentum cleanup together.
+- Gum fixed-step owner is `scripts/game.gd`: input → `Gum.step` → `Player.simulate` → camera/HUD. Player has no independent physics callback. Tune `resources/game_settings.tres`; attachable terrain/props are physics layers 1/4, player is layer 2. Keep reciprocal forces and collision momentum cleanup together.
 - Gum controls: hold X + arrows to aim in eight directions, release X to fire and auto-contract; attached X toggles fixed-length loosen/contract; Z detaches then contact-kicks (no airborne impulse). `tools/verify_controls.gd` exercises physical Z/X gestures and cancellation. `tools/verify_gum.gd` covers real ray queries, rigid force/mass response and live Game integration. Input bindings use device -1 (any device); editor-saved device 16 bindings do not match Godot 4.5 synthetic keyboard events.
 - Assign the gum settings Resource through the scene's exported property; preloading its instance as a typed script property's default caused uninitialized Resource script values under Godot 4.5.1.
 
@@ -80,3 +80,7 @@
 - Player feet are the local origin; `scenes/characters/player.tscn` uses normalized 256 px cells at 0.3125 scale, a fixed 20 × 52 px capsule and sprite y=-32.5. `tools/verify_player.gd` checks movement/animation and collision momentum using the same headless invocation as the map check.
 
 - Physical arrow bindings in project.godot are Left=4194319 and Right=4194321. `tools/verify_player.gd` checks physical-key events as well as action-driven movement; action_press alone bypasses key mappings.
+
+- Player floor friction is explicit: after move_and_slide/collision cleanup, ground_friction (900 px/s²) reduces external velocity along the floor tangent. Air momentum remains intact; CharacterBody2D does not provide automatic material friction. verify_player.gd covers both sliding directions and landing/air preservation.
+
+- Shared runtime tuning lives in `resources/game_settings.tres` (schema: `scripts/game_settings.gd`), grouped for the Inspector. Game.Settings is assigned in game.tscn and passed to Player/Gum at ready; standalone Player has the same default asset. Aim Guide colors include alpha (0.9) and line width (2 px). See specs/game-settings.md.

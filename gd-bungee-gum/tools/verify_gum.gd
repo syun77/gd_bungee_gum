@@ -45,7 +45,7 @@ func verify() -> void:
 	player = load("res://scenes/characters/player.tscn").instantiate()
 	world.add_child(player)
 	gum = load("res://scripts/gum_connection.gd").new()
-	gum.settings = load("res://resources/gum_settings.tres")
+	gum.settings = load("res://resources/game_settings.tres")
 	gum.player = player
 	world.add_child(gum)
 	var wall := body_at(Vector2(220, -34))

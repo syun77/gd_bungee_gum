@@ -1,5 +1,7 @@
 extends Node2D
 ## Fixed-step owner: validate -> Z/X gesture -> spring -> player -> presentation.
+const Settings = preload("res://scripts/game_settings.gd")
+@export var settings: Settings
 enum Gesture { IDLE, AIM, WAIT_RELEASE }
 @onready var player: CharacterBody2D = $Player
 @onready var camera: Camera2D = $Camera2D
@@ -11,6 +13,8 @@ var aim_direction := Vector2.RIGHT
 var aim_selected := false
 
 func _ready() -> void:
+	player.settings = settings
+	gum.settings = settings
 	player.global_position = $TheaterStage/PlacementMarkers/PlayerSpawn.global_position
 	gum.player = player
 	player.gum = gum
@@ -20,7 +24,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if restarting:
 		return
-	if Input.is_action_just_pressed("restart") or player.position.y > 900.0:
+	if Input.is_action_just_pressed("restart") or player.position.y > settings.restart_y:
 		restarting = true
 		gum.detach("RESTART")
 		get_tree().call_deferred("reload_current_scene")

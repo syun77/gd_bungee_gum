@@ -1,0 +1,43 @@
+extends Resource
+## Shared tuning resource. Edit resources/game_settings.tres in the Inspector.
+@export_group("Player Movement")
+## Maximum input-driven speed (px/s).
+@export_range(0.0, 2000.0) var run_speed := 220.0
+## Input acceleration and braking (px/s²).
+@export_range(0.0, 10000.0) var ground_acceleration := 1600.0
+@export_range(0.0, 10000.0) var air_acceleration := 350.0
+## Ground tangent deceleration of external velocity (px/s²).
+@export_range(0.0, 5000.0) var ground_friction := 900.0
+@export_range(0.0, 5000.0) var gravity := 1100.0
+## Contact kick-off impulse expressed as speed (px/s).
+@export_range(0.0, 2000.0) var kick_speed := 260.0
+@export_range(0.01, 1000.0) var player_mass := 1.0
+
+@export_group("Gum Physics")
+@export_range(0.0, 200.0) var stiffness := 35.0
+@export_range(0.0, 100.0) var damping := 9.0
+@export_range(1.0, 1000.0) var contraction_speed := 180.0
+@export_range(1.0, 900.0) var minimum_length := 36.0
+@export_range(1.0, 3000.0) var maximum_length := 900.0
+@export_range(1.0, 10000.0) var maximum_tension := 2800.0
+@export_range(0.0, 200.0) var loosen_margin := 32.0
+
+@export_group("Aim Guide")
+## Target available / unavailable. Alpha controls both guide and reticle opacity.
+@export var aim_valid_color := Color(0.45, 1.0, 0.75, 0.9)
+@export var aim_invalid_color := Color(1.0, 0.7, 0.6, 0.9)
+@export_range(1.0, 10.0) var aim_line_width := 2.0
+@export_range(1.0, 40.0) var aim_dash_length := 6.0
+@export_range(1.0, 40.0) var aim_reticle_radius := 7.0
+@export_range(1.0, 10.0) var aim_reticle_width := 1.5
+
+@export_group("Gum Appearance")
+@export var gum_slack_color := Color(1.0, 0.52, 0.8, 1.0)
+@export var gum_taut_color := Color(1.0, 0.2, 0.28, 1.0)
+@export_range(1.0, 10.0) var gum_line_width := 2.0
+## Additional width at maximum tension (px).
+@export_range(0.0, 10.0) var gum_tension_width := 4.0
+
+@export_group("Stage Rules")
+## Restart below this world-space Y coordinate (px).
+@export var restart_y := 900.0

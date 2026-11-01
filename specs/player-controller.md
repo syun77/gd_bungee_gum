@@ -11,3 +11,7 @@ F5で `scenes/game.tscn` を実行。A/Dまたは左右矢印で走り、Zで接
 `Game` が毎物理ティック、接続入力→張力→`Player.simulate(delta)`→カメラ・表示の順に更新する。Player自身は `_physics_process` を持たず二重更新を避ける。カメラは移動後の位置を追う。
 
 検証: `Godot --headless --path gd-bungee-gum --log-file /tmp/player-check.log --script res://tools/verify_player.gd`。
+
+接地中の外部速度は床の接線方向に `ground_friction`（初期値900 px/s²）でゼロへ減速する。300 px/sの外部速度は約0.33秒で停止する。着地したティックから適用し、左右入力・照準・接続の有無に依存しない。空中と床から離れる蹴り出しには適用せず、入力速度の加減速は従来どおり別に処理する。
+
+調整値は共有設定 `resources/game_settings.tres` のPlayer Movementで編集する。編集手順と表示設定は `game-settings.md` を参照。

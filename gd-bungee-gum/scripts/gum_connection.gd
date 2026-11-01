@@ -1,6 +1,6 @@
 extends Node2D
 ## Rules own the connection; physics resolves both endpoints' motion.
-const Settings = preload("res://scripts/gum_settings.gd")
+const Settings = preload("res://scripts/game_settings.gd")
 enum Mode { NONE, CONTRACT, LOOSEN }
 @export var settings: Settings
 var player: CharacterBody2D
@@ -126,19 +126,19 @@ func _draw() -> void:
 		return
 	var start := to_local(player.gum_visual_origin())
 	var aim := to_local(aim_point)
-	var aim_color := Color(0.45, 1.0, 0.75, 0.8) if aim_valid else Color(1, 0.7, 0.6, 0.6)
+	var aim_color := settings.aim_valid_color if aim_valid else settings.aim_invalid_color
 	if aiming:
-		draw_dashed_line(start, aim, Color(aim_color, 0.25), 1.0, 6.0)
-		draw_arc(aim, 7.0, 0, TAU, 20, aim_color, 1.5)
+		draw_dashed_line(start, aim, aim_color, settings.aim_line_width, settings.aim_dash_length)
+		draw_arc(aim, settings.aim_reticle_radius, 0, TAU, 20, aim_color, settings.aim_reticle_width)
 	if not connected():
 		return
 	var end := to_local(endpoint())
 	var ratio := tension / settings.maximum_tension
-	var color := Color(1, 0.52, 0.8).lerp(Color(1, 0.2, 0.28), ratio)
+	var color := settings.gum_slack_color.lerp(settings.gum_taut_color, ratio)
 	var sag := minf(maxf(rest_length - start.distance_to(end), 0.0) * 0.35, 70.0)
 	var points := PackedVector2Array()
 	for index in 25:
 		var weight := index / 24.0
 		points.append(start.lerp(end, weight) + Vector2(0, sin(weight * PI) * sag))
-	draw_polyline(points, color, 2.0 + ratio * 4.0, true)
+	draw_polyline(points, color, settings.gum_line_width + ratio * settings.gum_tension_width, true)
 	draw_circle(end, 5.0, color)
