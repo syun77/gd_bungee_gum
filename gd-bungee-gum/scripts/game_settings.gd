@@ -45,10 +45,25 @@ extends Resource
 ## Additional width at maximum tension (px).
 @export_range(0.0, 10.0) var gum_tension_width := 4.0
 
+@export_group("Camera Zoom")
+## Camera2D scale: larger values show a closer view.
+@export_range(0.1, 4.0) var camera_normal_zoom := 1.5
+@export_range(0.1, 4.0) var camera_hold_zoom := 0.8
+@export_range(0.1, 4.0) var camera_long_gum_zoom := 0.65
+## Continuous X hold time before requesting the wider view (seconds).
+@export_range(0.0, 2.0) var camera_hold_delay := 0.25
+## Total wrapped path lengths (px) at which distance zoom starts / reaches its limit.
+@export_range(0.0, 3000.0) var camera_gum_zoom_start := 200.0
+@export_range(0.0, 3000.0) var camera_gum_zoom_end := 800.0
+## Exponential response rate (1/s); zero snaps immediately.
+@export_range(0.0, 30.0) var camera_zoom_response := 5.0
+
 @export_group("Stage Rules")
 ## Restart below this world-space Y coordinate (px).
 @export var restart_y := 900.0
 
 @export_group("Diagnostics")
+## Log contact kick-off requests, rejection reasons and rearming.
+@export var jump_diagnostics := true
 ## Log unexpected vertical control velocity and subsequent floor transitions.
 @export var landing_diagnostics := true

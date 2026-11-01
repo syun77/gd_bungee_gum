@@ -11,6 +11,7 @@ var restarting := false
 var gesture := Gesture.IDLE
 var aim_direction := Vector2.RIGHT
 var aim_selected := false
+var camera_hold_time := 0.0
 
 func _ready() -> void:
 	player.settings = settings
@@ -20,6 +21,7 @@ func _ready() -> void:
 	player.gum = gum
 	aim_direction = Vector2.LEFT if player.sprite.flip_h else Vector2.RIGHT
 	camera.position = player.position
+	camera.zoom = Vector2.ONE * settings.camera_normal_zoom
 
 func _physics_process(delta: float) -> void:
 	if restarting:
@@ -37,10 +39,27 @@ func _physics_process(delta: float) -> void:
 	if was_connected and not gum.connected():
 		player.cancel_gum_action()
 	player.simulate(delta, gesture == Gesture.AIM, jump_requested)
-	camera.position = player.position
+	_update_camera(delta)
 	gum.aiming = gesture == Gesture.AIM
 	gum.update_aim(_aim_target())
 	_update_status()
+
+func _update_camera(delta: float) -> void:
+	camera.position = player.position
+	camera_hold_time = camera_hold_time + delta if Input.is_action_pressed("gum_action") else 0.0
+	var target_zoom: float = settings.camera_normal_zoom
+	if Input.is_action_pressed("gum_action") and camera_hold_time >= settings.camera_hold_delay:
+		target_zoom = minf(target_zoom, settings.camera_hold_zoom)
+	if gum.connected():
+		var start: float = settings.camera_gum_zoom_start
+		var end: float = settings.camera_gum_zoom_end
+		# Equal/reversed thresholds become a step, avoiding division by zero.
+		var weight := float(gum.path.length >= start)
+		if end > start:
+			weight = clampf((gum.path.length - start) / (end - start), 0.0, 1.0)
+		target_zoom = minf(target_zoom, lerpf(settings.camera_normal_zoom, settings.camera_long_gum_zoom, weight))
+	var blend := 1.0 - exp(-settings.camera_zoom_response * delta) if settings.camera_zoom_response > 0.0 else 1.0
+	camera.zoom = camera.zoom.lerp(Vector2.ONE * target_zoom, blend)
 
 func _aim_target() -> Vector2:
 	return gum.origin() + aim_direction * gum.settings.maximum_length

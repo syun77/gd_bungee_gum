@@ -1,8 +1,8 @@
-[gd_resource type="SpriteFrames" load_steps=28 format=3]
+[gd_resource type="SpriteFrames" format=3 uid="uid://cwpjwwewpud32"]
 
-[ext_resource type="Texture2D" path="res://assets/characters/teto/teto_gum_fire.png" id="fire"]
-[ext_resource type="Texture2D" path="res://assets/characters/teto/teto_gum_pull.png" id="pull"]
-[ext_resource type="Texture2D" path="res://assets/characters/teto/teto_gum_hang.png" id="hang"]
+[ext_resource type="Texture2D" uid="uid://b2c7guxtonwnc" path="res://assets/characters/teto/teto_gum_fire.png" id="fire"]
+[ext_resource type="Texture2D" uid="uid://b2i5ilgayckis" path="res://assets/characters/teto/teto_gum_hang.png" id="hang"]
+[ext_resource type="Texture2D" uid="uid://cksybomax7ymj" path="res://assets/characters/teto/teto_gum_pull.png" id="pull"]
 
 [sub_resource type="AtlasTexture" id="fire_0"]
 atlas = ExtResource("fire")
@@ -34,38 +34,6 @@ region = Rect2(512, 256, 256, 256)
 
 [sub_resource type="AtlasTexture" id="fire_7"]
 atlas = ExtResource("fire")
-region = Rect2(768, 256, 256, 256)
-
-[sub_resource type="AtlasTexture" id="pull_0"]
-atlas = ExtResource("pull")
-region = Rect2(0, 0, 256, 256)
-
-[sub_resource type="AtlasTexture" id="pull_1"]
-atlas = ExtResource("pull")
-region = Rect2(256, 0, 256, 256)
-
-[sub_resource type="AtlasTexture" id="pull_2"]
-atlas = ExtResource("pull")
-region = Rect2(512, 0, 256, 256)
-
-[sub_resource type="AtlasTexture" id="pull_3"]
-atlas = ExtResource("pull")
-region = Rect2(768, 0, 256, 256)
-
-[sub_resource type="AtlasTexture" id="pull_4"]
-atlas = ExtResource("pull")
-region = Rect2(0, 256, 256, 256)
-
-[sub_resource type="AtlasTexture" id="pull_5"]
-atlas = ExtResource("pull")
-region = Rect2(256, 256, 256, 256)
-
-[sub_resource type="AtlasTexture" id="pull_6"]
-atlas = ExtResource("pull")
-region = Rect2(512, 256, 256, 256)
-
-[sub_resource type="AtlasTexture" id="pull_7"]
-atlas = ExtResource("pull")
 region = Rect2(768, 256, 256, 256)
 
 [sub_resource type="AtlasTexture" id="hang_0"]
@@ -100,24 +68,124 @@ region = Rect2(512, 256, 256, 256)
 atlas = ExtResource("hang")
 region = Rect2(768, 256, 256, 256)
 
+[sub_resource type="AtlasTexture" id="pull_0"]
+atlas = ExtResource("pull")
+region = Rect2(0, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="pull_1"]
+atlas = ExtResource("pull")
+region = Rect2(256, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="pull_2"]
+atlas = ExtResource("pull")
+region = Rect2(512, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="pull_3"]
+atlas = ExtResource("pull")
+region = Rect2(768, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="pull_4"]
+atlas = ExtResource("pull")
+region = Rect2(0, 256, 256, 256)
+
+[sub_resource type="AtlasTexture" id="pull_5"]
+atlas = ExtResource("pull")
+region = Rect2(256, 256, 256, 256)
+
+[sub_resource type="AtlasTexture" id="pull_6"]
+atlas = ExtResource("pull")
+region = Rect2(512, 256, 256, 256)
+
+[sub_resource type="AtlasTexture" id="pull_7"]
+atlas = ExtResource("pull")
+region = Rect2(768, 256, 256, 256)
+
 [resource]
-animations = [
-{
-"frames": [{"duration": 1.0, "texture": SubResource("fire_0")}, {"duration": 1.0, "texture": SubResource("fire_1")}, {"duration": 1.0, "texture": SubResource("fire_2")}, {"duration": 1.0, "texture": SubResource("fire_3")}, {"duration": 1.0, "texture": SubResource("fire_4")}, {"duration": 1.0, "texture": SubResource("fire_5")}, {"duration": 1.0, "texture": SubResource("fire_6")}, {"duration": 1.0, "texture": SubResource("fire_7")}],
-"loop": false,
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("fire_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("fire_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("fire_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("fire_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("fire_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("fire_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("fire_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("fire_7")
+}],
+"loop": 0,
 "name": &"gum_fire",
 "speed": 12.0
-},
-{
-"frames": [{"duration": 1.0, "texture": SubResource("pull_0")}, {"duration": 1.0, "texture": SubResource("pull_1")}, {"duration": 1.0, "texture": SubResource("pull_2")}, {"duration": 1.0, "texture": SubResource("pull_3")}, {"duration": 1.0, "texture": SubResource("pull_4")}, {"duration": 1.0, "texture": SubResource("pull_5")}, {"duration": 1.0, "texture": SubResource("pull_6")}, {"duration": 1.0, "texture": SubResource("pull_7")}],
-"loop": true,
-"name": &"gum_pull",
-"speed": 8.0
-},
-{
-"frames": [{"duration": 1.0, "texture": SubResource("hang_0")}, {"duration": 1.0, "texture": SubResource("hang_1")}, {"duration": 1.0, "texture": SubResource("hang_2")}, {"duration": 1.0, "texture": SubResource("hang_3")}, {"duration": 1.0, "texture": SubResource("hang_4")}, {"duration": 1.0, "texture": SubResource("hang_5")}, {"duration": 1.0, "texture": SubResource("hang_6")}, {"duration": 1.0, "texture": SubResource("hang_7")}],
-"loop": true,
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("hang_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("hang_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("hang_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("hang_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("hang_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("hang_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("hang_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("hang_7")
+}],
+"loop": 1,
 "name": &"gum_hang",
 "speed": 8.0
-}
-]
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("pull_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("pull_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("pull_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("pull_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("pull_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("pull_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("pull_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("pull_7")
+}],
+"loop": 1,
+"name": &"gum_pull",
+"speed": 8.0
+}]

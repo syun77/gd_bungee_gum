@@ -95,3 +95,5 @@
 
 - Player input velocity stays horizontal, including after collision projection; external velocity retains physical sliding/momentum. verify_player.gd covers both high-speed corner directions on actual physics ticks and stable landing.
 - Landing Diagnostics defaults ON: [LandingDiagnostic] logs CONTROL_COLLISION_RESOLVED / HIGH_SPEED_LANDING (30-tick detail throttle), plus persistent unexpected control-Y diagnostics; includes incoming/control/external velocity, discarded Y, normals and gum state. See specs/game-settings.md.
+
+- Runtime camera zoom is owned by Game._update_camera after Player.simulate; Camera Zoom settings in game_settings.tres control normal/held-X/path-length scales, hold delay, distance thresholds and exponential response. Uses wrapped total path length; physical X hold is independent of gesture state. Verify with tools/verify_camera.gd.

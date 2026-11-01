@@ -1,3 +1,22 @@
+## Active jump diagnostic task
+- Goal/status: Add logs for intermittent repeated contact kick-off failure; implementation in progress.
+- Completed: Read prior work and controller. Kick eligibility resets only after a tick without floor/wall/ceiling contact; Z requests are sampled by Game before Player.simulate.
+- Decisions: Preserve behavior; log accepted/rejected requests, eligibility rearming and post-move contact/velocity.
+- Files: Pending player/settings/spec changes; existing workspace edits preserved.
+- Verification: Pending.
+- Blockers: None.
+- Next action: Implement diagnostics and run player/controls checks.
+
+## Completed camera zoom task
+- Goal/status: Close normal camera, held-X and gum-path distance zoom-out; complete.
+- Completed: Player-centered camera starts at1.5x; X held0.25s requests0.8x; total gum path200–800px interpolates1.5→0.65x. Wider request wins. Exponential response5/s (0 snaps). All seven values in shared Camera Zoom settings. Release resets hold; attach/toggle/cancel input semantics preserved.
+- Decisions: Wrapped path length rather than tension/rest length; equal/reversed distance thresholds use step at start. Keep scene limits and position follow. Existing project.godot edit preserved untouched.
+- Files changed: scripts/game.gd, game_settings.gd; resources/game_settings.tres; tools/verify_camera.gd; specs/game-settings.md; AGENTS.md; WORKLOG.md.
+- Verification: Final headless camera/controls/gum suites PASS (/tmp/camera-{camera,controls,gum}.log); git diff --check PASS. Camera regression covers physical X delay/release, real saved-stage attachment, distance interpolation/clamp, priority, equal thresholds, detach smoothing, timestep subdivision and position follow. Known unrelated macOS certificate warning only.
+- Refactoring: Reviewed complete camera/input update ordering and shared settings; isolated presentation helper, simplified threshold handling, no physics changes. Relevant suites rerun after final runtime edit.
+- Blockers: None. Native visual/play-feel verification not performed.
+- Next action: F5 review camera feel and tune Camera Zoom in resources/game_settings.tres via Inspector.
+
 ## Completed landing fix
 - Goal/status: Fix repeated lift-off after corner impacts and retain diagnostic logging; complete.
 - Changes: Input velocity is refreshed horizontally and keeps only projected X after collision. External sliding/momentum, gum forces, floor contact authority and animations remain physics-driven. Diagnostic logs report collision correction and high-speed landing with incoming velocity/discarded control Y, normals, ground state and gum information; detail throttled30 ticks, existing anomaly persistence logging retained, defaults ON.

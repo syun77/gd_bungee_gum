@@ -9,7 +9,8 @@ GodotのFileSystemで `res://resources/game_settings.tres` を選択し、Inspec
 | Gum Wrapping | 支点のクリアランス、解除離隔・確認ティック、支点数・経路修正の上限 |
 | Aim Guide | 接着可／不可の色と透明度、補助線の太さ・破線長、照準円の半径・太さ |
 | Gum Appearance | 弛緩／最大張力の色、線の太さと張力による追加幅 |
-| Diagnostics | Landing Diagnostics：着地不安定の調査ログ（初期値ON） |
+| Diagnostics | Landing Diagnostics：着地不安定の調査ログ、Jump Diagnostics：接地キックの調査ログ（両方初期値ON） |
+| Camera Zoom | 通常／X長押し／長距離時の倍率、長押し時間、距離範囲、追従速度 |
 | Stage Rules | 落下時に再スタートするY座標 |
 
 X長押し中の補助線は **Aim Valid Color / Aim Invalid Color** で変更する。カラーピッカーの **A（アルファ）** が透明度で、1が不透明。初期値は両方0.9、**Aim Line Width** は2 px。色とアルファは照準円にも適用する。描画側は `scripts/gum_connection.gd` の `_draw()`。
@@ -21,3 +22,11 @@ X長押し中の補助線は **Aim Valid Color / Aim Invalid Color** で変更�
 巻き付き時の最大長・緩め余裕長・自然長は総経路長に適用する。初期設定はクリアランス1 px、解除離隔2 pxを2ティック確認、支点16個・修正32回まで。
 
 `Landing Diagnostics`がONの場合、横移動用速度に1 px/sを超える上下成分が生じたとき、`[LandingDiagnostic]`ログをGodotのOutputと標準ログへ出す。発生時、最初の接地変化6回、以後60物理ティックごとの要約、解消時を記録する。座標・両速度・接地変化・アニメーション・着地／発射タイマー・ガム接続と張力・衝突法線を含む。衝突時に入力用の縦成分を除外した際はCONTROL_COLLISION_RESOLVED、高速着地時はHIGH_SPEED_LANDINGを出力する（詳細は30ティック間隔）。衝突前の速度と除外した縦成分も含む。通常の待機・歩行では出力しない。
+
+カメラはプレイヤーを追従し、通常は `camera_normal_zoom`（1.5倍）。Godotの倍率は大きいほど近く、小さいほど広く映る。Xを `camera_hold_delay`（0.25秒）以上押し続けると `camera_hold_zoom`（0.8倍）まで引く。照準中・接続中・キャンセル待ちのいずれも対象で、既存のX操作はそのまま使える。離すと長押し時間をリセットする。
+
+接続中はガムの総経路長（巻き付き支点を含む）が `camera_gum_zoom_start`（200 px）から `camera_gum_zoom_end`（800 px）へ伸びるにつれ、通常倍率から `camera_long_gum_zoom`（0.65倍）へ線形に引く。自然長や張力では判定しない。Xと距離の両方が有効なら、より広く映る倍率を採用し、通常より近づく設定値は採用しない。終了距離が開始距離以下なら開始距離で切り替える。
+
+倍率は `camera_zoom_response`（5 /秒）の指数応答で滑らかに変化し、0なら即時切り替え。解除後も同じ応答で戻る。起動・再スタートは通常倍率から始まる。カメラの位置追従とシーンの範囲制限は維持するため、画面端ではキャラクターが中央からずれることがある。
+
+`Jump Diagnostics`がONの場合、Zの押下要求ごとに`[JumpDiagnostic]`を出力する。`ACCEPTED`は接地キック実行、`REJECTED_NO_CONTACT`は接触なし、`REJECTED_NOT_REARMED`は前回のキック後に非接触ティックを経ていないための拒否。直後の`AFTER_MOVE`には同じ物理ティックの移動後状態と衝突前速度を記録する。`REARMED`は非接触による再使用可能化の直前状態を示す。座標・床／壁／天井接触・使用可否・Z/X保持・入力／外部速度・衝突法線・ガム接続を含む。要求時の接触は前回の`move_and_slide()`の結果。Zは押下エッジ入力のため、押し続けても要求ログは繰り返さない。ガム接続状態はGameによるZの切断処理後。挙動の修正は行わない。
