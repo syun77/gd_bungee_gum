@@ -14,6 +14,7 @@ var control_velocity := Vector2.ZERO
 var kick_available := true
 var coyote_remaining := 0.0
 var coyote_normal := Vector2.UP
+var coyote_gravity_velocity := Vector2.ZERO
 var landing_time := 0.0
 var gum: Node2D
 var fire_time := 0.0
@@ -66,8 +67,11 @@ func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 	if grounded:
 		coyote_remaining = settings.coyote_time
 		coyote_normal = get_floor_normal()
+		coyote_gravity_velocity = Vector2.ZERO
 	else:
 		coyote_remaining = maxf(minf(coyote_remaining, settings.coyote_time) - delta, 0.0)
+	if coyote_remaining <= 0.0:
+		coyote_gravity_velocity = Vector2.ZERO
 	# Floor contact restores a kick even when wall contact never broke.
 	if grounded or not touching:
 		if not kick_available:
@@ -79,17 +83,29 @@ func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 	# 入力速度は設定の加速度で目標速度へ近づけ、無入力ではゼロへ減速する。
 	var removed_control_y := control_velocity.y
 	control_velocity = Vector2(move_toward(control_velocity.x, direction * settings.run_speed, acceleration * delta), 0.0)
-	external_velocity.y += settings.gravity * delta
+	var gravity_velocity := Vector2(0.0, settings.gravity * delta)
+	external_velocity += gravity_velocity
+	if coyote_remaining > 0.0:
+		coyote_gravity_velocity += gravity_velocity
 	var coyote_kick := not touching and coyote_remaining > 0.0
 	var can_kick := kick_available and (touching or coyote_kick)
 	if jump_requested:
-		var result := ("ACCEPTED_COYOTE" if coyote_kick else "ACCEPTED") if can_kick else ("REJECTED_NO_CONTACT" if not touching else "REJECTED_NOT_REARMED")
+		var result := "REJECTED_NO_CONTACT" if not touching else "REJECTED_NOT_REARMED"
+		if can_kick:
+			result = "ACCEPTED_COYOTE" if coyote_kick else "ACCEPTED"
 		_log_jump_state(result)
 	if jump_requested and can_kick:
-		var normal := coyote_normal if coyote_kick else (get_floor_normal() if grounded else (get_wall_normal() if is_on_wall() else Vector2.DOWN))
+		var normal := coyote_normal
+		if touching:
+			normal = get_floor_normal() if grounded else (get_wall_normal() if is_on_wall() else Vector2.DOWN)
+		if coyote_kick:
+			var falling_speed := maxf(-external_velocity.dot(normal), 0.0)
+			var gravity_fall := maxf(-coyote_gravity_velocity.dot(normal), 0.0)
+			external_velocity += normal * minf(falling_speed, gravity_fall)
 		external_velocity += normal * settings.kick_speed
 		kick_available = false
 		coyote_remaining = 0.0
+		coyote_gravity_velocity = Vector2.ZERO
 	# 外部速度は空中で保持し、接地後に床面方向の摩擦で減速する。
 	velocity = control_velocity + external_velocity
 	var incoming_velocity := velocity
@@ -98,6 +114,9 @@ func simulate(delta: float, aiming := false, jump_requested := false) -> void:
 	# slide() により外部横速度にも微小値が生じる（実測で約0.02 px/s）。
 	for index in get_slide_collision_count():
 		var normal := get_slide_collision(index).get_normal()
+		# Gravity already resolved by terrain must not remain available as compensation.
+		if coyote_gravity_velocity.dot(normal) < 0.0:
+			coyote_gravity_velocity = coyote_gravity_velocity.slide(normal)
 		if external_velocity.dot(normal) < 0.0:
 			external_velocity = external_velocity.slide(normal)
 		if control_velocity.dot(normal) < 0.0:

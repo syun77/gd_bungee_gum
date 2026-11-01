@@ -41,6 +41,8 @@ extends Resource
 @export_range(1.0, 10.0) var aim_reticle_width := 1.5
 
 @export_group("Gum Appearance")
+## Fixed-length loosen mode, independent of tension.
+@export var gum_loosen_color := Color("#B8A6AD")
 @export var gum_slack_color := Color(1.0, 0.52, 0.8, 1.0)
 @export var gum_taut_color := Color(1.0, 0.2, 0.28, 1.0)
 @export_range(1.0, 10.0) var gum_line_width := 2.0

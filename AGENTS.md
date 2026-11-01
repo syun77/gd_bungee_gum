@@ -102,8 +102,12 @@
 
 - Floor kick eligibility recovers on floor contact even with continuous wall contact; wall/ceiling-only contact does not rearm. verify_player.gd checks three consecutive jumps on saved-stage left wall without any fully non-contact tick.
 
-- Gum line color currently encodes tension only (pink→red), not CONTRACT/LOOSEN; width also follows tension and sag follows actual slack. When changing state feedback, distinguish fixed-length LOOSEN mode from zero tension; either mode can be taut or slack.
+- Gum LOOSEN color is opaque pink-gray #B8A6AD independent of tension (Gum Loosen Color); CONTRACT retains pink→red tension colors. Line/pivots/endpoint share color; width follows tension and sag actual slack. Either mode can be taut or slack.
 
 - Floor coyote grace uses shared Player Movement/coyote_time (default0.10s,0 disables), last floor normal and fixed-step countdown. Any successful contact/coyote kick consumes it; wall/ceiling do not refill. verify_player.gd covers walk-off/expiry/disabled/consumed/no-repeat cases. JumpDiagnostic includes coyote seconds and ACCEPTED_COYOTE.
 
-- For gum feedback, user prefers subdued gray-like loosen color over prominent blue-violet; pink-gray #B8A6AD is an unimplemented candidate requiring in-game readability checks.
+- User prefers subdued gray-like loosen feedback over prominent blue-violet.
+
+- Coyote kicks cancel only accumulated gravity velocity inward along the remembered floor normal, capped by current inward external speed, before adding kick_speed. coyote_gravity_velocity follows collision projection and resets on floor/expiry/kick; tangent, outward and excess external momentum remain. verify_player.gd covers delay/timestep/slope/external-speed combinations.
+
+- Idle sheet uses six-frame shallow knee-bend ping-pong poses (0/1/2/3/2/1),6fps; keep normalized/runtime copies identical, baseline y232 and one common scale across poses. See specs/character-sprite-audit.md.

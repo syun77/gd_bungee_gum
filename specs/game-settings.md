@@ -8,7 +8,7 @@ GodotのFileSystemで `res://resources/game_settings.tres` を選択し、Inspec
 | Gum Physics | ばね係数、減衰、収縮速度、最小／最大長、最大張力、緩め余裕長 |
 | Gum Wrapping | 支点のクリアランス、解除離隔・確認ティック、支点数・経路修正の上限 |
 | Aim Guide | 接着可／不可の色と透明度、補助線の太さ・破線長、照準円の半径・太さ |
-| Gum Appearance | 弛緩／最大張力の色、線の太さと張力による追加幅 |
+| Gum Appearance | 緩めモードの色（Gum Loosen Color、初期値 #B8A6AD）、収縮中の無張力／最大張力の色、線の太さと張力による追加幅 |
 | Diagnostics | Landing Diagnostics：着地不安定の調査ログ、Jump Diagnostics：接地キックの調査ログ（両方初期値ON） |
 | Camera Zoom | 通常／X長押し／長距離時の倍率、長押し時間、距離範囲、追従速度 |
 | Stage Rules | 落下時に再スタートするY座標 |
@@ -32,3 +32,5 @@ X長押し中の補助線は **Aim Valid Color / Aim Invalid Color** で変更�
 `Jump Diagnostics`がONの場合、Zの押下要求ごとに`[JumpDiagnostic]`を出力する。`ACCEPTED`は接地キック実行、`ACCEPTED_COYOTE`は床離脱猶予中のキック、`REJECTED_NO_CONTACT`は接触なし、`REJECTED_NOT_REARMED`は前回のキック後に床接触または完全な非接触ティックを経ていないための拒否。直後の`AFTER_MOVE`には同じ物理ティックの移動後状態と衝突前速度を記録する。`REARMED`は床接触または完全な非接触による再使用可能化の直前状態を示す。座標・床／壁／天井接触・使用可否・Z/X保持・入力／外部速度・衝突法線・ガム接続を含む。要求時の接触は前回の`move_and_slide()`の結果。Zは押下エッジ入力のため、押し続けても要求ログは繰り返さない。ガム接続状態はGameによるZの切断処理後。
 
 `Coyote Time`は初期値0.10秒（0で無効）。ジャンプ診断の`coyote`は残り秒数を示す。床法線方向へ速度を加算し、成功時に残り時間を0にする。
+
+コヨーテキックでは、猶予中に重力で増えた床法線逆向きの速度だけを補正してから`Kick Speed`を加算する。`Coyote Time`を延ばしても重力による相殺は増えないが、入力までに落ちた位置は戻さない。補正量用の追加設定はない。

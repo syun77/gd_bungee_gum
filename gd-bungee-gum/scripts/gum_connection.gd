@@ -155,6 +155,8 @@ func _draw() -> void:
 		return
 	var ratio := tension / settings.maximum_tension
 	var color := settings.gum_slack_color.lerp(settings.gum_taut_color, ratio)
+	if mode == Mode.LOOSEN:
+		color = settings.gum_loosen_color
 	var points := _display_points()
 	if points.size() > 1:
 		draw_polyline(points, color, settings.gum_line_width + ratio * settings.gum_tension_width, true)

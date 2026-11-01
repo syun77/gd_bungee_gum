@@ -89,6 +89,7 @@ func verify() -> void:
 	assert(player.position.x >= 73.0)
 	assert(absf(player.external_velocity.x) < 0.1, "Wall must clear inward external momentum")
 	await verify_coyote_time(game)
+	await verify_coyote_gravity_compensation(game)
 	await verify_wall_landing_jump(game)
 	await verify_corner_landing(game)
 	print("PASS: physical A/D/arrow bindings and PageUp exclusion, spawn, floor alignment, idle/run/jump/landing, no air jump, wall momentum cleanup, ground friction and retained air momentum")
@@ -197,11 +198,14 @@ func verify_coyote_time(game: Node2D) -> void:
 			await physics_frame
 			player.simulate(1.0 / 60.0)
 		var before: Vector2 = player.external_velocity
+		var gravity_budget: Vector2 = player.coyote_gravity_velocity + Vector2(0, game.settings.gravity / 60.0)
 		await physics_frame
 		player.simulate(1.0 / 60.0, false, true)
 		var expected := before + Vector2(0, game.settings.gravity / 60.0)
 		if scenario == "within":
-			expected += player.coyote_normal * game.settings.kick_speed
+			var normal: Vector2 = player.coyote_normal
+			var correction := minf(maxf(-expected.dot(normal), 0.0), maxf(-gravity_budget.dot(normal), 0.0))
+			expected += normal * (game.settings.kick_speed + correction)
 		assert(player.external_velocity.is_equal_approx(expected), "Coyote impulse eligibility: " + scenario)
 		assert(player.coyote_remaining == 0.0, "Grace must be consumed or expired")
 		# Repeated airborne requests cannot use the same grace twice.
@@ -212,3 +216,46 @@ func verify_coyote_time(game: Node2D) -> void:
 	game.settings.coyote_time = original_grace
 	platform.queue_free()
 	print("PASS: real walk-off coyote kick, expiry, disabled grace, consumed floor kick and no repeated air impulse")
+
+func verify_coyote_gravity_compensation(game: Node2D) -> void:
+	var player = game.get_node("Player")
+	var original_grace: float = game.settings.coyote_time
+	var original_diagnostics: bool = game.settings.jump_diagnostics
+	game.settings.jump_diagnostics = false
+	game.settings.coyote_time = 0.2
+	for normal in [Vector2.UP, Vector2(0.6, -0.8)]:
+		for dt in [1.0 / 60.0, 1.0 / 120.0]:
+			for delay in [2, 6, 10]:
+				for normal_speed in [0.0, -500.0, 30.0, 300.0]:
+					# Isolate airborne momentum after departure; the platform test covers real contact.
+					player.position = Vector2(12000, 0)
+					player.external_velocity = Vector2.ZERO
+					player.control_velocity = Vector2.ZERO
+					await physics_frame
+					player.simulate(dt)
+					assert(not player.is_on_floor() and not player.is_on_wall())
+					player.coyote_normal = normal
+					player.coyote_remaining = 0.2
+					player.coyote_gravity_velocity = Vector2.ZERO
+					var tangent: Vector2 = normal.orthogonal()
+					var initial: Vector2 = normal * normal_speed + tangent * 140.0
+					player.external_velocity = initial
+					for tick in delay:
+						await physics_frame
+						player.simulate(dt)
+					await physics_frame
+					player.simulate(dt, false, true)
+					var gravity_change := Vector2(0, game.settings.gravity * dt * (delay + 1))
+					var expected: Vector2 = initial + gravity_change
+					var inward := maxf(-expected.dot(normal), 0.0)
+					var correction := minf(inward, -gravity_change.dot(normal))
+					expected += normal * (game.settings.kick_speed + correction)
+					assert(player.external_velocity.distance_to(expected) < 0.01,
+						"Compensate gravity only; preserve tangent/outward/excess falling momentum")
+					if normal_speed == 0.0:
+						assert(absf(player.external_velocity.dot(normal) - game.settings.kick_speed) < 0.01,
+							"Pure-gravity launch speed must not depend on grace timing")
+					assert(player.coyote_gravity_velocity == Vector2.ZERO)
+	game.settings.coyote_time = original_grace
+	game.settings.jump_diagnostics = original_diagnostics
+	print("PASS: coyote gravity compensation across timings, timesteps, slopes and external momentum")

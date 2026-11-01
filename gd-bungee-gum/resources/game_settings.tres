@@ -5,7 +5,8 @@
 [resource]
 resource_name = "Game Settings"
 script = ExtResource("1")
-kick_speed = 350.0
+kick_speed = 400.0
+coyote_time = 0.2
 maximum_length = 400.0
 camera_hold_zoom = 1.2000000000000002
 camera_long_gum_zoom = 1.0

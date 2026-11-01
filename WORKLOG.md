@@ -1,10 +1,52 @@
-## Active coyote time implementation
-- Goal/status: Add floor departure grace for contact kick-off; in progress.
-- Decisions: Default0.10s, floor-only grace with last floor normal; any successful kick consumes grace. No wall/ceiling grace, extra airborne jumps or input buffering. Existing Z detach ordering and momentum addition retained. Shared setting0 disables grace.
-- Completed: Read controller, shared settings, prior wall fix and authoritative control docs. User tuning kick350/maximum_length400 preserved.
-- Files/tests: Pending runtime, regression and aligned specs.
+## Completed idle sprite correction
+- Goal/status: Replace shrinking idle motion with shallow knee bends; complete.
+- Completed: Built-in imagegen edit preserving character identity; normalized four upper-row poses at one0.56 nearest scale, sequenced0/1/2/3/2/1 into existing six-frame layout. Replaced normalized and runtime sheets together. Source original preserved;6fps/runtime controller unchanged.
+- Decisions: Feet baseline y232; visible top34/36/40/43/40/36px (maximum2.8px in game); no per-frame height scaling. Final two cells empty. Unrelated workspace edits preserved.
+- Files changed: images/normalized/teto_idle.png, gd-bungee-gum/assets/characters/teto_idle.png, specs/character-sprite-audit.md, AGENTS.md, WORKLOG.md.
+- Verification: Final sheet visually inspected; Python matching-byte/RGBA/1024×512/six-cell/baseline/empty-cell checks PASS. Godot import completed; verify_player.gd PASS (/tmp/idle-player.log), exit0. git diff --check PASS. Editor sandbox emitted known certificate/Mono socket/editor-settings permission warnings; runtime suite unaffected.
+- Refactoring: Reviewed full asset consumption/layout and docs, removed ambiguous scale description; reused existing six-frame resource without new paths or animation machinery.
+- Blockers: None; native in-game appearance not inspected.
+- Next action: F5 inspect idle motion at gameplay zoom.
+
+## Completed coyote gravity compensation
+- Goal/status: Compensate only gravity-acquired inward momentum on coyote kicks; complete.
+- Completed: Track gravity velocity during grace, collision-project it, cap normal correction by tracked inward gravity and current inward external speed. Clear tracker on floor/expiry/kick. Actual walk-off expectations and timing/timestep/slope/momentum regressions updated; controller/controls/settings specs aligned.
+- Decisions: Preserve tangent, current outward and excess downward external momentum; usual contact kicks unchanged. No added settings; saved user tuning (currently kick400/coyote0.2) preserved. Position is never rewound.
+- Files changed: scripts/player.gd, tools/verify_player.gd, specs/keyboard-controls.md, player-controller.md, game-settings.md, AGENTS.md, WORKLOG.md. Other workspace edits preserved.
+- Verification: Full Godot4.5.1 headless player suite PASS (/tmp/coyote-compensation.log, final /tmp/coyote-compensation-final.log); no assertion/script errors. Includes96 timing/timestep/normal/external-speed cases, pure-gravity constant normal launch speed, weak-outward clamp, excess downward and tangent retention; real walk-off/expiry/disabled/consumed/no-repeat and wall/corner/momentum regressions pass. git diff --check PASS. Known unrelated macOS certificate warning only.
+- Refactoring: Reviewed full gravity/contact/collision lifecycle; one vector tracker uses existing collision normals, no external-force source classification or duplicated impulse paths. Expanded cap coverage and suppressed only combinatorial test diagnostic noise before final rerun.
+- Blockers: None; native play feel and user Godot4.7.2 not verified locally.
+- Next action: F5 compare early/late coyote inputs after walking off ledges, including while carrying gum momentum.
+
+## Completed coyote launch-height design review
+- Goal/status: Evaluate downward-velocity cancellation during coyote kick; analysis complete, runtime unchanged.
+- Findings: Player adds gravity before adding kick along remembered floor normal. Current saved tuning kick350/gravity1100/coyote0.2 allows roughly220px/s downward speed to offset kick, leaving130px/s upward; ideal rise from input point falls55.7→7.7px. Player regression currently requires pure additive impulse, so correction must update assertions.
+- Recommendation: Compensate the downward normal component attributable to gravity accrued since floor departure before the usual kick; bound compensation by both current inward normal speed and accrued gravity. Preserve tangent momentum, outward speed and excess downward gum/impact momentum. Simpler full downward-normal reset guarantees launch speed but erases externally acquired falling momentum; explicit design tradeoff. Compensate normal grounded gravity too if matching contact-launch speed is required.
+- Decisions: No implementation requested. Keep grace single-use, expiration and detach ordering; test early/late departure, slopes, upward/tangent velocity, strong downward momentum and consumed grace on adoption.
+- Files changed: WORKLOG.md, AGENTS.md (verified additive behavior note) only.
+- Verification: Read current player integration order, shared saved tuning and physics momentum requirements; values are ideal flat-floor estimates, no runtime measurement.
+- Blockers: None for design.
+- Next action: On implementation request, add bounded gravity compensation accounting and update regression/specs; compare launch speed across grace timings.
+
+## Completed loosen color implementation
+- Goal/status: Apply approved LOOSEN #B8A6AD; complete.
+- Completed: Added shared Gum Loosen Color; line/pivots/endpoint use mode color regardless of tension. CONTRACT palette and physical width/sag unchanged. Controls/settings docs and durable guidance aligned.
+- Files changed: scripts/game_settings.gd, scripts/gum_connection.gd, specs/keyboard-controls.md, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Decisions: Opaque color; no physics/HUD changes. Existing workspace edits preserved.
+- Verification: Original gum suite fails saved-map scenarios with current maximum_length400 (/tmp/loosen-color-gum.log). Temporary duplicate settings with maximum_length900 passes full gum suite plus exact opaque color load check (/tmp/loosen-color-final.log); real resource untouched, temporary script removed. git diff --check PASS. Known macOS certificate warning only. Native visual review not performed.
+- Refactoring: Reviewed draw/settings area; explicit mode override keeps one shared color for line/pivots/endpoint and existing tension width, no physics changes. Final suite ran after cleanup of drawing logic.
 - Blockers: None.
-- Next action: Implement timer and verify actual walk-off, expiry, disable and consumed-jump cases on physics ticks.
+- Next action: F5 toggle X and review gray loosen line at normal/wide zoom.
+
+## Completed coyote time implementation
+- Goal/status: Add floor-departure grace for contact kick-off; complete.
+- Completed: Shared Player Movement/coyote_time default0.10s, floor-normal capture, fixed-step countdown, consume-on-any-kick, ACCEPTED_COYOTE and remaining-time logs. Actual platform walk-off regression covers accepted grace, expiry, zero setting, consumed normal kick and repeated-air rejection. Control/controller/direction/implementation/settings docs aligned.
+- Decisions: Floor-only grace, additive momentum along last floor normal,0 disables; no extra jump after kick, no wall/ceiling refill or input buffering. Existing Z detach-first ordering and user kick350/max-length400 tuning preserved.
+- Files changed: scripts/player.gd, scripts/game_settings.gd, tools/verify_player.gd; specs/player-controller.md, keyboard-controls.md, game-direction.md, stage-action-concept.md, bungee-gum-prototype.md, godot-implementation-plan.md, game-settings.md; AGENTS.md, WORKLOG.md.
+- Verification: Full headless player suite PASS before/after refactor (/tmp/coyote-player-final.log, /tmp/coyote-refactor.log), including wall-landing jumps, no air jump, momentum, corner settling and physical key mappings. git diff --check PASS. Local Godot4.5.1; known unrelated macOS certificate warning. First test expected vertical impulse incorrectly; real capsule-edge floor normal is angled, now regression checks captured floor normal as designed.
+- Refactoring: Simplified nested kick decision branches; one eligibility calculation shared by log and impulse. Centralized detailed control policy in keyboard-controls; broader specs reference it.
+- Blockers: None. Native play feel not checked.
+- Next action: F5 walk off ledge and press Z just after departure; tune Coyote Time in shared settings Inspector if desired.
 
 ## Completed gum mode visibility review
 - Goal/status: Evaluate loosen-mode feedback and subdued gray candidate; review complete, runtime unchanged.
