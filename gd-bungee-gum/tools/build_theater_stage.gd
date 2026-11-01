@@ -83,7 +83,7 @@ func _initialize() -> void:
 	for section in range(6):
 		var x := 4 + section * 26
 		put(signs, x, 12, 98)
-		label(SECTION_NAMES[section], Vector2(x * TILE, 192), 18, Color("fff0cc"))
+		label(SECTION_NAMES[section], Vector2(x * TILE, 192), Color("fff0cc"))
 	put(signs, 5, 18, 99)
 	put(signs, 154, 10, 100)
 	for x in [25, 35, 86, 94, 138, 147]:
@@ -99,8 +99,8 @@ func _initialize() -> void:
 	marker(markers, "Exit", Vector2(4944, 364))
 	for section in range(6):
 		marker(markers, "Section%02d" % (section + 1), Vector2((4 + section * 26) * TILE, 384))
-	label("ENTRANCE", Vector2(96, 552), 14, Color("fff0cc"))
-	label("EXIT", Vector2(4896, 284), 20, Color("fff0cc"))
+	label("ENTRANCE", Vector2(96, 552), Color("fff0cc"))
+	label("EXIT", Vector2(4896, 284), Color("fff0cc"))
 	var scene := PackedScene.new()
 	assert(scene.pack(stage) == OK)
 	assert(ResourceSaver.save(scene, STAGE_PATH) == OK)
@@ -124,11 +124,10 @@ func layer(node_name: String, tint := Color.WHITE) -> TileMapLayer:
 func put(target: TileMapLayer, x: int, y: int, id: int) -> void:
 	target.set_cell(Vector2i(x, y), 0, Vector2i(id % 16, id / 16))
 
-func label(value: String, position: Vector2, size: int, color: Color) -> void:
+func label(value: String, position: Vector2, color: Color) -> void:
 	var result := Label.new()
 	result.text = value
 	result.position = position
-	result.add_theme_font_size_override("font_size", size)
 	result.add_theme_color_override("font_color", color)
 	add(stage, result)
 

@@ -5,6 +5,7 @@
 [resource]
 resource_name = "Game Settings"
 script = ExtResource("1")
+pinning_diagnostics = false
 gum_diagnostics = false
 jump_diagnostics = false
 landing_diagnostics = false

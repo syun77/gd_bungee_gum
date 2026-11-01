@@ -8,6 +8,7 @@ const GUM_HANDS := {
 
 
 const COMPRESSION_CLEARANCE := 0.25
+const SUPPORT_FACE_TOLERANCE := 0.5
 const Settings = preload("res://scripts/game_settings.gd")
 @export var settings: Settings
 var external_velocity := Vector2.ZERO
@@ -122,7 +123,7 @@ func simulate(delta: float, jump_requested := false) -> void:
 	var before_position := global_position
 	var before_control := control_velocity
 	var before_external := external_velocity
-	move_and_slide()
+	_move_with_face_support(delta, grounded)
 	var slide_velocity := velocity
 	var collision_contacts: Array[Dictionary] = pending_impulses.duplicate()
 	collision_contacts.append_array(_slide_contacts())
@@ -130,10 +131,12 @@ func simulate(delta: float, jump_requested := false) -> void:
 		collision_contacts.append_array(_slide_contacts())
 		if is_on_floor():
 			collision_contacts.append({"normal": get_floor_normal()})
-	# 衝突面へ向かう成分を両速度から除去する。床の法線に微小な横成分がある場合、
-	# slide() により外部横速度にも微小値が生じる（実測で約0.02 px/s）。
+	# Resolve support against the contacted face, rather than the rounded capsule corner.
+	var support_normal := get_floor_normal() if is_on_floor() else up_direction
 	for contact in collision_contacts:
-		var normal: Vector2 = contact.normal
+		var normal := _support_face_normal(contact)
+		if is_on_floor() and _is_support_normal(normal):
+			support_normal = normal
 		var external_before_contact := external_velocity
 		# Gravity already resolved by terrain must not remain available as compensation.
 		if coyote_gravity_velocity.dot(normal) < 0.0:
@@ -152,7 +155,7 @@ func simulate(delta: float, jump_requested := false) -> void:
 			if not impulse.is_zero_approx():
 				pending_impulses.append({"body": body, "point": contact.point, "normal": normal,
 					"impulse": impulse, "kind": "support"})
-	_apply_ground_friction(delta)
+	_apply_ground_friction(delta, support_normal)
 	_apply_rigid_impulses(pending_impulses)
 	velocity = control_velocity + external_velocity
 	if not grounded and is_on_floor():
@@ -181,10 +184,9 @@ func _log_jump_state(event: String, incoming := Vector2.ZERO) -> void:
 		control_velocity, external_velocity, incoming, contacts, attached, coyote_remaining,
 		get_floor_normal(), get_wall_normal(), get_real_velocity(), get_position_delta()])
 
-func _apply_ground_friction(delta: float) -> void:
+func _apply_ground_friction(delta: float, normal: Vector2) -> void:
 	if not is_on_floor():
 		return
-	var normal := get_floor_normal()
 	var tangent := normal.orthogonal()
 	var speed := external_velocity.dot(tangent)
 	external_velocity += tangent * (move_toward(speed, 0.0, settings.ground_friction * delta) - speed)
@@ -383,6 +385,7 @@ func _rigid_contacts(bodies: Array[RigidBody2D]) -> Array[Dictionary]:
 		var deepest := 0.0
 		var normal := Vector2.ZERO
 		var point := Vector2.ZERO
+		var shape_index := -1
 		for owner in body.get_shape_owners():
 			if body.is_shape_owner_disabled(owner):
 				continue
@@ -396,8 +399,9 @@ func _rigid_contacts(bodies: Array[RigidBody2D]) -> Array[Dictionary]:
 						deepest = separation.length()
 						normal = separation.normalized()
 						point = pairs[i + 1]
+						shape_index = body.shape_owner_get_shape_index(owner, index)
 		if deepest > 0.001:
-			contacts.append({"body": body, "depth": deepest, "normal": normal, "point": point})
+			contacts.append({"body": body, "depth": deepest, "normal": normal, "point": point, "shape": shape_index})
 	return contacts
 
 func _is_support_normal(normal: Vector2) -> bool:
@@ -408,14 +412,79 @@ func _slide_contacts() -> Array[Dictionary]:
 	for index in get_slide_collision_count():
 		var collision := get_slide_collision(index)
 		contacts.append({"normal": collision.get_normal(), "body": collision.get_collider(),
-			"point": collision.get_position()})
+			"point": collision.get_position(), "shape": collision.get_collider_shape_index()})
 	return contacts
+
+func _move_with_face_support(delta: float, grounded: bool) -> void:
+	var supported_angle := _predicted_support_angle(delta)
+	if grounded:
+		# Do not drive gravity into a supported rounded corner each tick.
+		# External momentum is still resolved after movement for reciprocal reactions.
+		for contact in _slide_contacts():
+			var face := _support_face_normal(contact)
+			if _is_support_normal(face) and velocity.dot(face) < 0.0:
+				velocity = velocity.slide(face)
+	var configured_angle := floor_max_angle
+	floor_max_angle = supported_angle
+	move_and_slide()
+	floor_max_angle = configured_angle
+
+func _predicted_support_angle(delta: float) -> float:
+	# Only a verified walkable face may turn a steep capsule corner into floor support.
+	# Keeping the engine's floor classification lets stop-on-slope and platform carry work.
+	if velocity.dot(up_direction) > 0.0:
+		return floor_max_angle
+	var hit := KinematicCollision2D.new()
+	if not test_move(global_transform, velocity * delta, hit, safe_margin, true):
+		return floor_max_angle
+	var contact := {"normal": hit.get_normal(), "body": hit.get_collider(),
+		"shape": hit.get_collider_shape_index(), "point": hit.get_position()}
+	var normal: Vector2 = contact.normal
+	if not _is_support_normal(_support_face_normal(contact)):
+		return floor_max_angle
+	var angle := acos(clampf(normal.dot(up_direction), -1.0, 1.0))
+	return maxf(floor_max_angle, minf(angle + 0.001, PI * 0.5 - 0.001))
+
+func _support_face_normal(contact: Dictionary) -> Vector2:
+	var normal: Vector2 = contact.normal
+	var body = contact.get("body")
+	if normal.dot(up_direction) <= 0.0 or not body is CollisionObject2D or not contact.has("shape"):
+		return normal
+	var shape_index: int = contact.shape
+	var owner: int = body.shape_find_owner(shape_index)
+	if body.is_shape_owner_disabled(owner):
+		return normal
+	var transform: Transform2D = body.global_transform * body.shape_owner_get_transform(owner)
+	for index in body.shape_owner_get_shape_count(owner):
+		if body.shape_owner_get_shape_index(owner, index) != shape_index:
+			continue
+		var shape: Shape2D = body.shape_owner_get_shape(owner, index)
+		if not shape is RectangleShape2D:
+			return normal
+		var local_point: Vector2 = transform.affine_inverse() * contact.point
+		var half: Vector2 = shape.size * 0.5
+		# Resolve all four edges: a rotated box's supporting face need not be local top.
+		var edges := [
+			[Vector2(-half.x, -half.y), Vector2(half.x, -half.y)],
+			[Vector2(half.x, -half.y), Vector2(half.x, half.y)],
+			[Vector2(half.x, half.y), Vector2(-half.x, half.y)],
+			[Vector2(-half.x, half.y), Vector2(-half.x, -half.y)],
+		]
+		for edge in edges:
+			var closest := Geometry2D.get_closest_point_to_segment(local_point, edge[0], edge[1])
+			if (transform * closest).distance_to(contact.point) > SUPPORT_FACE_TOLERANCE:
+				continue
+			var tangent: Vector2 = transform.basis_xform(edge[1] - edge[0])
+			var face_normal := Vector2(tangent.y, -tangent.x).normalized() * signf(transform.determinant())
+			if _is_support_normal(face_normal):
+				return face_normal
+	return normal
 
 func _solve_rigid_contacts(delta: float, incoming: Vector2) -> Array[Dictionary]:
 	var contacts: Array[Dictionary] = []
 	for contact in _rigid_contacts(_nearby_movable_rigids()):
 		# Supporting surfaces are resolved by move_and_slide, without a separation target.
-		if not _is_support_normal(contact.normal):
+		if not _is_support_normal(_support_face_normal(contact)):
 			contacts.append(contact)
 	var original_external := external_velocity
 	for contact in contacts:

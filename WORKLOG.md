@@ -1,3 +1,49 @@
+## Completed extreme-edge landing follow-up
+- Goal/status: Fix remaining edge slip and apparent side rebound in user4.7.2 log; locally implemented and verified.
+- Findings: Static terrain normal(-.941842,-.336056) is wall-classified. Projecting external(0,278.3334) yields exactly(-88.09582,246.9001): sideways momentum from slope projection, not restitution. Old raw45deg gate excluded genuine top support; engine movement also drifted each tick when driven downward into steep rounded contact.
+- Completed: Predict collision with test_move; verified walkable rectangle face allows that movement's raw capsule normal to classify as floor, with configured angle immediately restored. Before grounded movement, remove into-face motion while retaining external momentum for actual post-move contact/reaction. Rigid proximity contacts include actual shape index and use same face resolver to distinguish support from repulsion. No shape/position/mask or tuning changes.
+- Files changed: scripts/player.gd, tools/verify_player.gd, specs/player-controller.md, AGENTS.md, WORKLOG.md. User settings/debug-font edits preserved.
+- Verification: Expanded regression fails baseline (/tmp/extreme-before.log); final42 mirrored cases pass at offsets0/3/5/7/9/9.8/9.99 and fall0/300/600 (/tmp/extreme-limit.log). Diagonal278.3334px/s descent has no horizontal external pushback or outward displacement; real walls/undersides stay nonfloor, angle restored, upward/downward load and horizontal momentum preserved. Post-refactor all7 suites PASS exit0 with --fixed-fps60: /tmp/extreme-final-{player,compression,gum,controls,gum_path,camera,theater_stage}.log, logs checked for assertion/script errors. Latest player test expansion also PASS. Known macOS CA warning only. git diff --check PASS.
+- Refactoring: Dedicated _move_with_face_support owns temporary engine configuration/restoration; geometric helper evaluated with original slope limit, shared by motion/momentum/friction/rigid-contact classification. Relevant suites rerun after cleanup.
+- Blockers: User4.7.2 unavailable locally; verified with4.5.1.
+- Next action: F5 repeat extreme ledge landing/diagonal corner descent on user4.7.2; compare updated behavior if further logs supplied.
+
+## Completed corner landing repair
+- Goal/status: Implement approved support-face correction; complete and locally verified.
+- Completed: Rectangle edge resolver uses collider shape index/transform and0.5px face tolerance for all4 edges. Momentum cleanup and friction share a per-step support normal; engine contacts/movement and capsule are unchanged. Integrated current behavior into specs/player-controller.md and removed proposal file.
+- Files changed: scripts/player.gd, tools/verify_player.gd, specs/player-controller.md, removed specs/corner-landing-fix-proposal.md, AGENTS.md, WORKLOG.md. Pre-existing debug font edits preserved.
+- Verification: New original-ledge test fails baseline (/tmp/corner-before.log); assertions can return exit0, so logs were checked explicitly. Final Godot4.5.1 all7 suites PASS exit0 with no script errors/assertions: /tmp/corner-player-refactor.log and /tmp/corner-refactor-{compression,gum,controls,gum_path,camera,theater_stage}.log.24 mirrored ledge cases cover offsets0/3/5/7 and fall0/300/600; impact drift<0.1px and support retained. Downward load/upward departure, horizontal momentum/ledge escape and rotated-face checks pass. Rigid center/edges60/60 floor, drift<=0.028px; moving platforms60/60 and0 relative drift. git diff --check PASS. Known macOS CA warning only.
+- Refactoring: Local support-normal argument avoids persistent state; shared face resolver, named tolerance and four-edge handling. Relevant suites rerun after cleanup. No movement rewrite needed: impact-frame displacement tests pass with existing engine movement.
+- Decisions: Preserve incoming horizontal momentum, upward departure, real slopes, rigid contact-point reactions and deferred application. Unsupported/nonrectangle shapes retain real contact normals.
+- Blockers: None for local implementation; native user-engine/interactive feel not tested.
+- Next action: F5 land on stage corners to confirm feel; existing physics checks cover local4.5.1 behavior.
+
+## Completed corner landing repair proposal
+- Goal/status: Develop a repair approach; proposal complete, runtime unchanged.
+- Decisions: Recommend verified support-surface response distinct from raw capsule contact normal. Horizontal top support absorbs downward relative velocity without creating lateral momentum; preserve incoming horizontal momentum, upward departure and actual slopes. Include same-tick move_and_slide displacement verification, rigid point-relative support/reaction and deferred impulse constraints. Do not blanket-replace all floor normals with UP.
+- Files changed: specs/corner-landing-fix-proposal.md, WORKLOG.md.
+- Verification: Reviewed proposal against player.gd current movement, friction, rigid support and compression architecture. Documentation-only; no runtime test rerun. Proposal includes mirrored original-support regressions and full implementation verification/refactoring sequence.
+- Blockers: None for proposal; exact support-face lookup and same-tick movement handling require implementation experiments.
+- Next action: If implementation requested, add original-corner regressions, implement support-face resolver and test collision displacement before expanding movement changes.
+
+## Completed static corner landing investigation
+- Goal/status: Identify why landing on a corner slides player off; diagnosis complete, runtime unchanged.
+- Findings: Capsule rounded bottom touching a rectangular ledge produces tilted floor normal. player.gd collision cleanup projects full falling external velocity onto that tangent, creating outward/downward retained momentum even with no input/gum. Ground friction removes only15px/s per60Hz tick (900px/s²), insufficient before contact escapes; gravity is added while grounded too. At edge+3px, normal(0.300466,-0.953793), impact external after friction(69.7571,21.97504); eventually falls. At initial fall600, outward179.2035px/s. Edge+0px remains grounded for all tested speeds. Static-only reproduction rules out rigid support/platform carry as necessary cause.
+- Verification: Godot4.5.1 temporary /tmp/corner_probe.gd, /tmp/corner-probe.log exit0: 96×40 static platform top640, feet start600, offsets0/3/5/7px, initial falling speeds0/300/600,90 real physics ticks each. All9 outside-edge cases fall; all3 exact-edge cases stay. Known macOS CA warning only. Existing corner traversal test settles on added recovery floor, so does not assert retention on original corner; floor-kick corner fixture checks only12 ticks before launch.
+- Decisions: Investigate only; no gameplay fix adopted. A repair needs explicit floor-support handling of landing/gravity versus retained intentional physical momentum, plus original-corner retention regressions; merely increasing friction changes movement globally.
+- Files changed: WORKLOG.md, AGENTS.md only. Reviewed touched documentation for consistency; no runtime refactoring required.
+- Blockers: User exact location/engine sequence not supplied; mechanism independently reproduced locally, not yet verified against their specific occurrence.
+- Next action: On repair request, add mirrored corner-retention cases with multiple fall speeds and implement floor-support momentum policy while preserving gum/air/rigid reciprocal momentum; run player/compression and related suites.
+
+## Completed debug text font replacement
+- Goal/status: Replace on-screen debug text with fonts added by user; complete.
+- Completed: Shared project Theme uses PixelMplus12 Regular24px; import uses no AA/subpixel, oversampling1. Game help/status, map preview and stage labels inherit it; adjusted HUD spacing/header height.
+- Decisions/refactoring: One shared theme, removed arbitrary stage sizes and generator size argument; no physics changes. Console output font remains owned by editor/terminal.
+- Files changed: project.godot, resources/debug_theme.tres, font import, game/map-preview/stage scenes, stage generator, specs/debug-text.md, AGENTS.md, WORKLOG.md.
+- Verification: Godot4.5.1 import and gameplay smoke exit0; temporary headless font checks PASS for both scenes/all labels, font path24px, help bounds936×87 and745×59 fit1280px and reserved vertical space. git diff --check PASS. Existing sandbox CA/Mono/editor-settings warnings only; rendered appearance not visually inspected.
+- Blockers: None.
+- Next action: F5 inspect updated debug text; F6 map preview uses same font.
+
 ## Completed scheduled block-top repair
 - Goal/status: Scheduled repair implemented and locally verified; one-time automation deleted at start. User4.7.2/native verification pending.
 - Completed: Distinguish floor support from repulsion. Non-support solver updates virtual body velocities and player momentum, commits rigid impulses after all movement. Supporting collision momentum is transferred at its real contact point after movement; no skin separation/restitution on floor normals. Default automatic platform layers preserved. Terrain queries exclude nearby rigid RIDs without mask changes on normal frames. Preserved existing pushing-run edits.

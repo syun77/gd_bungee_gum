@@ -27,6 +27,10 @@ window/size/window_width_override=1280
 window/size/window_height_override=768
 window/stretch/mode="canvas_items"
 
+[gui]
+
+theme/custom="res://resources/debug_theme.tres"
+
 [input]
 
 move_left={

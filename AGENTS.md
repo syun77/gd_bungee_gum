@@ -144,7 +144,7 @@
 
 - Detailed pinning log confirms compressed gap: wall x64,40px LightBox center96.446 (rotation~-PI/2) gives12.446px gap for20px capsule; player wall depth grows1.45→5.67px, then4 repeated wall hits exhaust max_slides4, hide floor/block and accumulate gravity despite zero displacement. Rightward input remains positive but cannot escape; gum tension0 and later rigid sleep rule out continuous gum pull as persistence cause. Behavioral fix must address compressed contact geometry, not only input/jump/tension.
 
-- Font research: Japanese UI candidates are PixelMplus12 (first trial24px), DotGothic16 and Misaki8×8; none is adopted or integrated. Official sources: github.com/itouhiro/PixelMplus, github.com/fontworks-fonts/DotGothic16, littlelimit.net/misaki.htm. Validate actual Japanese strings and pixel alignment before choosing.
+- Debug UI uses project-wide resources/debug_theme.tres: PixelMplus12 Regular24px, antialiasing/subpixel positioning OFF and oversampling1. Stage generator labels inherit it; see specs/debug-text.md. Console fonts are independent.
 
 - Compression terrain queries exclude nearby movable rigid RIDs in body_test_motion (safe_margin+0.25, max8 iterations); normal support queries do not toggle live masks. Only actual terrain correction uses a terrain-only support refresh. No rigid transform/gum edits. verify_compression.gd covers pressure/mass/rotation/gum/escape; COMPRESSION_RECOVERED is throttled30ticks.
 
@@ -154,3 +154,7 @@
 - Godot4.5.1 headless torque fixtures need a physics tick after unfreezing a RigidBody2D before checking inertia/angular impulse response. Contact lever arms use direct-state world COM offset, including automatic/custom COM, not the node's saved center_of_mass field.
 
 - Grounded run animation uses movement input OR horizontal speed>12px/s, so pushing against blocks/walls stays animated even when collision removes velocity. Air/gum/landing pose priority remains higher. Existing verify_player.gd blocked fixture covers zero-displacement run.
+
+- Corner support resolves the contacted rectangle edge (shape index/transform, <=0.5px face distance), sharing its actual face normal for momentum cleanup and friction; raw capsule normals still own engine contacts. All four edges support rotated boxes; unknown shapes retain raw normals. verify_player.gd checks 42 mirrored original-ledge landings including impact drift, upward departure/downward load and retained horizontal momentum.
+
+- Extreme corner normals can be wall-classified even on a walkable rectangular top. Player predicts that geometric support with test_move, temporarily widens floor classification only during move_and_slide, then restores the configured angle. Supported motion removes into-face velocity before movement; external momentum remains for post-move rigid reaction. Rigid proximity contacts share face classification via shape indices. verify_player covers offsets9/9.8px, diagonal pushback, true walls/undersides and restored slope limit.
