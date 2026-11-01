@@ -45,7 +45,7 @@ func verify() -> void:
 	player = load("res://scenes/characters/player.tscn").instantiate()
 	world.add_child(player)
 	gum = load("res://scripts/gum_connection.gd").new()
-	gum.settings = load("res://resources/game_settings.tres")
+	gum.settings = load("res://resources/game_settings.tres").duplicate()
 	gum.player = player
 	world.add_child(gum)
 	var wall := body_at(Vector2(220, -34))
@@ -56,14 +56,35 @@ func verify() -> void:
 	check(gum.tension == 0.0, "Fresh attachment must not exert force")
 	check(gum.mode == gum.Mode.LOOSEN, "Lab force isolation selected fixed-length mode")
 	gum.mode = gum.Mode.CONTRACT
-	gum.toggle_mode()
+	gum.relax()
 	var loose_length: float = gum.rest_length
 	player.position.x = -80.0
 	gum.step(1.0 / 60.0)
 	check(gum.mode == gum.Mode.LOOSEN and gum.rest_length == loose_length and gum.tension > 0.0, "Fixed-length loosen regains spring support when stretched")
-	gum.toggle_mode()
-	check(gum.mode == gum.Mode.CONTRACT, "Toggle resumes contract even with nonzero tension")
+	gum.contract()
+	check(gum.mode == gum.Mode.CONTRACT, "Explicit contract resumes even with nonzero tension")
 	player.position.x = 0.0
+	gum.relax()
+	for delta in [1.0 / 30.0, 1.0 / 60.0, 1.0 / 120.0]:
+		gum.rest_length = 100.0
+		gum.step(delta, 1.0)
+		check(is_equal_approx(gum.rest_length, 100.0 + gum.settings.manual_extension_speed * delta), "Manual extension follows delta")
+		check(gum.mode == gum.Mode.LOOSEN and gum.tension > 0.0, "Relaxed extension preserves spring tension")
+		gum.rest_length = 100.0
+		gum.step(delta, -1.0)
+		check(is_equal_approx(gum.rest_length, 100.0 - gum.settings.manual_shortening_speed * delta) and gum.mode == gum.Mode.LOOSEN, "Manual shortening keeps relaxed mode")
+	gum.rest_length = gum.manual_length_limit() - 1.0
+	gum.step(0.1, 1.0)
+	check(gum.rest_length == gum.manual_length_limit() and gum.rest_length < gum.settings.maximum_length, "Manual extension reserves break margin")
+	gum.rest_length = gum.settings.maximum_length - 1.0
+	gum.step(0.1, 1.0)
+	check(gum.rest_length == gum.settings.maximum_length - 1.0, "Above-cap attachment never snaps shorter on extension")
+	gum.rest_length = 40.0
+	gum.step(1.0, -1.0)
+	check(gum.rest_length == gum.settings.minimum_length, "Manual shortening respects lower bound")
+	gum.rest_length = 10.0
+	gum.step(0.1, -1.0)
+	check(gum.rest_length <= 10.0, "Short attachment never extends on shortening")
 	gum.rest_length = 300.0
 	player.velocity = Vector2(-500, 0)
 	step_lab()
@@ -92,8 +113,11 @@ func verify() -> void:
 		total_force += force
 	check(total_force.length() < 0.001, "Wrapped forces balance including terrain reaction")
 	gum.mode = gum.Mode.CONTRACT
-	gum.toggle_mode()
-	check(absf(gum.rest_length - gum.path.length - gum.settings.loosen_margin) < 0.01, "Wrapped loosen uses total path plus margin")
+	var before_relax: float = gum.rest_length
+	gum.relax()
+	check(gum.rest_length == before_relax, "Wrapped relax preserves natural length and tension")
+	gum.step(0.1, 1.0)
+	check(is_equal_approx(gum.rest_length, before_relax + gum.settings.manual_extension_speed * 0.1), "Wrapped extension adjusts total natural length")
 	var wrapped_velocity: Vector2 = player.external_velocity
 	gum.detach()
 	check(player.external_velocity == wrapped_velocity and gum.path.pivots.is_empty(), "Wrapped detach clears pivots and preserves momentum")
@@ -191,6 +215,11 @@ func verify() -> void:
 	world.free()
 	var game: Node2D = load("res://scenes/game.tscn").instantiate()
 	root.add_child(game)
+	# Saved-map ceiling/wrapping fixture intentionally uses a 900px range.
+	game.settings = game.settings.duplicate()
+	game.settings.maximum_length = 900.0
+	game.gum.settings = game.settings
+	game.player.settings = game.settings
 	await ticks(40)
 	var game_gum: Node2D = game.get_node("Gum")
 	var game_player: CharacterBody2D = game.get_node("Player")

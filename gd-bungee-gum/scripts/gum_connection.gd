@@ -90,19 +90,22 @@ func validate_connection() -> void:
 			detach("TARGET LOST")
 		return
 
-func toggle_mode() -> void:
-	if not connected():
-		return
-	if mode == Mode.CONTRACT:
+func relax() -> void:
+	if connected():
 		mode = Mode.LOOSEN
-		if not path.update(origin(), endpoint(), get_tree().root, settings, false):
-			detach(path.failure)
-			return
-		rest_length = minf(settings.maximum_length, maxf(rest_length, path.length + settings.loosen_margin))
-	else:
+
+func contract() -> void:
+	if connected():
 		mode = Mode.CONTRACT
 
-func step(delta: float) -> void:
+func manual_length_limit() -> float:
+	return clampf(settings.maximum_length - settings.manual_length_margin, 0.0, settings.maximum_length)
+
+func _shorten(speed: float, delta: float) -> void:
+	# A short-range attachment must never lengthen in response to shortening.
+	rest_length = maxf(minf(rest_length, settings.minimum_length), rest_length - speed * delta)
+
+func step(delta: float, length_input := 0.0) -> void:
 	player_force = Vector2.ZERO
 	target_force = Vector2.ZERO
 	tension = 0.0
@@ -121,8 +124,12 @@ func step(delta: float) -> void:
 		return
 	var distance: float = path.length
 	if mode == Mode.CONTRACT:
-		# A shot closer than minimum_length must not lengthen on contraction.
-		rest_length = maxf(minf(rest_length, settings.minimum_length), rest_length - settings.contraction_speed * delta)
+		_shorten(settings.contraction_speed, delta)
+	elif length_input > 0.0:
+		# Above-cap attachments hold their length rather than snapping shorter.
+		rest_length = maxf(rest_length, minf(manual_length_limit(), rest_length + settings.manual_extension_speed * delta))
+	elif length_input < 0.0:
+		_shorten(settings.manual_shortening_speed, delta)
 	if distance <= rest_length or distance < 0.01:
 		return
 	var direction: Vector2 = path.start_direction()

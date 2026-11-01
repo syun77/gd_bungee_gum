@@ -23,6 +23,9 @@ func verify() -> void:
 	# Isolate camera timing without changing the shared resource on disk.
 	game.settings = game.settings.duplicate()
 	var settings = game.settings
+	game.gum.settings = settings
+	settings.maximum_length = 900.0
+	settings.camera_hold_delay = 0.2
 	check(game.camera.zoom.is_equal_approx(Vector2.ONE * settings.camera_normal_zoom), "Spawn uses close normal zoom")
 	settings.camera_zoom_response = 0.0
 	key(true)
@@ -38,6 +41,10 @@ func verify() -> void:
 	game.gum.path.length = settings.camera_gum_zoom_start
 	game._update_camera(0.01)
 	check(is_equal_approx(game.camera.zoom.x, settings.camera_normal_zoom), "Short connection stays close")
+	key(true)
+	game._update_camera(1.0)
+	check(is_equal_approx(game.camera.zoom.x, settings.camera_normal_zoom) and game.camera_hold_time == 0.0, "Attached X never widens view or accumulates hold")
+	key(false)
 	game.gum.path.length = (settings.camera_gum_zoom_start + settings.camera_gum_zoom_end) * 0.5
 	game._update_camera(0.01)
 	check(is_equal_approx(game.camera.zoom.x, (settings.camera_normal_zoom + settings.camera_long_gum_zoom) * 0.5), "Path midpoint interpolates zoom")
@@ -49,7 +56,13 @@ func verify() -> void:
 	settings.camera_gum_zoom_end = settings.camera_gum_zoom_start
 	game._update_camera(0.01)
 	check(is_equal_approx(game.camera.zoom.x, settings.camera_long_gum_zoom), "Equal thresholds remain finite")
+	key(true)
 	game.gum.detach()
+	game._update_camera(0.01)
+	check(game.camera_hold_time == 0.0 and is_equal_approx(game.camera.zoom.x, settings.camera_normal_zoom), "Detach resets held X timing")
+	key(false)
+	# Start wide to measure the smooth return independently of hold timing.
+	game.camera.zoom = Vector2.ONE * settings.camera_long_gum_zoom
 	settings.camera_zoom_response = 5.0
 	var initial: float = game.camera.zoom.x
 	game._update_camera(0.1)

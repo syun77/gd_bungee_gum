@@ -1,3 +1,14 @@
+## Completed manual gum controls implementation
+- Goal/status: Implement approved Up/Down/X controls and unattached-only X camera zoom; complete; final refactor verification passed.
+- Completed: Explicit relax/contract, continuous natural-length adjustment, per-key firing release gates, no-op attached X release consumption, camera timing reset, shared tuning, multiline HUD and authoritative specs. Removed superseded proposal file and toggle/margin API. Fixed ceiling fixture range by duplicating settings explicitly.
+- Decisions: Extension180 px/s, shortening90 px/s, automatic180 px/s, margin40 px (cap360/break400). Down wins over X; Up+Down relaxes/holds. Above-cap attachments never snap down to cap. Physical tension is preserved.
+- Files changed: game/gum_connection/game_settings scripts, game scene, verify_controls/gum/camera, keyboard-controls/game-settings/prototype/direction/stage-action/implementation/wrapping/player-controller specs, AGENTS.md, WORKLOG.md.
+- Verification: Godot4.5.1 all six suites PASS: controls (/tmp/new-controls.log), gum/camera/gum_path/player/theater_stage (/tmp/new-verify_*.log). Includes real physical keys, independent firing gates, mode priority, dt/rate/bounds, wrapped total length and reciprocal rigid forces. git diff --check PASS. Known unrelated macOS CA certificate warning only.
+- Refactoring: Reviewed full input→length→force→camera flow, shared shorten helper, explicit mode commands, clearer per-tick input naming; avoided duplicate authoritative design docs. HUD length help split onto separate line.
+- Blockers: None. Native visual/play feel not checked.
+- Final verification: Refactored controls/gum/camera suites all PASS exit0 (/tmp/final-controls.log, /tmp/final-gum.log, /tmp/final-camera.log); final diff and git diff --check PASS.
+- Next action: F5 playtest Down extension, Up precision shortening, X automatic contraction; tune manual rates/margin in resources/game_settings.tres if needed.
+
 ## Completed vertical floor/coyote kick implementation
 - Goal/status: Apply approved world-up floor/coyote kicks and bounded vertical gravity compensation; complete.
 - Completed: Removed saved floor-normal launch state. Floor/coyote add world-up kick; coyote correction uses only downward external/gravity Y with minimum cap. Collision-projected gravity tracker, contact/friction normals and wall/ceiling priority retained. Specs and durable guidance aligned.

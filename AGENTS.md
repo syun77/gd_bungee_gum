@@ -47,10 +47,10 @@
 - If later evidence invalidates an entry, update or remove it immediately instead of appending contradictory guidance.
 
 - Gum fixed-step owner is `scripts/game.gd`: input → `Gum.step` → `Player.simulate` → camera/HUD. Player has no independent physics callback. Tune `resources/game_settings.tres`; attachable terrain/props are physics layers 1/4, player is layer 2. Keep reciprocal forces and collision momentum cleanup together.
-- Gum controls: hold X + arrows to aim in eight directions, release X to fire and auto-contract; attached X toggles fixed-length loosen/contract; Z detaches then contact-kicks (no airborne impulse). `tools/verify_controls.gd` exercises physical Z/X gestures and cancellation. `tools/verify_gum.gd` covers real ray queries, rigid force/mass response and live Game integration. Input bindings use device -1 (any device); editor-saved device 16 bindings do not match Godot 4.5 synthetic keyboard events.
+- Gum controls: hold X + arrows to aim in eight directions, release X to fire and auto-contract; attached Down relaxes/extends, Up manually shortens only while relaxed, X starts automatic contraction (no-op while already contracting); Z detaches then contact-kicks (no airborne impulse). `tools/verify_controls.gd` exercises physical Z/X gestures and cancellation. `tools/verify_gum.gd` covers real ray queries, rigid force/mass response and live Game integration. Input bindings use device -1 (any device); editor-saved device 16 bindings do not match Godot 4.5 synthetic keyboard events.
 - Assign the gum settings Resource through the scene's exported property; preloading its instance as a typed script property's default caused uninitialized Resource script values under Godot 4.5.1.
 
-- `specs/keyboard-controls.md` is the implemented Z/X control authority. Keep input gesture state separate from physical slack: a toggle/canceled gesture waits for X release and never fires after connection loss. Loosen extends rest length once by the configured margin and then fixes it.
+- `specs/keyboard-controls.md` is the implemented Z/X control authority. Keep input gesture state separate from physical slack: an attached/canceled gesture waits for X release and never fires after connection loss. Firing-held Up/Down each wait for release before length control. Relaxed mode holds natural length when manual input stops.
 
 ## Persistent progress and session recovery
 
@@ -96,7 +96,7 @@
 - Player input velocity stays horizontal, including after collision projection; external velocity retains physical sliding/momentum. verify_player.gd covers both high-speed corner directions on actual physics ticks and stable landing.
 - Landing Diagnostics defaults ON: [LandingDiagnostic] logs CONTROL_COLLISION_RESOLVED / HIGH_SPEED_LANDING (30-tick detail throttle), plus persistent unexpected control-Y diagnostics; includes incoming/control/external velocity, discarded Y, normals and gum state. See specs/game-settings.md.
 
-- Runtime camera zoom is owned by Game._update_camera after Player.simulate; Camera Zoom settings in game_settings.tres control normal/held-X/path-length scales, hold delay, distance thresholds and exponential response. Uses wrapped total path length; physical X hold is independent of gesture state. Verify with tools/verify_camera.gd.
+- Runtime camera zoom is owned by Game._update_camera after Player.simulate; Camera Zoom settings in game_settings.tres control normal/held-X/path-length scales, hold delay, distance thresholds and exponential response. Uses wrapped total path length; physical X hold zoom applies only while unattached, independent of gesture state; connection transitions reset hold time. Verify with tools/verify_camera.gd.
 
 - Jump Diagnostics defaults ON: `[JumpDiagnostic]` logs each Z request (ACCEPTED / REJECTED_NO_CONTACT / REJECTED_NOT_REARMED), AFTER_MOVE and pre-reset REARMED state. Contact eligibility resets on floor contact or a fully non-contact tick; request contact uses previous move_and_slide results. Toggle in shared Diagnostics settings; see specs/game-settings.md.
 
@@ -119,3 +119,7 @@
 
 
 - Floor and coyote kicks add world-up velocity; wall/ceiling retain contact kicks. Contact normals still own collision/friction, never floor launch direction. verify_player.gd includes real left/right tilted corner floor and delayed-coyote launches.
+
+
+
+- Manual gum tuning: extension180 px/s, shortening90 px/s, break margin40 px (manual cap360 at max400). Down immediately relaxes without clearing tension; existing above-cap natural length never snaps shorter on extension. Down wins over X, Up+Down relaxes/holds; X attached always consumes its release. Ceiling input/physics fixtures duplicate settings with max900 explicitly; saved gameplay settings stay400.

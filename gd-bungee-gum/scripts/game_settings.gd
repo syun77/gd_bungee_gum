@@ -22,7 +22,11 @@ extends Resource
 @export_range(1.0, 900.0) var minimum_length := 36.0
 @export_range(1.0, 3000.0) var maximum_length := 400.0
 @export_range(1.0, 10000.0) var maximum_tension := 2800.0
-@export_range(0.0, 200.0) var loosen_margin := 32.0
+## Manual relaxed-mode length changes (px/s).
+@export_range(1.0, 1000.0) var manual_extension_speed := 180.0
+@export_range(1.0, 1000.0) var manual_shortening_speed := 90.0
+## Reserve between manual natural-length cap and path break limit (px).
+@export_range(1.0, 500.0) var manual_length_margin := 40.0
 
 @export_group("Gum Wrapping")
 @export_range(0.25, 4.0) var wrap_clearance := 1.0
@@ -41,7 +45,7 @@ extends Resource
 @export_range(1.0, 10.0) var aim_reticle_width := 1.5
 
 @export_group("Gum Appearance")
-## Fixed-length loosen mode, independent of tension.
+## Relaxed manual-length mode, independent of tension.
 @export var gum_loosen_color := Color("#B8A6AD")
 @export var gum_slack_color := Color(1.0, 0.52, 0.8, 1.0)
 @export var gum_taut_color := Color(1.0, 0.2, 0.28, 1.0)
