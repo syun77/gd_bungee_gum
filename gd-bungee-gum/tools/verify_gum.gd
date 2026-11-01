@@ -242,6 +242,55 @@ func verify() -> void:
 	check(not gum.connected() and gum.release_reason == "UNSUPPORTED OBSTACLE", "Dynamic obstruction has explicit safe release")
 	crossing.free()
 	wall.free()
+	# A rotating target may hide its local adhesion point behind its own silhouette.
+	var rotating_target := body_at(Vector2(220, -34), true) as RigidBody2D
+	rotating_target.freeze = true
+	await ticks(2)
+	check(gum.attach_at(rotating_target.position), "Attach rotating-target regression fixture")
+	rotating_target.rotation = PI
+	await ticks(2)
+	var self_hit: Dictionary = gum._cast_segment(gum.origin(), gum.endpoint().move_toward(gum.origin(), 0.1))
+	check(not self_hit.is_empty() and self_hit.collider == rotating_target, "Rotated attachment ray crosses target before endpoint")
+	gum.step(1.0 / 60.0)
+	check(gum.connected() and gum.tension > 0.0, "Rotating target self-intersection preserves contracting connection")
+	check((gum.player_force + gum.target_force).length() < 0.001, "Rotated target retains reciprocal force")
+	# The target must not mask a separate obstacle, even on this same ray.
+	crossing = body_at(Vector2(100, -34), true)
+	crossing.freeze = true
+	await ticks(2)
+	gum.step(1.0 / 60.0)
+	check(not gum.connected() and gum.release_reason == "UNSUPPORTED OBSTACLE", "Separate dynamic blocker still releases rotated-target connection")
+	check(gum.diagnostic_obstruction.get("is_target", true) == false, "Release identifies separate blocker rather than attached target")
+	crossing.free()
+	rotating_target.free()
+	# Replay floor-side rotation from the reported PATH INVALID release.
+	var contact_floor := body_at(Vector2(200, 660))
+	(contact_floor.get_child(0).shape as RectangleShape2D).size = Vector2(600, 40)
+	var contact_box := body_at(Vector2(272.9085, 620.3831), true) as RigidBody2D
+	contact_box.freeze = true
+	player.position = Vector2(173.3192, 639.9338)
+	await ticks(2)
+	check(gum.attach_at(contact_box.position), "Attach floor-contact target")
+	gum.target_local_point = Vector2(-19.99997, -14.36584)
+	contact_box.rotation = -1.57764959335327
+	await ticks(2)
+	var physical_endpoint: Vector2 = gum.endpoint()
+	gum.step(1.0 / 60.0)
+	check(gum.connected() and gum.tension > 0.0, "Subpixel floor penetration retains contracting connection")
+	check(gum.endpoint().is_equal_approx(physical_endpoint), "Contact correction preserves physical adhesion point")
+	check(gum.path.points[-1].y < 640.0, "Route endpoint stays outside floor")
+	check((gum.player_force + gum.target_force).length() < 0.001, "Contact correction retains reciprocal force")
+	contact_box.position.y += 0.6
+	await ticks(2)
+	gum.step(1.0 / 60.0)
+	check(gum.connected(), "One-pixel floor penetration remains connected")
+	contact_box.position.y += 4.0
+	await ticks(2)
+	gum.step(1.0 / 60.0)
+	check(not gum.connected() and gum.release_reason == "PATH INVALID", "Deep penetration still rejects invalid route")
+	contact_box.free()
+	contact_floor.free()
+	player.position = Vector2.ZERO
 	var box := body_at(Vector2(220, -34), true) as RigidBody2D
 	await ticks(2)
 	check(gum.attach_at(box.position), "Ray must attach to dynamic box")

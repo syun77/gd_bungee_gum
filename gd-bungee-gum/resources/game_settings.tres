@@ -5,5 +5,6 @@
 [resource]
 resource_name = "Game Settings"
 script = ExtResource("1")
-attachment_range = 240.0
-gum_shot_speed = 1200.0
+gum_diagnostics = false
+jump_diagnostics = false
+landing_diagnostics = false

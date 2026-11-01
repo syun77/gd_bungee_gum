@@ -21,7 +21,7 @@ extends Resource
 @export_range(1.0, 1000.0) var contraction_speed := 180.0
 @export_range(1.0, 900.0) var minimum_length := 36.0
 ## Maximum straight-line firing distance (px), independent of connected path length.
-@export_range(1.0, 3000.0) var attachment_range := 400.0
+@export_range(1.0, 3000.0) var attachment_range := 240.0
 ## Maximum connected path length, including wrapping (px).
 @export_range(1.0, 3000.0) var maximum_length := 400.0
 @export_range(1.0, 10000.0) var maximum_tension := 2800.0
@@ -32,7 +32,7 @@ extends Resource
 @export_range(1.0, 500.0) var manual_length_margin := 240.0
 
 @export_group("Gum Flight")
-@export_range(1.0, 10000.0) var gum_shot_speed := 2400.0
+@export_range(1.0, 10000.0) var gum_shot_speed := 1200.0
 @export_range(1.0, 10000.0) var gum_return_speed := 3200.0
 @export_range(0.01, 2.0) var gum_return_max_duration := 0.25
 
@@ -84,6 +84,10 @@ extends Resource
 @export var restart_y := 900.0
 
 @export_group("Diagnostics")
+## Log rigid contacts or stalled penetration, movement, nearby bodies and gum force.
+@export var pinning_diagnostics := true
+## Log gum releases with endpoint physics, obstruction details and eight preceding steps.
+@export var gum_diagnostics := true
 ## Log contact kick-off requests, rejection reasons and rearming.
 @export var jump_diagnostics := true
 ## Log unexpected vertical control velocity and subsequent floor transitions.

@@ -1,3 +1,91 @@
+## Completed pixel font research
+- Goal/status: Find Japanese pixel fonts suited to current restaurant game; research complete, no font installed or selected.
+- Completed: Checked official PixelMplus, Misaki and DotGothic16 sources/licenses; confirmed current viewport1280×768.
+- Decision: Recommend PixelMplus12 for first UI trial at24px; DotGothic16 for denser Japanese text; Misaki for deliberately tiny retro labels. Recommendations remain untested in rendered gameplay.
+- Files changed: WORKLOG.md, AGENTS.md; runtime untouched.
+- Verification: Official source review; documentation reviewed for clear recommendation vs adoption. No runtime tests required.
+- Blockers: None. Existing compression repair remains unfinished and unchanged.
+- Next action: If implementation requested, compare candidate fonts with actual HUD/menu strings at integer scale before selecting.
+
+## Completed player compression repair
+- Goal/status: Repair wall/block compression and restore escape; complete, native user-engine verification pending.
+- Completed: Terrain-only physics-server depenetration near unfrozen rigid bodies,0.25px recovery clearance, equal/opposite mass-scaled contact impulse without rigid transform changes; refresh support contacts and combine original/recovered normals to stop gravity accumulation. Diagnostic recovery log throttled30ticks.
+- Decisions: CharacterBody controller/gum force law unchanged. Recovery uses physics-server zero-motion travel (max8 iterations), not a fixed relocation. Static reaction removes inward external momentum; frozen bodies stay frozen. Normal movement keeps its original single collision cleanup when no correction occurs.
+- Files changed: scripts/player.gd, tools/verify_compression.gd(+UID), specs/player-controller.md, AGENTS.md, WORKLOG.md. Earlier diagnostics/gum fixes and other workspace changes preserved.
+- Verification: Pre-fix real dynamic pressure fixture failed terrain/floor/escape checks. Final Godot4.5.1 all7 suites PASS exit0: compression/player/gum/controls/gum_path/camera/theater_stage (/tmp/pin-repair-final-*.log). Compression covers left/right, light/heavy/rotation, real gum tension with retained connection, pre-existing logged-size overlap, bounded gravity and kick escape. git diff --check PASS. Existing macOS CA warning only. Godot4.7.2/native feel not tested.
+- Refactoring: Original normals captured once; refreshed normals appended only on corrected frames, avoiding changed ordinary collision projection. Reused collider transform, documented recovery/contact impulse, isolated test cases and bounded/throttled correction logging; full suites rerun after cleanup.
+- Blockers: None.
+- Next action: F5 pull block into wall-side player on user engine, relax/detach and Z to confirm escape; retain PinningDiagnostic for further cases.
+
+## Completed pinning log analysis and capture correction
+- Goal/status: Analyze supplied wall/block trapped log and close diagnostic blind spot; diagnostics updated and verified, physics unchanged.
+- Findings: Supplied64-line log has no PinningDiagnostic (could be omitted, disabled or capture condition missed). At tick336 wall depth5.2837px repeated4 times, floor=false, real motion~0.002px/tick; slack tension0 and manual detach do not release trap. Z accepted as +400 horizontal wall kick then denied rearm. Downward external speed grows1395→8381 while actual motion stays near zero. Block center96.97 with left face76.97 vs wall64 leaves~12.97px for20px player; geometric compression is consistent with overlap, but onset/nearby query not present to prove full causal sequence.
+- Decisions: Extend capture to static-only stalled penetration (depth>=1px, speed>=10, displacement<0.1px/tick). Do not change physics or choose a recovery fix from incomplete onset evidence.
+- Completed/files: player.gd diagnostic predicate/fields, game_settings comment, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Verification: Godot4.5.1 player/controls suites PASS exit0 (/tmp/pinning-static-{player,controls}.log), git diff --check PASS. New stalled-static trigger not yet exercised by user reproduction. Known macOS CA warning only.
+- Refactoring: Reuse same contact lifecycle/history/nearby query for both triggers; no duplicate logger or new state.
+- Blockers: Need onset/nearby details to distinguish exact recovery failure and block pushing behavior on user engine.
+- Next action: Run verification, report evidenced failure chain and request new complete Output with strengthened PinningDiagnostic.
+
+## Completed player pinning diagnostics
+- Goal/status: Log player trapped between wall and pulled block; complete; physics unchanged.
+- Decisions: Default-on diagnostics watch rigid slide contacts, capture8 prior steps, transitions/input changes and30-tick summaries; include nearby collider query to expose contacts missing from slide results.
+- Completed: Shared Pinning Diagnostics toggle,8-step pre-event history, rigid contact transitions/input changes/30-tick summary, pre/post cleanup motion/contacts/gum state, event-only2px nearby query; documented current semantics. Added real narrow-gap player fixture verifying blocked input/displacement, bounded history, nearby candidates and disable behavior.
+- Files changed: player.gd, game_settings.gd, verify_player.gd, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Verification: Godot4.5.1 player/controls/gum suites PASS exit0 (/tmp/pinning-player.log, /tmp/pinning-final-{controls,gum}.log); real fixture logged attempted26.67px/s vs zero displacement and nearby wall/block/floor. History cap/disable checks passed. git diff --check PASS. Existing macOS CA warning only. Gameplay cause awaits supplied reproduction log.
+- Refactoring: Reviewed full touched move pipeline and logger, kept captures read-only and named by timing; shared collider snapshot helper and input dictionary avoid duplicate field handling, nearby query runs only on log events. No further code change needed.
+- Blockers: None; gameplay pinning cause not yet established.
+- Next action: F5 reproduce pinning, try left/right/Z and gum relaxation, supply [PinningDiagnostic] plus [JumpDiagnostic]/[GumDiagnostic] output.
+
+## Completed floor-contact endpoint fix
+- Goal/status: Resolve remaining rotating block releases; bounded terrain endpoint correction complete.
+- Findings: New logs ticks331/422 PATH INVALID; actual endpoint y640.481/641.097 penetrates floor y640 during rigid contact, unlike prior self-obstruction.
+- Decisions: Only rigid target route endpoint may project out of static union within2px; actual local adhesion point/torque position unchanged; deeper penetration remains invalid.
+- Files changed: gum_connection/gum_path/gum_terrain_geometry scripts, verify_gum/verify_gum_path, specs/gum-wrapping.md, AGENTS.md, WORKLOG.md.
+- Verification: Initial gum replay PASS for logged floor penetration, subsequent1.1px contact, deep-penetration release, unchanged actual endpoint and reciprocal force. Final Godot4.5.1 gum/path/controls/player/camera/map suites PASS exit0 (/tmp/contact-final-*.log), git diff --check PASS; known macOS CA warning only. User Godot4.7.2/native feel untested.
+- Refactoring: Projection owned by GumPath after cached geometry refresh, preserving geometry-change pivot cleanup; common geometry helper checks exposed union exits. No force/torque repositioning.
+- Blockers: None.
+- User verification: Rotating-block unintended release is resolved in gameplay.
+- Next action: Investigate separate player pinning issue using diagnostics above.
+
+## Completed target self-obstruction fix
+- Goal/status: Prevent attached rotating blocks from causing self-obstruction releases; complete.
+- Decisions: Exclude attached target RID from dynamic route rays; separate dynamic blockers still release, static target terrain wrapping unchanged.
+- Completed: Added rotated far-side adhesion regression and separate-blocker check. Pre-fix suite failed self-intersection retention/obstruction identity; fixed suite passed. Updated query and current specs/AGENTS.
+- Files changed: gum_connection.gd, verify_gum.gd, gum-wrapping/prototype specs, AGENTS.md, WORKLOG.md; existing tuning/diagnostics preserved.
+- Verification: Godot4.5.1 final gum/controls/path suites PASS exit0 (/tmp/self-obstruction-{final,controls,gum_path}.log); regression fails before fix and passes after. git diff --check PASS. Known macOS certificate warning only. User engine4.7.2/native gameplay not tested.
+- Refactoring: Reviewed full dynamic query; removed obsolete endpoint-shortening workaround now that target is explicitly excluded, and compute exclusion list once per path query. Final gum rerun PASS after cleanup.
+- Blockers: None.
+- Next action: F5 verify rotating block pull on user engine; diagnostics retained for further investigation.
+
+## Completed saved tuning baseline
+- Goal/status: Finalize game_settings.tres tuning; complete.
+- Completed: Adopted saved attachment_range240 and gum_shot_speed1200 as script defaults and specification baseline. Resource already committed in 9e081d5; no resource edit needed.
+- Files changed: scripts/game_settings.gd, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Decisions: Preserve existing diagnostic changes; do not bundle them into a settings commit.
+- Verification: Reviewed saved values and affected defaults/docs; Godot4.5.1 verify_controls.gd PASS exit0 (/tmp/final-tuning-controls.log); git diff --check PASS. Reviewed touched defaults/docs for consistency; no extra refactor needed. Existing macOS CA warning only.
+- Blockers: None.
+- Next action: F5 playtest finalized tuning.
+
+## Completed block-release log analysis
+- Goal/status: Analyze supplied gameplay release logs; cause identified, runtime unchanged.
+- Findings: Unexpected detach ticks114/214/305 all UNSUPPORTED OBSTACLE with collider=target LightBox and is_target=true; path_failure empty, zero pivots, lengths86.43/74.57/53.29 below max400. Rotating attached block intersects its own connection ray before attachment endpoint. Tick531 RELEASED coincides with Z kick and is expected.
+- Decision: Immediate cause is target self-obstruction in _dynamic_obstruction, which excludes only player RID. Rotation brings the fixed local attachment point behind the near silhouette; logs do not establish an engine transform-sync defect. Proposed fix is excluding attached target from dynamic obstruction while retaining other-body checks; pending implementation request.
+- Files changed: WORKLOG.md, AGENTS.md only.
+- Verification: Read complete supplied log and current ray query; no runtime tests required for analysis-only task.
+- Blockers: None for diagnosis; fix not applied.
+- Next action: On fix request, add rotating-target regression plus independent-blocker retention check, update query/specs and rerun gum/controls/path suites.
+
+## Completed gum block-release diagnostics
+- Goal/status: Add logs for unexpected block-pulling disconnections; complete; reported gameplay occurrence awaits reproduction.
+- Completed: Toggleable default-on release snapshot, eight pre-reset step snapshots, dynamic ray hit identity/segment details. Physics rules unchanged.
+- Decisions: Include manual/outbound releases for reason comparison; detect whether obstruction is attached target without changing collision filtering.
+- Files changed: gum_connection.gd, game_settings.gd, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Verification: Godot4.5.1 gum/controls/path suites PASS exit0 (/tmp/gum-diagnostics-{final,controls,path}.log); logged release snapshots/history and rigid state observed. git diff --check PASS. Known unrelated macOS certificate warning only.
+- Refactoring: Reviewed snapshot lifecycle; clear history on new shots/attachments, print history as separate searchable lines, preserve original ray query and force/reset ordering.
+- Blockers: None; actual user-reported occurrence not reproduced yet.
+- Next action: F5 reproduce block-pulling release and inspect [GumDiagnostic] DETACH/HISTORY in Godot Output, especially reason and obstruction.is_target.
+
 ## Completed constant faint guide
 - Goal/status: Keep prediction line and reticle faint regardless of arrow input; complete.
 - Completed: Unconditional guide opacity multiplier0.3, renamed setting aim_guide_opacity, removed obsolete cross-node aim_active flag; updated direction regression assertions, current specs and AGENTS.

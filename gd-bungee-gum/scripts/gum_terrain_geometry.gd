@@ -135,3 +135,21 @@ func _contains(point: Vector2, polygon: PackedVector2Array) -> bool:
 		if float(edge.x) * float(relative.y) - float(edge.y) * float(relative.x) < -0.00001:
 			return false
 	return true
+
+func contact_endpoint(point: Vector2, tolerance: float) -> Vector2:
+	if not inside(point):
+		return point
+	var result := point
+	var nearest := tolerance
+	# Only exposed union edges can resolve contact; internal seams are not exits.
+	for polygon in polygons:
+		for i in polygon.size():
+			var a := polygon[i]
+			var b := polygon[(i + 1) % polygon.size()]
+			var outward := Vector2((b-a).y, -(b-a).x).normalized()
+			var candidate := Geometry2D.get_closest_point_to_segment(point, a, b) + outward * 0.01
+			var distance := point.distance_to(candidate)
+			if distance <= nearest and not inside(candidate):
+				nearest = distance
+				result = candidate
+	return result

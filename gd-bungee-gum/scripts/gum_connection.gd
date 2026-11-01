@@ -1,6 +1,7 @@
 extends Node2D
 ## Rules own the connection; physics resolves both endpoints' motion.
 const Settings = preload("res://scripts/game_settings.gd")
+const RIGID_CONTACT_TOLERANCE := 2.0
 const GumPath = preload("res://scripts/gum_path.gd")
 var path = GumPath.new()
 var terrain_forces := PackedVector2Array()
@@ -25,6 +26,8 @@ var aim_point := Vector2.ZERO
 var aim_valid := false
 var release_reason := "READY"
 var mode := Mode.NONE
+var diagnostic_history: Array[Dictionary] = []
+var diagnostic_obstruction: Dictionary = {}
 
 func origin() -> Vector2:
 	return player.global_position + Vector2(0, -34)
@@ -66,6 +69,8 @@ func attach_at(point: Vector2) -> bool:
 
 func _attach_hit(hit: Dictionary) -> void:
 	state = State.ATTACHED
+	diagnostic_history.clear()
+	diagnostic_obstruction.clear()
 	return_points.clear()
 	last_display.clear()
 	target = hit.collider
@@ -84,6 +89,8 @@ func fire(direction: Vector2) -> void:
 	if connected() or state == State.OUTBOUND or direction.is_zero_approx():
 		return
 	cancel_return()
+	diagnostic_history.clear()
+	diagnostic_obstruction.clear()
 	state = State.OUTBOUND
 	tip = origin()
 	shot_direction = direction.normalized()
@@ -138,6 +145,10 @@ func _step_return(delta: float) -> void:
 		tip = return_points[-1]
 
 func detach(reason := "RELEASED") -> void:
+	if settings.gum_diagnostics and state in [State.ATTACHED, State.OUTBOUND]:
+		print("[GumDiagnostic] DETACH reason=", reason, " snapshot=", _diagnostic_snapshot(), " obstruction=", diagnostic_obstruction)
+		for snapshot in diagnostic_history:
+			print("[GumDiagnostic] HISTORY ", snapshot)
 	if reason == "RESTART":
 		cancel_return()
 		state = State.READY
@@ -193,7 +204,40 @@ func _shorten(speed: float, delta: float) -> void:
 	# A short-range attachment must never lengthen in response to shortening.
 	rest_length = maxf(minf(rest_length, settings.minimum_length), rest_length - speed * delta)
 
+func _diagnostic_snapshot() -> Dictionary:
+	var snapshot := {
+		"tick": Engine.get_physics_frames(), "state": State.keys()[state],
+		"mode": Mode.keys()[mode], "origin": origin(), "endpoint": endpoint(),
+		"player_velocity": player.velocity, "player_external_velocity": player.external_velocity,
+		"target_valid": connected(), "path_length": path.length, "rest_length": rest_length,
+		"maximum_length": settings.maximum_length, "tension": tension,
+		"player_force": player_force, "target_force": target_force,
+		"route_endpoint": path.points[-1] if not path.points.is_empty() else endpoint(),
+		"points": path.points.duplicate(), "pivots": path.pivots.size(),
+		"path_failure": path.failure, "path_repairs": path.modifications,
+		"previous_origin": path.previous_a, "previous_endpoint": path.previous_b,
+	}
+	if is_instance_valid(target):
+		snapshot["target"] = str(target.get_path())
+		snapshot["target_position"] = target.global_position
+		snapshot["target_rotation"] = target.global_rotation
+		snapshot["target_local_point"] = target_local_point
+		if target is RigidBody2D:
+			snapshot["target_linear_velocity"] = target.linear_velocity
+			snapshot["target_angular_velocity"] = target.angular_velocity
+			snapshot["target_mass"] = target.mass
+	return snapshot
+
 func step(delta: float, length_input := 0.0) -> void:
+	# Capture before force reset so history retains the preceding applied force.
+	if settings.gum_diagnostics and state == State.ATTACHED:
+		var snapshot := _diagnostic_snapshot()
+		snapshot["delta"] = delta
+		snapshot["length_input"] = length_input
+		diagnostic_history.append(snapshot)
+		if diagnostic_history.size() > 8:
+			diagnostic_history.pop_front()
+	diagnostic_obstruction.clear()
 	player_force = Vector2.ZERO
 	target_force = Vector2.ZERO
 	tension = 0.0
@@ -207,7 +251,8 @@ func step(delta: float, length_input := 0.0) -> void:
 		return
 	if not connected():
 		return
-	if not path.update(origin(), endpoint(), get_tree().root, settings):
+	var contact_tolerance := RIGID_CONTACT_TOLERANCE if target is RigidBody2D else 0.0
+	if not path.update(origin(), endpoint(), get_tree().root, settings, true, contact_tolerance):
 		detach(path.failure)
 		return
 	if path.length > settings.maximum_length:
@@ -321,14 +366,21 @@ func _display_points() -> PackedVector2Array:
 	return result
 
 func _dynamic_obstruction() -> bool:
+	# Adhesion follows the local point even when target rotation hides it.
+	# Only other dynamic bodies obstruct the route; static terrain still wraps.
+	var excluded: Array[RID] = [player.get_rid(), target.get_rid()]
 	for i in range(path.points.size()-1):
 		var a: Vector2 = path.points[i]
 		var b: Vector2 = path.points[i+1]
-		var end := b
-		if i == path.points.size()-2:
-			end = b.move_toward(a, minf(0.1, a.distance_to(b)*0.1))
-		var query := PhysicsRayQueryParameters2D.create(a, end, 4, [player.get_rid()])
+		var query := PhysicsRayQueryParameters2D.create(a, b, 4, excluded)
 		query.hit_from_inside = true
-		if not get_world_2d().direct_space_state.intersect_ray(query).is_empty():
+		var hit := get_world_2d().direct_space_state.intersect_ray(query)
+		if not hit.is_empty():
+			if settings.gum_diagnostics:
+				diagnostic_obstruction = {
+					"segment": i, "from": a, "to": b,
+					"collider": str(hit.collider.get_path()), "is_target": hit.collider == target,
+					"position": hit.position, "normal": hit.normal, "shape": hit.shape,
+				}
 			return true
 	return false

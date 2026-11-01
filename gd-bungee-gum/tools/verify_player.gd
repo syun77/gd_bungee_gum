@@ -88,6 +88,7 @@ func verify() -> void:
 	await ticks(25)
 	assert(player.position.x >= 73.0)
 	assert(absf(player.external_velocity.x) < 0.1, "Wall must clear inward external momentum")
+	await verify_pinning_diagnostics(game)
 	await verify_floor_kick_direction(game)
 	await verify_coyote_time(game)
 	await verify_coyote_gravity_compensation(game)
@@ -294,3 +295,48 @@ func verify_floor_kick_direction(game: Node2D) -> void:
 			assert(player.external_velocity.y < -300.0 and not player.is_on_floor())
 	platform.queue_free()
 	print("PASS: left/right tilted corner floor and delayed coyote launches add no horizontal velocity")
+
+func verify_pinning_diagnostics(game: Node2D) -> void:
+	game.set_physics_process(false)
+	var player = game.get_node("Player")
+	var fixture := Node2D.new()
+	game.add_child(fixture)
+	for entry in [[Vector2(10000, 660), Vector2(200, 40), false],
+		[Vector2(9970, 600), Vector2(40, 120), false],
+		[Vector2(10030, 620), Vector2(40, 40), true]]:
+		var body: PhysicsBody2D = RigidBody2D.new() if entry[2] else StaticBody2D.new()
+		body.position = entry[0]
+		body.name = "PinningBlock" if entry[2] else "PinningTerrain%d" % fixture.get_child_count()
+		body.collision_layer = 4 if entry[2] else 1
+		if body is RigidBody2D:
+			body.freeze = true
+		var collider := CollisionShape2D.new()
+		var shape := RectangleShape2D.new()
+		shape.size = entry[1]
+		collider.shape = shape
+		body.add_child(collider)
+		fixture.add_child(body)
+	player.position = Vector2(10000, 639.9)
+	player.external_velocity = Vector2.ZERO
+	player.control_velocity = Vector2.ZERO
+	var enabled: bool = game.settings.pinning_diagnostics
+	game.settings.pinning_diagnostics = true
+	Input.action_press("move_right")
+	for tick in 12:
+		await physics_frame
+		player.simulate(1.0 / 60.0)
+	assert(player.pinning_diagnostic_active, "Rigid contact must activate pinning diagnostics")
+	assert(player.pinning_diagnostic_history.size() == 8, "Pinning history must stay bounded")
+	var snapshot: Dictionary = player.pinning_diagnostic_history[-1]
+	assert(snapshot.move_axis == 1.0 and snapshot.incoming.x > 0.0, "Log must retain attempted motion before collision cleanup")
+	assert(absf(snapshot.displacement.x) < 0.1, "Fixture must reproduce blocked movement")
+	var nearby: Array = player._pinning_nearby_bodies()
+	assert(nearby.size() >= 2, "Nearby query must expose wall and rigid block even if slide contacts omit wall")
+	game.settings.pinning_diagnostics = false
+	await physics_frame
+	player.simulate(1.0 / 60.0)
+	assert(not player.pinning_diagnostic_active and player.pinning_diagnostic_history.is_empty(), "Disabled diagnostic clears capture")
+	Input.action_release("move_right")
+	game.settings.pinning_diagnostics = enabled
+	fixture.free()
+	print("PASS: pinning contact capture, blocked input/displacement, bounded history, nearby bodies and disable toggle")

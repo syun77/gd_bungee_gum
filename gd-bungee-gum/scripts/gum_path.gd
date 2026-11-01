@@ -26,7 +26,7 @@ func _points(a: Vector2, b: Vector2) -> PackedVector2Array:
 	result.append(b)
 	return result
 
-func update(a: Vector2, b: Vector2, root: Node, settings: Resource, advance_release := true) -> bool:
+func update(a: Vector2, b: Vector2, root: Node, settings: Resource, advance_release := true, endpoint_contact_tolerance := 0.0) -> bool:
 	failure = ""
 	modifications = 0
 	if not initialized:
@@ -43,6 +43,8 @@ func update(a: Vector2, b: Vector2, root: Node, settings: Resource, advance_rele
 					exists = true
 			if not exists:
 				pivots.remove_at(i)
+	if endpoint_contact_tolerance > 0.0:
+		b = geometry.contact_endpoint(b, endpoint_contact_tolerance)
 	# Interpolate endpoint motion at sub-pixel corner clearance resolution. Existing
 	# pivots constrain each local repair, retaining the side selected on first contact.
 	var samples := maxi(1, ceili(maxf(a.distance_to(previous_a), b.distance_to(previous_b)) / maxf(settings.wrap_clearance, 0.25)))

@@ -7,6 +7,7 @@ const GUM_HANDS := {
 }
 
 
+const COMPRESSION_CLEARANCE := 0.25
 const Settings = preload("res://scripts/game_settings.gd")
 @export var settings: Settings
 var external_velocity := Vector2.ZERO
@@ -16,6 +17,12 @@ var coyote_remaining := 0.0
 var coyote_gravity_velocity := Vector2.ZERO
 var landing_time := 0.0
 var gum: Node2D
+var compression_diagnostic_next_tick := 0
+var pinning_diagnostic_active := false
+var pinning_diagnostic_next_tick := 0
+var pinning_diagnostic_input: Dictionary = {}
+var pinning_diagnostic_gum_state := ""
+var pinning_diagnostic_history: Array[Dictionary] = []
 var landing_diagnostic_active := false
 var landing_diagnostic_next_tick := 0
 var landing_diagnostic_transitions := 0
@@ -108,11 +115,22 @@ func simulate(delta: float, jump_requested := false) -> void:
 	# 外部速度は空中で保持し、接地後に床面方向の摩擦で減速する。
 	velocity = control_velocity + external_velocity
 	var incoming_velocity := velocity
+	var before_position := global_position
+	var before_control := control_velocity
+	var before_external := external_velocity
 	move_and_slide()
+	var slide_velocity := velocity
+	var collision_normals: Array[Vector2] = []
+	for index in get_slide_collision_count():
+		collision_normals.append(get_slide_collision(index).get_normal())
+	if _recover_rigid_compression(delta, incoming_velocity):
+		for index in get_slide_collision_count():
+			collision_normals.append(get_slide_collision(index).get_normal())
+		if is_on_floor():
+			collision_normals.append(get_floor_normal())
 	# 衝突面へ向かう成分を両速度から除去する。床の法線に微小な横成分がある場合、
 	# slide() により外部横速度にも微小値が生じる（実測で約0.02 px/s）。
-	for index in get_slide_collision_count():
-		var normal := get_slide_collision(index).get_normal()
+	for normal in collision_normals:
 		# Gravity already resolved by terrain must not remain available as compensation.
 		if coyote_gravity_velocity.dot(normal) < 0.0:
 			coyote_gravity_velocity = coyote_gravity_velocity.slide(normal)
@@ -133,6 +151,7 @@ func simulate(delta: float, jump_requested := false) -> void:
 	if jump_requested:
 		_log_jump_state("AFTER_MOVE", incoming_velocity)
 	_log_landing_state(grounded, incoming_velocity, removed_control_y)
+	_log_pinning_state(delta, direction, jump_requested, before_position, before_control, before_external, incoming_velocity, slide_velocity)
 
 func _log_jump_state(event: String, incoming := Vector2.ZERO) -> void:
 	if not settings.jump_diagnostics:
@@ -229,3 +248,155 @@ func _log_landing_state(was_grounded: bool, incoming_velocity: Vector2, removed_
 		event, tick, global_position, control_velocity, external_velocity,
 		was_grounded, is_on_floor(), landing_diagnostic_transitions,
 		sprite.animation, landing_time, attached, gum_status, gum_tension, incoming_velocity, removed_control_y, normals])
+
+func _log_pinning_state(delta: float, direction: float, jump_requested: bool, before_position: Vector2, before_control: Vector2, before_external: Vector2, incoming: Vector2, slide_velocity: Vector2) -> void:
+	if not settings.pinning_diagnostics:
+		pinning_diagnostic_active = false
+		pinning_diagnostic_history.clear()
+		return
+	var contacts: Array[Dictionary] = []
+	var rigid_contact := false
+	var deepest_contact := 0.0
+	for i in get_slide_collision_count():
+		var hit := get_slide_collision(i)
+		var body := hit.get_collider()
+		deepest_contact = maxf(deepest_contact, hit.get_depth())
+		rigid_contact = rigid_contact or body is RigidBody2D
+		var contact := _pinning_body_state(body)
+		contact.merge({"normal": hit.get_normal(), "point": hit.get_position(),
+			"depth": hit.get_depth(), "collider_velocity": hit.get_collider_velocity(),
+			"travel": hit.get_travel(), "remainder": hit.get_remainder()})
+		contacts.append(contact)
+	var displacement := global_position - before_position
+	var stalled_penetration := deepest_contact >= 1.0 and incoming.length() >= 10.0 and displacement.length() < 0.1
+	var watched_contact := rigid_contact or stalled_penetration
+	var gum_state := "NO GUM"
+	var gum_snapshot: Dictionary = {}
+	if is_instance_valid(gum):
+		gum_state = "%s/%s" % [gum.state, gum.mode]
+		gum_snapshot = {"state": gum.State.keys()[gum.state], "mode": gum.Mode.keys()[gum.mode],
+			"connected": gum.connected(), "reason": gum.release_reason,
+			"tension": gum.tension, "player_force": gum.player_force, "target_force": gum.target_force,
+			"length": gum.path.length, "rest_length": gum.rest_length}
+		if gum.connected():
+			gum_snapshot["target"] = str(gum.target.get_path())
+			gum_snapshot["endpoint"] = gum.endpoint()
+	var input_state := {"move_axis": direction, "z_held": Input.is_action_pressed("jump"),
+		"x_held": Input.is_action_pressed("gum_action"), "up": Input.is_action_pressed("aim_up"),
+		"down": Input.is_action_pressed("aim_down")}
+	var tick := Engine.get_physics_frames()
+	var snapshot := {"tick": tick, "delta": delta, "feet_before": before_position, "feet": global_position,
+		"displacement": displacement, "real_velocity": get_real_velocity(),
+		"rigid_contact": rigid_contact, "stalled_penetration": stalled_penetration,
+		"deepest_contact": deepest_contact, "slide_count": get_slide_collision_count(),
+		"jump_requested": jump_requested,
+		"control_before": before_control, "external_before": before_external, "incoming": incoming,
+		"slide_velocity": slide_velocity, "control_after": control_velocity, "external_after": external_velocity,
+		"floor": is_on_floor(), "wall": is_on_wall(), "ceiling": is_on_ceiling(),
+		"kick_available": kick_available, "coyote": coyote_remaining,
+		"safe_margin": safe_margin, "max_slides": max_slides, "contacts": contacts, "gum": gum_snapshot}
+	snapshot.merge(input_state)
+	var event := ""
+	if watched_contact and not pinning_diagnostic_active:
+		event = "CONTACT_STARTED"
+	elif pinning_diagnostic_active:
+		if not watched_contact:
+			event = "CONTACT_ENDED"
+		elif jump_requested or input_state != pinning_diagnostic_input or gum_state != pinning_diagnostic_gum_state:
+			event = "ACTION_CHANGED"
+		elif tick >= pinning_diagnostic_next_tick:
+			event = "PERSISTING"
+	if not event.is_empty():
+		print("[PinningDiagnostic] ", event, " snapshot=", snapshot, " nearby=", _pinning_nearby_bodies())
+		if event == "CONTACT_STARTED":
+			for previous in pinning_diagnostic_history:
+				print("[PinningDiagnostic] HISTORY ", previous)
+		pinning_diagnostic_next_tick = tick + 30
+	pinning_diagnostic_active = watched_contact
+	pinning_diagnostic_input = input_state
+	pinning_diagnostic_gum_state = gum_state
+	pinning_diagnostic_history.append(snapshot)
+	if pinning_diagnostic_history.size() > 8:
+		pinning_diagnostic_history.pop_front()
+
+func _pinning_body_state(body: Object) -> Dictionary:
+	var result := {"collider": str(body.get_path()) if body is Node else str(body)}
+	if body is Node2D:
+		result.merge({"position": body.global_position, "rotation": body.global_rotation})
+	if body is RigidBody2D:
+		result.merge({"mass": body.mass, "linear_velocity": body.linear_velocity,
+			"angular_velocity": body.angular_velocity, "sleeping": body.sleeping, "freeze": body.freeze})
+	return result
+
+func _pinning_nearby_bodies() -> Array[Dictionary]:
+	# Recovery contacts may be absent from slide results; this is proximity, not contact proof.
+	var collider: CollisionShape2D = $CollisionShape2D
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = collider.shape
+	query.transform = collider.global_transform
+	query.margin = 2.0
+	query.collision_mask = collision_mask
+	query.exclude = [get_rid()]
+	var result: Array[Dictionary] = []
+	for hit in get_world_2d().direct_space_state.intersect_shape(query, 16):
+		var body := _pinning_body_state(hit.collider)
+		body["shape"] = hit.shape
+		result.append(body)
+	return result
+
+func _recover_rigid_compression(delta: float, incoming: Vector2) -> bool:
+	var collider: CollisionShape2D = $CollisionShape2D
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = collider.shape
+	query.transform = collider.global_transform
+	query.margin = 2.0
+	query.collision_mask = 4
+	query.exclude = [get_rid()]
+	var bodies: Array[RigidBody2D] = []
+	for hit in get_world_2d().direct_space_state.intersect_shape(query, 16):
+		if hit.collider is RigidBody2D and not hit.collider.freeze and hit.collider not in bodies:
+			bodies.append(hit.collider)
+	if bodies.is_empty():
+		return false
+	var saved_mask := collision_mask
+	collision_mask = saved_mask & ~4
+	var parameters := PhysicsTestMotionParameters2D.new()
+	parameters.margin = safe_margin
+	parameters.recovery_as_collision = true
+	var result := PhysicsTestMotionResult2D.new()
+	parameters.from = global_transform
+	PhysicsServer2D.body_test_motion(get_rid(), parameters, result)
+	if result.get_travel().length() < 0.01:
+		collision_mask = saved_mask
+		return false
+	var start := global_position
+	# Leave a small clearance so subsequent tangent motion is not consumed by recovery.
+	parameters.margin += COMPRESSION_CLEARANCE
+	for iteration in 8:
+		parameters.from = global_transform
+		PhysicsServer2D.body_test_motion(get_rid(), parameters, result)
+		var recovery := result.get_travel()
+		if recovery.length_squared() < 0.000001:
+			break
+		global_position += recovery
+	var correction := global_position - start
+	if correction.length_squared() > 0.000001:
+		for body in bodies:
+			var direction := correction.normalized()
+			var toward_body := body.global_position - collider.global_position
+			if toward_body.dot(direction) <= 0.0:
+				continue
+			var approaching := maxf(-body.linear_velocity.dot(direction), 0.0)
+			var impulse := direction * body.mass * (correction.length() / delta + approaching)
+			body.sleeping = false
+			body.apply_central_impulse(impulse)
+			external_velocity -= impulse / settings.player_mass
+		# Refresh floor/wall classification after the terrain-only recovery.
+		velocity = Vector2(0.0, 0.01 if incoming.y >= 0.0 else -0.01)
+		move_and_slide()
+		var tick := Engine.get_physics_frames()
+		if settings.pinning_diagnostics and tick >= compression_diagnostic_next_tick:
+			print("[PinningDiagnostic] COMPRESSION_RECOVERED tick=", tick, " correction=", correction)
+			compression_diagnostic_next_tick = tick + 30
+	collision_mask = saved_mask
+	return correction.length_squared() > 0.000001
