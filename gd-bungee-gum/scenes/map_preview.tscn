@@ -16,12 +16,12 @@ position = Vector2(512, 384)
 [node name="Panel" type="ColorRect" parent="CanvasLayer"]
 offset_right = 1280.0
 offset_bottom = 62.0
-color = Color(0.04, 0.06, 0.1, 0.95)
+color = Color(0.20, 0.13, 0.11, 0.95)
 mouse_filter = 2
 
 [node name="Help" type="Label" parent="CanvasLayer"]
 offset_left = 24.0
 offset_top = 8.0
-theme_override_colors/font_color = Color(0.60, 0.83, 0.76, 1)
+theme_override_colors/font_color = Color(1, 0.94, 0.8, 1)
 theme_override_font_sizes/font_size = 16
-text = "THEATER / BUNGEE GUM   —   MAP PREVIEW\nArrows: pan    1–6: section    Tab: overview    Home: entrance"
+text = "FAMILY RESTAURANT / BUNGEE GUM   —   MAP PREVIEW\nArrows: pan    1–6: section    Tab: overview    Home: entrance"

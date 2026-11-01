@@ -1,40 +1,37 @@
-# 劇場タイルセット画像・初版
+# ファミリーレストラン用タイルセット
 
-## ファイル
+## 採用ファイル
 
-- `images/tilesets/theater_tileset.png`: 512 × 512 RGBA、32 × 32セル、16列。間隔・余白0。先頭105セルを使用、残り151セルは透明。
-- `images/tilesets/theater_tileset_source.png`: 組み込みimagegenで生成した1254 × 1254の原本。
-- `specs/theater-tileset-atlas.json`: 各セルのID、分類、アトラス座標、ピクセル矩形、原本セルの対応表。座標は左上起点・0始まり。
+- `images/tilesets/theater_tileset.png`: 採用アトラス。512 × 512 RGBA、32 × 32セル、16列、余白・間隔0。105セル使用、151セル透明。
+- `gd-bungee-gum/assets/tilesets/theater_tileset.png`: Godot用の同一コピー。`theater_tileset.tres` が105セルを参照する。
+- `images/tilesets/restaurant_tileset_source.png`: 組み込みimagegenで編集した1254 × 1254 RGBA原本。
+- `specs/theater-tileset-atlas.json`: 0始まりのアトラス座標と形状分類。`source_cell` は形状制作時の `theater_tileset_source.png` のセル対応を示し、色編集原本の座標ではない。
 
-| ID（両端含む） | 分類 | 数 |
+舞台は明るいファミリーレストラン。暖色のクリーム色の陶板、コーラルの縁、ミントのラインと塗装フレーム、金色の金具、茶色の輪郭を使う。ファイル名の `theater` は現行リソースの識別名。
+
+| ID（両端含む） | 形状分類 | 数 |
 | --- | --- | ---: |
-| 0–55 | 石材の形状候補 | 56 |
-| 56–64 | 石材差分 | 9 |
-| 65–78 | 鉄骨 | 14 |
+| 0–55 | 地形の形状候補 | 56 |
+| 56–64 | 地形差分 | 9 |
+| 65–78 | 塗装フレーム | 14 |
 | 79–88 | 背景 | 10 |
 | 89–96 | 透過装飾 | 8 |
 | 97–104 | 案内・警告 | 8 |
 
-本画像は手置きマップ用の初版素材。仕様の美術方向・セル寸法に合わせたが、生成された形状の内訳は設計の99セルと異なる。47近傍パターンの網羅性・シームレス接続・物理判定は未検証であり、近傍マスクはJSONで `null` としている。自動接続用に登録する前に、類似形状の整理、欠ける形状の追加、連続面の継ぎ目調整が必要。危険表示は絵だけであり、物理・進行処理を持たない。
-
 ## 整形と確認
 
-原本は指定の16列ではなく14列で生成されたため、ImageMagickで各セルを整数座標切り出し、境界の生成線を除き、補間なしで32 × 32へ縮小して16列に再配置。アルファを50%閾値で二値化した。Pythonはコマンド呼び出し・JSON出力・読み取り検証に使用し、画像描画には使用していない。
+imagegen編集後、ImageMagickのpoint補間で512 × 512へ正規化し、元アトラスのアルファを復元。黄緑色の強いフリンジを暖かい金茶色へ調整した。Pillowは読み取り検証にのみ使用。
 
-寸法512 × 512、RGBA、アルファ0/255のみ、105セルに可視画素あり、未使用151セルは透明であることを検証。完成シートを目視確認した。Godot採用コピーは `gd-bungee-gum/assets/tilesets/theater_tileset.png`。`theater_tileset.tres` に105セルを登録し、初期マップの各 `TileMapLayer` で手置き配置している。インポート時は32 × 32、マージン0、セパレーション0、補間なしを使い、背景・装飾へ地形の衝突を付けない。
+寸法・RGBA、元画像とのアルファバイト完全一致、105使用セル・151透明セルを確認。形状、透過穴、セル配置は既存マップと同一。描画色を変えても衝突形状は変わらない。Godotでテクスチャを再インポートし、保存済みマップの物理検査とOpenGL実描画を確認した。
 
-## 生成プロンプト
+32 px、nearest表示で使用する。背景・装飾に衝突を付けず、地形判定は `Terrain` の静的矩形へ集約する。マップの背景は落ち着いたティール、地形の輪郭は茶色、区画名はクリーム色。
 
-組み込み `image_gen` を使用。下記を原本生成の最終指示として与えた。続けて16列への再配置編集も試したが、列数が改善しなかったため、採用原本を機械的に整列した。
+本画像は手置き素材。47近傍パターンの網羅性・シームレス接続は未検証で、JSONの近傍マスクは `null`。タイルの縁や反復模様には継ぎ目がある。家具・料理・店舗設備はこの画像に含めていない。案内・危険表示は絵だけで、ゲーム判定は別実装。
 
-Use case: stylized-concept. Asset type: production pixel-art TILE ATLAS, NOT a scene or mockup.
-Create a precise square transparent PNG sprite sheet for a side-view 2D game set in an abandoned theater converted into a physics training facility. Target logical atlas 512x512 pixels, exactly 16 columns x16 rows of 32x32 logical pixel cells, no margins or spacing. If output higher resolution, keep exactly this grid and use nearest-neighbor enlarged pixel art. Strict orthographic front view, crisp pixel clusters, no antialiasing, no shadows outside cells, no lettering, no numbers, no visible grid.
-Palette: dark blue gray stone #344655 #526978 with restrained edge #91A5AD, dark iron; background #171D2B #293346; small mint #9AD5C2 and amber #E5B85C symbols. No pink, no characters.
-Layout: first 99 cells occupied, packed row-major; remaining 157 cells completely transparent.
-Cells 0-46: 47 blob-autotile configurations of solid blue-gray masonry terrain. All tile solids fill the ENTIRE 32px cell: no inset border or padding. Adjacent terrain must join without seams. Only exposed edges have thin bright rim and dark outer contour; interior connections have NO border. Include full interior, straight top/bottom/left/right exposed edge, convex corners, concave corner notches, thin horizontal/vertical runs, isolated block, ends, all multi-corner combinations. Quiet subtle masonry texture; minimal cracks. Walls and ceiling as clear as floors.
-Cells 47-54: eight subtle masonry alternatives, four full interior tiles, two top-edge and two bottom-edge.
-Cells 55-70: sixteen dark iron structural beam tiles, solid full-cell width/thickness, rivets restrained: horizontal left/middle/right, vertical top/middle/bottom, four elbows, four T junctions, cross, isolated.
-Cells 71-82: twelve darker low-contrast background tiles: four masonry fills, two vertical seams, two horizontal seams, four arch quarters. No bright terrain rim.
-Cells 83-90: eight transparent overlay decals: two tiny hairline cracks, two rivet arrangements, two recessed panels, two brackets.
-Cells 91-98: eight transparent symbol decals: left arrow, right arrow, entrance emblem, exit emblem, section marker, two amber diagonal warning stripe variations, target emblem. Icons without text.
-Do not include crates, projectiles, exit door sprites or distant scenery in this atlas. Do not draw a display board or checkerboard transparency. Every tile strictly within its exact grid cell, no gutters, no labels. This is a utilitarian usable game atlas rather than illustrated catalog.
+## 使用した最終プロンプト
+
+組み込み `image_gen` の画像編集を使用。入力は既存アトラス、透過背景を指定。
+
+```text
+Use case: precise-object-edit. Edit target: the provided production pixel-art tile atlas. Change ONLY its colors and surface material appearance into a cheerful Japanese family restaurant interior palette: warm vanilla cream ceramic/painted surfaces, restrained coral red accents, fresh mint/turquoise trim, honey yellow details, warm brown outlines. Existing stone blocks should read as clean colorful ceramic wall/floor masonry, metal structural pieces as painted mint restaurant fixtures. Keep general terrain bright cream and warm beige, reserve coral and mint for trim and occasional tile variants. Background wall tiles darker muted teal for foreground contrast. Signage bright teal and golden yellow. Keep texture clean, playful, crisp pixel art. CRITICAL invariants: exact same composition, exact same 16 by 16 atlas grid, 105 tiles in identical cells, identical silhouettes and cutouts, identical size and position of every tile and icon. Input is 512x512 pixels with 32x32 cells: preserve this logical resolution (if output upscaled use exact uniform nearest neighbor scaling). First 105 cells occupied, all remaining cells completely TRANSPARENT. No added restaurant furniture, food, lettering, new tiles, grids, checkerboard, background or shadows outside original silhouettes. Preserve real alpha transparency. This is a color/material edit of an engine asset, not a scene illustration.
+```

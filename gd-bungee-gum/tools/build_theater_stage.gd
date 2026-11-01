@@ -43,13 +43,13 @@ func _initialize() -> void:
 	stage = Node2D.new()
 	stage.name = "TheaterStage"
 	stage.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	var background := layer("Background", Color(0.35, 0.43, 0.53, 0.4))
+	var background := layer("Background", Color(0.65, 0.78, 0.72, 0.45))
 	for x in range(2, 158):
 		for y in range(4, 24):
 			# Sparse masonry piers, with open dark bays for readable silhouettes.
 			if x % 26 < 3 or y >= 22:
 				put(background, x, y, 79 + (x + y) % 2)
-	var iron := layer("BackgroundIron", Color(0.5, 0.58, 0.66, 0.5))
+	var iron := layer("BackgroundIron", Color(0.8, 0.9, 0.82, 0.6))
 	for x in range(2, 158):
 		put(iron, x, 5, 66)
 	var terrain := layer("TerrainTiles")
@@ -77,13 +77,13 @@ func _initialize() -> void:
 		var s := box.size
 		rim.points = PackedVector2Array([p, p + Vector2(s.x, 0), p + s, p + Vector2(0, s.y), p])
 		rim.width = 2
-		rim.default_color = Color("91a5ad")
+		rim.default_color = Color("795747")
 		add(stage, rim)
 	var signs := layer("Signs")
 	for section in range(6):
 		var x := 4 + section * 26
 		put(signs, x, 12, 98)
-		label(SECTION_NAMES[section], Vector2(x * TILE, 192), 18, Color("9ad5c2"))
+		label(SECTION_NAMES[section], Vector2(x * TILE, 192), 18, Color("fff0cc"))
 	put(signs, 5, 18, 99)
 	put(signs, 154, 10, 100)
 	for x in [25, 35, 86, 94, 138, 147]:
@@ -99,8 +99,8 @@ func _initialize() -> void:
 	marker(markers, "Exit", Vector2(4944, 364))
 	for section in range(6):
 		marker(markers, "Section%02d" % (section + 1), Vector2((4 + section * 26) * TILE, 384))
-	label("ENTRANCE", Vector2(96, 552), 14, Color("9ad5c2"))
-	label("EXIT", Vector2(4896, 284), 20, Color("9ad5c2"))
+	label("ENTRANCE", Vector2(96, 552), 14, Color("fff0cc"))
+	label("EXIT", Vector2(4896, 284), 20, Color("fff0cc"))
 	var scene := PackedScene.new()
 	assert(scene.pack(stage) == OK)
 	assert(ResourceSaver.save(scene, STAGE_PATH) == OK)
