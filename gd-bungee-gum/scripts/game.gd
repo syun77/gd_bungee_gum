@@ -76,10 +76,10 @@ func _read_length_input(jump_requested: bool) -> float:
 	return float(manual_down_pressed) - float(up and not up_wait_release)
 
 func _update_direction() -> void:
-	# Opposing directions cancel per axis; neutral preserves the last direction.
+	# Quantize keyboard/pad input to eight directions; neutral preserves the last direction.
 	var direction := Vector2(Input.get_axis("aim_left", "aim_right"), Input.get_axis("aim_up", "aim_down"))
 	if not direction.is_zero_approx():
-		aim_direction = direction.normalized()
+		aim_direction = direction.sign().normalized()
 
 func _handle_actions(jump_requested: bool) -> void:
 	if jump_requested:

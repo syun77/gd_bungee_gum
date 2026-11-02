@@ -42,7 +42,73 @@ func fixture() -> void:
 	gum.settings = game.settings
 	await ticks(40)
 
+func pad_button(button: JoyButton, pressed: bool) -> void:
+	var event := InputEventJoypadButton.new()
+	event.device = 0
+	event.button_index = button
+	event.pressed = pressed
+	Input.parse_input_event(event)
+	Input.flush_buffered_events()
+
+func pad_axis(axis: JoyAxis, value: float) -> void:
+	var event := InputEventJoypadMotion.new()
+	event.device = 0
+	event.axis = axis
+	event.axis_value = value
+	Input.parse_input_event(event)
+	Input.flush_buffered_events()
+
+func verify_pad() -> void:
+	await fixture()
+	pad_axis(JOY_AXIS_LEFT_X, 0.15)
+	await ticks(1)
+	check(is_zero_approx(Input.get_axis("move_left", "move_right")), "Stick drift below deadzone is ignored")
+	for direction in [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN, Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+		pad_axis(JOY_AXIS_LEFT_X, direction.x * 0.8)
+		pad_axis(JOY_AXIS_LEFT_Y, direction.y * 0.6)
+		await ticks(1)
+		check(game.aim_direction.is_equal_approx(direction.normalized()), "Stick eight-way aim " + str(direction))
+	pad_axis(JOY_AXIS_LEFT_X, 0.0)
+	pad_axis(JOY_AXIS_LEFT_Y, 0.0)
+	for button in [JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_DOWN]:
+		pad_button(button, true)
+		await ticks(1)
+		var expected: Vector2 = {JOY_BUTTON_DPAD_LEFT: Vector2.LEFT, JOY_BUTTON_DPAD_RIGHT: Vector2.RIGHT, JOY_BUTTON_DPAD_UP: Vector2.UP, JOY_BUTTON_DPAD_DOWN: Vector2.DOWN}[button]
+		check(game.aim_direction.is_equal_approx(expected), "D-pad direction " + str(button))
+		if button in [JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_RIGHT]:
+			check(Input.is_action_pressed("move_left" if button == JOY_BUTTON_DPAD_LEFT else "move_right"), "D-pad also moves")
+		pad_button(button, false)
+		await ticks(1)
+	pad_button(JOY_BUTTON_DPAD_UP, true)
+	pad_button(JOY_BUTTON_X, true)
+	await ticks(30)
+	check(gum.connected(), "Square fires and attaches through live Game")
+	check(gum.mode == gum.Mode.CONTRACT, "Arrival auto-contracts")
+	pad_button(JOY_BUTTON_X, false)
+	pad_button(JOY_BUTTON_DPAD_UP, false)
+	await ticks(1)
+	pad_button(JOY_BUTTON_DPAD_DOWN, true)
+	await ticks(2)
+	check(gum.mode == gum.Mode.LOOSEN, "D-pad Down relaxes")
+	pad_button(JOY_BUTTON_DPAD_DOWN, false)
+	pad_button(JOY_BUTTON_X, true)
+	await ticks(1)
+	check(gum.mode == gum.Mode.CONTRACT, "New Square press contracts")
+	pad_button(JOY_BUTTON_A, true)
+	await ticks(1)
+	check(not gum.connected(), "Cross releases before movement")
+	await ticks(20)
+	check(not gum.connected(), "Held Square never refires after Cross")
+	for button in [JOY_BUTTON_A, JOY_BUTTON_X]:
+		pad_button(button, false)
+	pad_button(JOY_BUTTON_START, true)
+	check(Input.is_action_just_pressed("restart"), "OPTIONS maps to restart")
+	pad_button(JOY_BUTTON_START, false)
+	game.set_physics_process(false)
+	await ticks(1)
+
 func verify() -> void:
+	await verify_pad()
 	await fixture()
 	check(gum.aim_valid, "Neutral guide still predicts a target")
 	for direction in [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN, Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:

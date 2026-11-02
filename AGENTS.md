@@ -166,3 +166,5 @@
 - Stage geometry/markers are authored in `scripts/stage_layout.gd`; generator now intentionally produces1212 solid cells/27rectangles/59gum corners. Preserve160×24 grid. Current tuning gives69.48px floor-kick rise at60Hz: use64px kick steps,128px gum lifts,222px chest-to-beam shots within range240. `tools/verify_stage_route.gd` traverses actual Game including boxes through7 lifts without teleport/tuning overrides; rerun after terrain/tuning changes.
 
 - TileMapLayer support faces use collision RID/server convex polygon geometry (not CollisionObject2D shape owners); guard has_body_rid against erased tiles. verify_one_way covers mirrored outer-edge landings0/5/7/8px for60ticks without sideways drift; native one-way passage remains authoritative.
+
+- PS4/DualShock 4 uses any-device InputMap: D-pad/left stick move+eight-way aim (axis deadzone0.25), Cross=jump/detach, Square=gum_action, OPTIONS=restart. Aim quantizes active axis signs; shared pre-attachment Up/Down gates and press-edge rules apply. verify_controls.gd includes synthetic joypad/live Game coverage; USB/Bluetooth hardware QA remains separate.

@@ -1,3 +1,13 @@
+## Completed PS4 gamepad support
+- Goal/status: DualShock 4 support implemented and locally verified.
+- Completed: Any-device InputMap mappings, axis deadzone0.25, eight-way sign-quantized stick aim, HUD instructions with status moved below five help lines, control spec and AGENTS knowledge. Synthetic joypad tests exercise live Game fire/contract/relax/release/no-repeat, D-pad and stick directions, drift rejection and OPTIONS mapping.
+- Decisions: D-pad/left stick move and aim; Cross detaches/contact-kicks, Square fires/contracts, OPTIONS restarts. Existing keyboard, held-input gates and physics stay authoritative.
+- Files changed: project.godot; scenes/game.tscn; scripts/game.gd; tools/verify_controls.gd; specs/keyboard-controls.md; AGENTS.md; WORKLOG.md.
+- Verification: Initial/final controls, player and gum suites PASS exit0; no assertions/script errors (known macOS CA warning only). git diff --check PASS.
+- Refactoring: Reviewed InputMap serialization/action reuse and shared edge/gate logic; kept runtime change confined to eight-way direction normalization. Split pad help across two lines and adjusted status placement.
+- Blockers: No physical controller available for USB/Bluetooth recognition/feel QA.
+- Next action: Connect DualShock 4 by USB/Bluetooth and F5 verify physical recognition and control feel.
+
 ## Completed one-way extreme-edge landing repair
 - Goal/status: Fix one-way edge sliding; complete locally.
 - Findings: TileMapLayer bypassed CollisionObject2D rectangle support correction; capsule corner converted downward momentum into outward drift. Baseline offset5px fell with90px drift.
