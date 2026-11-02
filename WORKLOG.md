@@ -1,3 +1,38 @@
+## Completed Godot gum adhesion effect integration
+- Goal/status: Integrate authored adhesion VFX into Godot; complete.
+- Completed: Runtime copies of surface/ring atlases and license notices; reusable nearest-filtered Sprite2D scene/script; Gum adhesion_started/adhesion_ended signals; Game binding. Effect follows live endpoint/rotating surface tangent; ring stays centered.9visible frames at30fps, hides at0.30s/release/restart/invalid target. Physics ownership/timing untouched.
+- Files: scripts/gum_connection.gd, game.gd, gum_attachment_effect.gd; scenes/game.tscn, effects/gum_attachment_effect.tscn; assets/effects/*; tools/verify_gum_attachment_effect.gd; specs/gum-attachment-effect.md; AGENTS.md; WORKLOG.md.
+- Verification: Final focused real-Game fixture PASS (actual outbound arrival, force-free tick, rigid translation/rotation, all four normals,30fps/expiry, no contract retrigger, detach/restart, miss, centered ring/erased target). Existing gum/controls/anchor suites all PASS exit0. git diff --check PASS. Source/runtime atlas bytes identical. Godot import succeeded; known sandbox CA/editor-settings/Mono socket warnings unrelated.
+- Refactoring: Reviewed touched signal/state boundaries and sprite lifecycle; shared surface/ring presentation in one reusable node, no duplicated animations or per-attachment allocations. Final focused fixture rerun after review and additional orientation/restart coverage.
+- Blockers: None. Interactive gameplay visual feel not yet reviewed.
+- Next action: F5 and attach to terrain, rotating boxes and rings to assess visual size/readability in gameplay.
+
+## Completed gum adhesion effect assets
+- Goal/status: Create pixelfx adhesion effects and save under images/; complete.
+- Completed: Original pink squash/stretch/recoil surface and radial ring variants; three render/review iterations; exported PNG atlases, JSON, GIF previews/contact sheets and editable procedural source under images/effects/. Included pixelfx license/notices; updated asset specification and AGENTS.
+- Decisions:64×64 frames,256×192 atlases,4columns,10frames including empty endpoint,30fps,pivot32/32. No Godot integration. Surface normal-X. Exact0.30s playback uses9 visible samples plus zero-hold empty endpoint.
+- Files changed: images/effects/*; local pixelfx/src/fx/impacts/gum-attach.js; specs/gum-attachment-effect.md; AGENTS.md; WORKLOG.md.
+- Verification: pixelfx check PASS0fail (procedural speed warning21.3ms/frame in tool runtime); Pillow checked both RGBA atlas sizes, metadata/frame count and all visible/empty frames. Three rounds visually inspected on dark/light backgrounds. Refactoring consolidated field/capsule drawing for shared variants. Shell node unavailable; bundled Node REPL imported pixelfx tooling directly.
+- Blockers: None for baked assets. Gameplay appearance remains unverified until integration.
+- Next action: Integrate selected sheets into Godot presentation event when requested.
+
+## Completed gum attachment effect proposal
+- Goal/status: Consider pixelfx workflow for gum adhesion VFX; proposal complete, implementation not requested.
+- Completed: Inspected local pixelfx README/authoring/export code and blunt-hit/slime references; inspected Gum attachment/arrival/center resolution. Wrote specs/gum-attachment-effect.md with timing, palette, authoring/export workflow, Godot event/follow/lifecycle design and acceptance checks.
+- Decisions: Dedicated0.30s squash/thread/recoil effect; surface-normal variant plus centered radial ring variant; presentation only, preserve arrival force timing. Aseprite JSON needs conversion/importer for Godot.
+- Files changed: specs/gum-attachment-effect.md; WORKLOG.md. No runtime or pixelfx source edits.
+- Verification: Proposal cross-checked against local source; no runtime tests applicable. Final review kept proposed values distinct from implemented behavior.
+- Blockers: None; visual quality and export output remain unverified until authoring.
+- Next action: Author and render three candidate gum-attach effects, review at gameplay scale, then integrate selected sprite sheet.
+
+## Completed pixelfx checkout
+- Goal/status: Checkout https://github.com/patch-gg/pixelfx into repository-root pixelfx/; complete.
+- Completed: Cloned upstream default branch as an independent nested Git repository. No game integration or dependency installation requested.
+- Files changed: pixelfx/ checkout; WORKLOG.md.
+- Verification: Clone exited0; origin URL and clean branch status verified. Reviewed scope; no source refactoring applicable.
+- Blockers: None. Initial sandbox DNS restriction resolved with authorized network escalation.
+- Next action: Use pixelfx/ for subsequent requested work.
+
 ## Completed attached release jump
 - Goal/status: Implement attached Z/Cross release jump; complete.
 - Decision: Snapshot validated attachment before detach; attached jump always world-up, cancel all downward external velocity, retain upward/horizontal momentum and add kick_speed. Unattached contact/coyote rules stay unchanged.

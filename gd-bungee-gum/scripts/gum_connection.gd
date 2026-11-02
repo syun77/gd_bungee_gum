@@ -1,5 +1,8 @@
 extends Node2D
 ## Rules own the connection; physics resolves both endpoints' motion.
+signal adhesion_started(normal: Vector2, is_ring: bool)
+signal adhesion_ended
+
 const Settings = preload("res://scripts/game_settings.gd")
 const RIGID_CONTACT_TOLERANCE := 2.0
 const GumPath = preload("res://scripts/gum_path.gd")
@@ -102,6 +105,10 @@ func _attach_hit(hit: Dictionary) -> void:
 	mode = Mode.CONTRACT
 	release_reason = "ATTACHED"
 	last_display = PackedVector2Array([player.gum_visual_origin(), point])
+	var normal: Vector2 = hit.get("normal", Vector2.ZERO)
+	if normal.is_zero_approx():
+		normal = (origin() - point).normalized()
+	adhesion_started.emit(normal, target is TileMapLayer)
 
 func fire(direction: Vector2) -> void:
 	if connected() or state == State.OUTBOUND or direction.is_zero_approx():
@@ -194,6 +201,7 @@ func detach(reason := "RELEASED") -> void:
 	target_force = Vector2.ZERO
 	mode = Mode.NONE
 	release_reason = reason
+	adhesion_ended.emit()
 
 func target_point_velocity() -> Vector2:
 	if target is RigidBody2D:

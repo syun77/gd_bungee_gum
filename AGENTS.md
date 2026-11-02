@@ -176,3 +176,5 @@
 - Atlas source0 cell(5,6) is a ring-like decoration with no collision; it cannot attach even when painted on GumAnchors. Use source2 cell(0,0) for functional rings.
 
 - Ring adhesion always resolves hit RID to tile center (aim/tip/path/natural length); terrain/props retain actual hit points. GumAnchors.physics_quadrant_size must be1: Godot default16 groups cell RIDs and get_coords_for_body_rid returns quadrant coordinates. Keep generator/saved layer/fixtures aligned; center distance owns maximum_length validation.
+
+- Gum adhesion VFX assets are `images/effects/gum_attach_{surface,ring}.png`:64px cells,4columns,10frames (last transparent),30fps,pivot32/32; surface normal-X,ring radial. Editable pixelfx source is images/effects/gum-attach.mjs. Runtime copies under assets/effects/; Game binds reusable GumAttachmentEffect to Gum adhesion_started/adhesion_ended signals, follows endpoint/rotating normal and hides at0.30s or release. See specs/gum-attachment-effect.md; run tools/verify_gum_attachment_effect.gd.

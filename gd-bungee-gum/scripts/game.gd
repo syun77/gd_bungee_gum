@@ -20,6 +20,7 @@ func _ready() -> void:
 	$PuzzleHeavyBox.global_position = $TheaterStage/PlacementMarkers/HeavyBoxSpawn.global_position
 	gum.player = player
 	player.gum = gum
+	$GumAttachmentEffect.bind(gum)
 	aim_direction = Vector2.LEFT if player.sprite.flip_h else Vector2.RIGHT
 	camera.position = player.position
 	camera.zoom = Vector2.ONE * settings.camera_normal_zoom

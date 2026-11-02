@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gum_attachment_effect.gd" id="1"]
+
+[node name="GumAttachmentEffect" type="Sprite2D"]
+visible = false
+z_index = 6
+texture_filter = 1
+hframes = 4
+vframes = 3
+script = ExtResource("1")
