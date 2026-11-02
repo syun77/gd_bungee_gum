@@ -30,6 +30,17 @@ const ONE_WAY_FLOORS := [
 	Rect2i(118, 16, 6, 1),
 	Rect2i(142, 18, 8, 1), Rect2i(144, 16, 6, 1), Rect2i(146, 12, 4, 1),
 ]
+# Gum-only hit area intentionally extends 9px beyond the 30px artwork.
+const GUM_ANCHOR_POLYGON := [
+	Vector2(-16, -24), Vector2(16, -24), Vector2(24, -16), Vector2(24, 16),
+	Vector2(16, 24), Vector2(-16, 24), Vector2(-24, 16), Vector2(-24, -16),
+]
+# Authored pass-through attachment points, matching the saved GumAnchors layer.
+const GUM_ANCHORS := [
+	Vector2i(5, 12), Vector2i(7, 9), Vector2i(10, 7), Vector2i(22, 10),
+	Vector2i(25, 8), Vector2i(38, 10), Vector2i(43, 8), Vector2i(60, 14),
+	Vector2i(62, 8), Vector2i(90, 11), Vector2i(120, 14), Vector2i(138, 16),
+]
 const SECTION_NAMES := ["01 / CONTACT", "02 / SWING", "03 / LIGHT CARGO", "04 / HEAVY ANCHOR", "05 / REDIRECT", "06 / EXIT"]
 const SECTION_STARTS := [Vector2(160, 640), Vector2(864, 512), Vector2(1792, 640), Vector2(2624, 448), Vector2(3456, 640), Vector2(4288, 704)]
 const MARKERS := {

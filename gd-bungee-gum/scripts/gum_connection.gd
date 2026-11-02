@@ -16,7 +16,8 @@ var return_time := 0.0
 var last_display := PackedVector2Array()
 @export var settings: Settings
 var player: CharacterBody2D
-var target: PhysicsBody2D
+var target: Node2D
+var target_rid := RID()
 var target_local_point := Vector2.ZERO
 var rest_length := 0.0
 var tension := 0.0
@@ -33,7 +34,11 @@ func origin() -> Vector2:
 	return player.global_position + Vector2(0, -34)
 
 func connected() -> bool:
-	return is_instance_valid(target) and not target.is_queued_for_deletion()
+	if not is_instance_valid(target) or target.is_queued_for_deletion():
+		return false
+	if target is TileMapLayer:
+		return target.collision_enabled and target.has_body_rid(target_rid)
+	return true
 
 func endpoint() -> Vector2:
 	return target.to_global(target_local_point) if connected() else tip
@@ -49,7 +54,7 @@ func cast_to(point: Vector2) -> Dictionary:
 	return _cast_segment(origin(), end)
 
 func _cast_segment(start: Vector2, end: Vector2) -> Dictionary:
-	var query := PhysicsRayQueryParameters2D.create(start, end, 1 | 4, [player.get_rid()])
+	var query := PhysicsRayQueryParameters2D.create(start, end, 1 | 4 | 16, [player.get_rid()])
 	query.hit_from_inside = true
 	return get_world_2d().direct_space_state.intersect_ray(query)
 
@@ -57,7 +62,17 @@ func attachable(hit: Dictionary) -> bool:
 	if hit.is_empty():
 		return false
 	var body = hit.collider
-	return (body is StaticBody2D or body is RigidBody2D) and not body.is_in_group("gum_blocked") and origin().distance_to(hit.position) <= settings.maximum_length
+	var supported := body is StaticBody2D or body is RigidBody2D
+	if body is TileMapLayer:
+		supported = body.has_body_rid(hit.rid) and (PhysicsServer2D.body_get_collision_layer(hit.rid) & 16) != 0
+	return supported and not body.is_in_group("gum_blocked") and origin().distance_to(_attachment_point(hit)) <= settings.maximum_length
+
+func _attachment_point(hit: Dictionary) -> Vector2:
+	var body = hit.collider
+	if body is TileMapLayer:
+		# The generous hit area extends outside the cell; the RID owns its identity.
+		return body.to_global(body.map_to_local(body.get_coords_for_body_rid(hit.rid)))
+	return hit.position
 
 func attach_at(point: Vector2) -> bool:
 	# Direct connection setup for physics fixtures; gameplay fires a moving tip.
@@ -74,8 +89,11 @@ func _attach_hit(hit: Dictionary) -> void:
 	return_points.clear()
 	last_display.clear()
 	target = hit.collider
-	target_local_point = target.to_local(hit.position)
-	path.reset(origin(), hit.position)
+	target_rid = hit.rid
+	var point := _attachment_point(hit)
+	target_local_point = target.to_local(point)
+	tip = point
+	path.reset(origin(), point)
 	rest_length = path.length
 	terrain_forces.clear()
 	tension = 0.0
@@ -83,7 +101,7 @@ func _attach_hit(hit: Dictionary) -> void:
 	target_force = Vector2.ZERO
 	mode = Mode.CONTRACT
 	release_reason = "ATTACHED"
-	last_display = PackedVector2Array([player.gum_visual_origin(), hit.position])
+	last_display = PackedVector2Array([player.gum_visual_origin(), point])
 
 func fire(direction: Vector2) -> void:
 	if connected() or state == State.OUTBOUND or direction.is_zero_approx():
@@ -165,6 +183,7 @@ func detach(reason := "RELEASED") -> void:
 			tip = return_points[-1]
 	# Never alter either endpoint's velocity on release.
 	target = null
+	target_rid = RID()
 	path.initialized = false
 	path.pivots.clear()
 	path.points.clear()
@@ -286,7 +305,12 @@ func step(delta: float, length_input := 0.0) -> void:
 func update_aim(point: Vector2) -> void:
 	var hit := cast_to(point)
 	aim_valid = attachable(hit)
-	aim_point = hit.position if not hit.is_empty() else origin() + (point - origin()).limit_length(settings.attachment_range)
+	if aim_valid:
+		aim_point = _attachment_point(hit)
+	elif not hit.is_empty():
+		aim_point = hit.position
+	else:
+		aim_point = origin() + (point - origin()).limit_length(settings.attachment_range)
 	queue_redraw()
 
 func _draw() -> void:
@@ -368,7 +392,7 @@ func _display_points() -> PackedVector2Array:
 func _dynamic_obstruction() -> bool:
 	# Adhesion follows the local point even when target rotation hides it.
 	# Only other dynamic bodies obstruct the route; static terrain still wraps.
-	var excluded: Array[RID] = [player.get_rid(), target.get_rid()]
+	var excluded: Array[RID] = [player.get_rid(), target_rid]
 	for i in range(path.points.size()-1):
 		var a: Vector2 = path.points[i]
 		var b: Vector2 = path.points[i+1]

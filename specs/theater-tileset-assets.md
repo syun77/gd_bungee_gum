@@ -50,3 +50,7 @@ Use case: precise-object-edit. Edit target: the provided production pixel-art ti
 上端y=0、棚板は高さ10px、残りは透明。クリーム色の天板、ミント色の前縁と金色の小金具で、厚い通常地形と区別する。左端→中央の反復→右端で水平に接続する。生成原本は `images/tilesets/restaurant_one_way_platform_source.png`。組み込みimagegenで生成・厚み編集後、point補間で128×32のグリッドへ整形した。厚み編集の指示は「上端とX方向・配色を保ち、棚板のY方向の厚みだけを5pxから10pxへ2倍にする。残りは透明」。
 
 `theater_tileset.tres` のsource ID 1に登録済み。`OneWayPlatforms` レイヤーで配置すると、上端y=0〜5pxの一方向衝突が生成される。source ID 0の既存タイルに衝突は付けない。使い方・物理仕様は `specs/one-way-platforms.md` を参照。
+
+## ガム接着専用タイル
+
+`restaurant_gum_anchor.png`（32×32 RGBA）をsource ID2に登録。衝突生成ONの`GumAnchors`で配置し、プレイヤー・箱は通過、ガムだけ接着する。物理ビット16、TileSet physics layer index1。既存source0/1の形状・用途は維持。詳細は `specs/gum-anchor-tile.md`。

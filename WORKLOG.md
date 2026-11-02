@@ -1,3 +1,75 @@
+## Completed attached release jump
+- Goal/status: Implement attached Z/Cross release jump; complete.
+- Decision: Snapshot validated attachment before detach; attached jump always world-up, cancel all downward external velocity, retain upward/horizontal momentum and add kick_speed. Unattached contact/coyote rules stay unchanged.
+- Completed: Implemented Game attachment snapshot and Player release-jump branch; six live physical-Z cases cover descend/still/ascend × contract/loosen, consumed kick/coyote, horizontal retention and hold/repress rejection. Pad Cross checks upward jump. Aligned control/player/genre/stage/flight/architecture specs and AGENTS. Existing edits preserved.
+- Files: game.gd, player.gd, verify_controls.gd; keyboard-controls/player-controller/game-direction/stage-action-concept/bungee-gum-prototype/godot-implementation-plan/gum-flight-return specs; AGENTS.md, WORKLOG.md.
+- Verification: Final controls/player/gum suites all PASS exit0; logs have no script/assertion errors, only known macOS CA warning. git diff --check PASS. Refactoring reviewed fixed-step ownership, release priority and jump consumption, consolidated compensation application and aligned affected specs. Physical keyboard synthetic inputs and pad Cross covered; interactive feel unverified.
+- Blockers: None.
+- Next action: F5 playtest attached Z/Cross while descending and ascending; kick_speed controls added jump velocity.
+
+## Completed centered ring adhesion
+- Goal/status: Ring attachment always resolves to tile center; complete.
+- Completed: Shared endpoint resolver feeds maximum-length validity, aim reticle and attachment. Ring tip/local endpoint/path/natural length/immediate display all use center; terrain/rigid bodies retain actual hit position. Saved GumAnchors/generator/fixture use physics_quadrant_size1 so RID identifies exact cell even with inflated off-cell hits.
+- Files changed: gum_connection.gd; saved theater_stage.tscn; build_theater_stage.gd; verify_gum_anchors.gd; specs/gum-anchor-tile.md and gum-flight-return.md; AGENTS.md; WORKLOG.md.
+- Findings: Godot4.5 default physics quadrant16 groups RIDs; get_coords_for_body_rid returns quadrant coordinates. Per-cell bodies are necessary for correct ring identity. Verified experimentally before fixing configuration.
+- Verification: Final anchor fixture PASS:12 saved centers, four off-center/diagonal hits, aim/display/path/natural length, real moving-tip arrival, transformed second-cell identity/local following, center-based maximum rejection, erase/disable lifecycle and pass-through. Gum/controls/map/stage_route suites PASS exit0; logs inspected without script/assertion errors. git diff --check PASS. Known macOS CA warning only.
+- Refactoring: Centralized endpoint selection, expanded aim branch for clarity, reviewed all hit.position uses for flight/diagnostic versus attachment intent; final anchor suite rerun after cleanup/assertion additions.
+- Blockers: None. Interactive feel unverified.
+- Next action: F5 hit ring rim or invisible margin; line and contraction should end at its center.
+
+## Completed generous anchor adhesion bounds
+- Goal/status: Enlarge gum-only anchor detection beyond unchanged artwork; complete.
+- Completed:48×48px filled octagon (corners trimmed8px) around30px artwork;9px extra reach per cardinal side. Saved TileSet updated directly; shared Layout.GUM_ANCHOR_POLYGON drives generator. Player/prop masks, artwork and map placements unchanged.
+- Files changed: theater_tileset.tres; stage_layout.gd; build_theater_stage.gd; verify_gum_anchors.gd; specs/gum-anchor-tile.md; AGENTS.md; WORKLOG.md.
+- Verification: Final anchor fixture PASS incl all12 saved rays, four outside-art rays, diagonal approach, moving near-miss shot, outside-margin misses, player/rigid passage, force and erase lifecycle. Map/gum/stage_route suites PASS exit0; logs inspected without script/assertion errors. git diff --check PASS. Known macOS CA warning only.
+- Refactoring: Shared immutable polygon array converted to packed array at Godot boundaries; reviewed naming/comments and consolidated fixture position assignment, reran anchor fixture. Moved fixture box clear of horizontal ray cases. No whole-map rebuild.
+- Blockers: None. Interactive aiming feel requires playtesting.
+- Next action: F5 test aim forgiveness; shape tuning is Layout.GUM_ANCHOR_POLYGON and saved TileSet source2 physics index1.
+
+## Completed enlarged functional anchor tiles
+- Goal/status: Enlarge ring within32px cell and replace8 decorative rings in place; complete.
+- Completed: Built-in imagegen edited ring; source/runtime PNG visible30×30px with1px transparent margin, preserved transparent hole. Matching30px gum-only octagon. Converted8 source0/(5,6) cells to source2/(0,0) via targeted scene save, preserving all12 authored positions and terrain. Layout synced for future generator builds; saved minimum_length16 untouched.
+- Files changed: anchor PNG copies and enlarged source; scene/TileSet; stage_layout.gd; build_theater_stage.gd; verify_gum_anchors.gd and verify_gum.gd; specs/gum-anchor-tile.md; AGENTS.md; WORKLOG.md.
+- Decisions/refactoring: No whole-map rebuild. Anchor fixture checks all authored rays, then isolates passage/force/lifecycle from neighboring terrain. Terrain wrapping fixture disables anchor collisions because enlarged section04 ring correctly intercepts its ceiling ray; gameplay detection unchanged. Reviewed affected generator/settings/docs consistency.
+- Verification: PNG RGBA32px/bounds(1,1)..(30,30)/center alpha0/copy equality PASS, enlarged preview inspected. Exact12 saved positions and functional source2 PASS. Final anchors/map/gum/stage_route suites all exit0/PASS, logs inspected without script/assertion errors. git diff --check PASS. Known macOS CA/editor sandbox warnings only.
+- Blockers: None. Interactive visual/feel QA remains separate.
+- Next action: F5 inspect enlarged12 rings; select GumAnchors/source2 for new placement. Imagegen final prompt is in specs/gum-anchor-tile.md.
+
+## Completed nonattaching ring investigation
+- Goal/status: Explain why user-painted rings do not attach; identified, no scene edits.
+- Findings: Saved GumAnchors layer contains8 source0/(5,6) decorative tiles at(5,12),(7,9),(10,7),(22,10),(25,8),(38,10),(43,8),(62,8); those tiles have no physics polygons. Four functional source2/(0,0) rings remain. Layer collision and source2 bit16 polygon are correct; gum mask21 includes them. Saved user tuning minimum_length16 preserved.
+- Files changed: AGENTS.md; WORKLOG.md.
+- Verification: Read current scene, TileSet and gum ray implementation; decoded saved TileMap cells. No runtime changes or regeneration.
+- Blockers: None.
+- Next action: Explain source selection and how to paint functional source2 rings; replace existing decorative cells only if requested.
+
+## Completed minimum contraction distance explanation
+- Goal/status: Locate closest-distance tuning and explain risks of reducing it; complete, no runtime edits.
+- Findings: Gum Physics/minimum_length defaults36px in game_settings.gd; saved Resource omits override. It limits natural total path length, not actual separation; origin is feet+(0,-34). Short initial attachment never lengthens. Gravity/spring equilibrium and terrain collision also limit approach; force is zero inside rest length.
+- Files changed: AGENTS.md; WORKLOG.md.
+- Verification: Read shared resource, schema and shorten/force/path-direction code. No experiments claiming small-length instability reproduced; jitter/overshoot described as potential physical consequences only.
+- Blockers: None.
+- Next action: Explain Inspector location and distinction to user; tune only on request.
+
+## Completed gum anchor TileMap integration
+- Goal/status: Register gum-only ring tile and saved-map samples; complete.
+- Completed: TileSet source2/(0,0), physics bit16, collision-enabled GumAnchors layer with6 layout-owned placements. Gum mask21 supports TileMap endpoints/local points and collision-RID lifecycle. Rebuilt stage intentionally; documented editor placement and generation ownership.
+- Decisions: Player/rigid masks unchanged and ignore rings; filled22px octagon includes visual hole for aiming. Rings are static attachments, not wrapping obstacles. Erase/disable releases connection. Two initial placements moved upward after passage test found adjacent terrain.
+- Files changed: generator/layout/gum_connection, project.godot, generated stage/TileSet, verify_gum_anchors.gd; anchor PNG import metadata; specs/gum-anchor-tile.md, bungee-gum-prototype.md, gum-wrapping.md, theater-tileset-assets.md; AGENTS.md; WORKLOG.md.
+- Verification: Final anchor fixture PASS (all6 actual rays/forces, player/rigid test_move passage, erase/no-hit/repaint moving-shot/disable). Gum/controls/gum_path/map/one_way/stage_route/player suites PASS exit0. Game60-tick smoke PASS. Logs inspected without script/assertion failures; known macOS CA and editor sandbox warnings only. git diff --check PASS.
+- Refactoring: Reviewed target lifetime/force/dynamic-obstruction path, split supported-target classification for readability, kept one generator/layout authority and updated authoritative mask/wrapping docs. Final fixture/regression runs followed implementation cleanup.
+- Blockers: None. Interactive appearance/feel unverified.
+- Next action: In stage editor select GumAnchors and source2 to paint; F5 tests first ring at cell(8,14), world center(272,464). Update Layout.GUM_ANCHORS before generator rebuild to preserve new placements.
+
+## Completed gum anchor tile artwork
+- Goal/status: Create transparent gum-only attachment ring tile artwork; complete.
+- Completed: Built-in imagegen generated mint/cream hollow ring with coral grip accents; point-resized to32px; saved source and identical runtime asset; documented generation prompt and intended separate physics configuration.
+- Decisions: Artwork-only request; no TileSet/map/physics edits. Dedicated gum-only layer remains integration work; existing terrain layer would collide with player.
+- Files changed: images/tilesets/restaurant_gum_anchor{,_source}.png; gd-bungee-gum/assets/tilesets/restaurant_gum_anchor.png; specs/gum-anchor-tile.md; AGENTS.md; WORKLOG.md.
+- Verification: RGBA32×32, alpha-zero center/borders, occupied bounds(5,5)..(26,26), identical runtime bytes PASS. Enlarged nearest preview visually inspected. Refactoring reviewed asset naming/copies and documentation consistency; no runtime changes/test need.
+- Blockers: None.
+- Next action: Deliver image; separate follow-up can register gum-only physics layer and place anchor tiles.
+
 ## Completed PS4 gamepad support
 - Goal/status: DualShock 4 support implemented and locally verified.
 - Completed: Any-device InputMap mappings, axis deadzone0.25, eight-way sign-quantized stick aim, HUD instructions with status moved below five help lines, control spec and AGENTS knowledge. Synthetic joypad tests exercise live Game fire/contract/relax/release/no-repeat, D-pad and stick directions, drift rejection and OPTIONS mapping.

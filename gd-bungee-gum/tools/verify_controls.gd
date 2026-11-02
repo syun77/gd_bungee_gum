@@ -96,7 +96,7 @@ func verify_pad() -> void:
 	check(gum.mode == gum.Mode.CONTRACT, "New Square press contracts")
 	pad_button(JOY_BUTTON_A, true)
 	await ticks(1)
-	check(not gum.connected(), "Cross releases before movement")
+	check(not gum.connected() and player.external_velocity.y < 0.0, "Cross releases and jumps upward")
 	await ticks(20)
 	check(not gum.connected(), "Held Square never refires after Cross")
 	for button in [JOY_BUTTON_A, JOY_BUTTON_X]:
@@ -107,7 +107,37 @@ func verify_pad() -> void:
 	game.set_physics_process(false)
 	await ticks(1)
 
+func verify_attached_jump() -> void:
+	for rising_speed in [600.0, 0.0, -250.0]:
+		for relaxed in [false, true]:
+			await fixture()
+			player.position = Vector2(160, 400)
+			player.external_velocity = Vector2.ZERO
+			await ticks(1)
+			check(gum.attach_at(Vector2(160, 100)), "Release-jump fixture attaches")
+			if relaxed:
+				gum.relax()
+			player.kick_available = false
+			player.coyote_remaining = 0.0
+			player.external_velocity = Vector2(75, rising_speed)
+			key(KEY_Z, true)
+			await ticks(1)
+			var expected_y: float = minf(rising_speed + game.settings.gravity / 60.0, 0.0) - game.settings.kick_speed
+			check(not gum.connected(), "Attached Z releases before jumping")
+			check(absf(player.external_velocity.y - expected_y) < 0.1, "Release jump cancels descent or adds to ascent: " + str(rising_speed))
+			check(absf(player.external_velocity.x - 75.0) < 0.1, "Release jump retains horizontal momentum")
+			await ticks(2)
+			check(player.external_velocity.y > expected_y, "Held Z cannot repeat release jump")
+			key(KEY_Z, false)
+			await ticks(1)
+			var before: float = player.external_velocity.y
+			key(KEY_Z, true)
+			await ticks(1)
+			check(player.external_velocity.y > before, "Detached airborne Z cannot jump again")
+			key(KEY_Z, false)
+
 func verify() -> void:
+	await verify_attached_jump()
 	await verify_pad()
 	await fixture()
 	check(gum.aim_valid, "Neutral guide still predicts a target")

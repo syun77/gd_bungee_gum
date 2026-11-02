@@ -34,11 +34,12 @@ func _physics_process(delta: float) -> void:
 		return
 	gum.validate_connection()
 	var jump_requested := Input.is_action_just_pressed("jump")
+	var attached_jump: bool = jump_requested and gum.connected()
 	_update_direction()
 	var length_input := _read_length_input(jump_requested)
 	_handle_actions(jump_requested)
 	gum.step(delta, length_input)
-	player.simulate(delta, jump_requested)
+	player.simulate(delta, jump_requested, attached_jump)
 	_update_camera(delta)
 	gum.update_aim(_aim_target())
 	_update_status()

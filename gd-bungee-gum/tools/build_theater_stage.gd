@@ -19,6 +19,7 @@ func _initialize() -> void:
 		atlas.create_tile(Vector2i(id % 16, id / 16))
 	tiles.add_source(atlas, 0)
 	add_one_way_source(tiles)
+	add_gum_anchor_source(tiles)
 	assert(ResourceSaver.save(tiles, TILESET_PATH) == OK)
 	tiles = load(TILESET_PATH)
 	stage = Node2D.new()
@@ -61,6 +62,11 @@ func _initialize() -> void:
 		rim.default_color = Color("795747")
 		add(stage, rim)
 	add_one_way_layer()
+	var anchors := layer("GumAnchors")
+	anchors.physics_quadrant_size = 1
+	anchors.collision_enabled = true
+	for cell in Layout.GUM_ANCHORS:
+		anchors.set_cell(cell, 2, Vector2i.ZERO)
 	var signs := layer("Signs")
 	for section in Layout.SECTION_NAMES.size():
 		var x := 4 + section * 26
@@ -144,3 +150,17 @@ func add_one_way_layer() -> void:
 			elif offset == rect.size.x - 1:
 				tile = 2
 			platforms.set_cell(rect.position + Vector2i(offset, 0), 1, Vector2i(tile, 0))
+
+func add_gum_anchor_source(target: TileSet) -> void:
+	target.add_physics_layer()
+	target.set_physics_layer_collision_layer(1, 16)
+	target.set_physics_layer_collision_mask(1, 0)
+	var atlas := TileSetAtlasSource.new()
+	atlas.texture = load("res://assets/tilesets/restaurant_gum_anchor.png")
+	atlas.texture_region_size = Vector2i(TILE, TILE)
+	target.add_source(atlas, 2)
+	atlas.create_tile(Vector2i.ZERO)
+	var data := atlas.get_tile_data(Vector2i.ZERO, 0)
+	# Filled target includes the hole so aiming through the ring center attaches.
+	data.add_collision_polygon(1)
+	data.set_collision_polygon_points(1, 0, PackedVector2Array(Layout.GUM_ANCHOR_POLYGON))
