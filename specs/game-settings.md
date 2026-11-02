@@ -1,6 +1,6 @@
 # ゲームパラメータの編集
 
-GodotのFileSystemで `res://resources/game_settings.tres` を選択し、Inspectorで編集して保存する。F5を再実行すると反映される。現在の基準値は蹴り出し速度400 px/s、Coyote Time 0.20秒、ガム最大長400 px、射程240 px、発射速度1200 px/s。保存済み設定とスクリプトの初期値を揃えている。定義・範囲・単位の説明は `scripts/game_settings.gd` にある。
+GodotのFileSystemで `res://resources/game_settings.tres` を選択し、Inspectorで編集して保存する。F5を再実行すると反映される。現在の基準値は蹴り出し速度400 px/s、Coyote Time 0.20秒、ガム最大長400 px、射程160 px、発射速度1200 px/s。保存済み設定とスクリプトの初期値を揃えている。ガム最小自然長は4 px。Gum／Pinning診断はOFF、Jump／Landing診断はONを基準とする。定義・範囲・単位の説明は `scripts/game_settings.gd` にある。
 
 | Inspectorのグループ | 主な項目 |
 | --- | --- |
@@ -41,15 +41,15 @@ READY時に表示する命中予告の補助線（発射から回収完了まで
 
 手動長さ調整は`manual_extension_speed`（180 px/s）、`manual_shortening_speed`（90 px/s）、`manual_length_margin`（240 px）で調整する。自動収縮は`contraction_speed`（180 px/s）。手動延長上限は最大長から安全余裕を引き0〜最大長に制限する。保存基準では160 px。
 
-接続中のガムは同じ経路に半透明のハロー4層、基本色の線、細い明るい芯を重ねて発光感を出す。折り返し点と接着点にも適用する。Gum Appearance の **Gum Glow Radius**（初期8 px）、**Gum Glow Opacity**（0.12）、**Gum Core Brightness**（白の混合率0.65）で調整する。半径または不透明度0でハローを無効化できる。緩めモードの基本色は灰色寄りのまま。描画のみの効果で、周囲への照明や物理への影響はなく、ポストエフェクトに依存しない。
+接続中のガムは同じ経路に加算合成・ガウス減衰のハロー24層、ピンクのリボン、幅75%の白ピンクの芯を重ねて発光感を出す。折り返し点と接着点にも適用する。線の基本幅は4 px、最大張力でさらに4 px加算する。距離や経路上の位置による幅の変化はなく、たるみ・折り返しの物理経路を維持する。通常色は #FF8DD6、最大張力色は #FF62BD。Gum Appearance の **Gum Glow Radius**（初期18 px）、**Gum Glow Opacity**（0.18）、**Gum Core Brightness**（白の混合率0.12）で調整する。半径または不透明度0でハローを無効化できる。緩めモードの基本色は灰色寄りのまま。描画のみの効果で、周囲への照明や物理への影響はなく、Compatibility対応の局所ブルーム近似で、画面全体のHDRポストエフェクトに依存しない。
 
-**Attachment Range**（`attachment_range`、初期240 px）は先端の累積飛行距離と照準の射程。**Maximum Length**（`maximum_length`、初期400 px）は接続後に伸びられる総経路長の切断上限で、巻き付き経路を含む。両者は独立して編集できる。例えば射程400／最大長800なら400 px以内に接着し、その後800 pxまで伸びられる。手動自然長の上限はMaximum Length−Manual Length Margin。射程を最大長より長くしても、最大長を超える位置には接着できず照準も接着不可になる。
+**Attachment Range**（`attachment_range`、初期160 px）は先端の累積飛行距離と照準の射程。**Maximum Length**（`maximum_length`、初期400 px）は接続後に伸びられる総経路長の切断上限で、巻き付き経路を含む。両者は独立して編集できる。例えば射程400／最大長800なら400 px以内に接着し、その後800 pxまで伸びられる。手動自然長の上限はMaximum Length−Manual Length Margin。射程を最大長より長くしても、最大長を超える位置には接着できず照準も接着不可になる。
 
 `Gum Flight`の`gum_shot_speed`は先端の直進速度（1200 px/s）、`gum_return_speed`は回収経路の短縮速度（3200 px/s）、`gum_return_max_duration`は回収表示の最大寿命（0.25秒）。飛行・回収はガム力を発生させず、接着成立の次更新から既存の物理計算を行う。飛行・回収の長さは経路長ズームに使用しない。
 
-`Gum Diagnostics`（初期値ON）は切断時に`[GumDiagnostic] DETACH`を出力する。切断理由、状態／モード、両端位置、プレイヤー速度／外部速度、接続先パス・回転・ローカル接着点・剛体速度／質量、経路長・自然長・上限・経路点・ピボット数・修復回数・失敗理由を含む。`HISTORY`は力のリセット前に保存した直近8ステップ（前ステップの張力／力、今回のdelta／長さ入力）の履歴。動的障害物による切断はレイ区間、検出物、接続先自身かを示す`is_target`、衝突位置／法線／shapeも記録する。通常の接続中は出力せず、手動切断・飛行失敗・再起動も切断理由で区別する。GodotのOutputまたは標準出力ログで確認し、InspectorのDiagnosticsから無効化できる。経路更新失敗時の経路点／長さは最後に完成した経路の場合があるため、現在の両端位置・previous位置と併せて読む。
+`Gum Diagnostics`（初期値OFF）は切断時に`[GumDiagnostic] DETACH`を出力する。切断理由、状態／モード、両端位置、プレイヤー速度／外部速度、接続先パス・回転・ローカル接着点・剛体速度／質量、経路長・自然長・上限・経路点・ピボット数・修復回数・失敗理由を含む。`HISTORY`は力のリセット前に保存した直近8ステップ（前ステップの張力／力、今回のdelta／長さ入力）の履歴。動的障害物による切断はレイ区間、検出物、接続先自身かを示す`is_target`、衝突位置／法線／shapeも記録する。通常の接続中は出力せず、手動切断・飛行失敗・再起動も切断理由で区別する。GodotのOutputまたは標準出力ログで確認し、InspectorのDiagnosticsから無効化できる。経路更新失敗時の経路点／長さは最後に完成した経路の場合があるため、現在の両端位置・previous位置と併せて読む。
 
-`Pinning Diagnostics`（初期値ON）はプレイヤーと剛体のスライド接触、または深い接触で移動できない状態を調査する。剛体が接触一覧から欠落しても、接触深度1 px以上・衝突前速度10 px/s以上・1ステップの実変位0.1 px未満なら`stalled_penetration=true`として記録を継続する。`rigid_contact`、`deepest_contact`、`slide_count`も含む。`[PinningDiagnostic] CONTACT_STARTED`で直前8ステップの`HISTORY`と現在状態を出力し、接触中は30物理ティックごとに`PERSISTING`、移動／Z／X／上下入力またはガム状態・モードの変化時に`ACTION_CHANGED`、剛体接触も深い接触による停滞も報告されなくなると`CONTACT_ENDED`を出す。挟まったと断定する検出ではなく、通常のブロック接触も対象。入力、キック可否・猶予、移動前後位置・実変位、衝突前の入力／外部／合成速度、move_and_slide直後速度、衝突整理・摩擦後の入力／外部速度、床・壁・天井、safe_margin／max_slides、接触相手・法線・深度・位置・相手速度、剛体の質量・回転・速度・sleep/freeze、ガムの状態・張力・両端力・長さを含む。イベント時の`nearby`はプレイヤー衝突形状を2 px拡張した重なり検索（最大16件）で、スライド結果に現れない近接壁やブロックを補足する。近接候補は接触や挟まりの証明ではない。ガム切断後も剛体接触ログは継続する。物理挙動は変更せず、InspectorのDiagnosticsから無効化できる。
+`Pinning Diagnostics`（初期値OFF）はプレイヤーと剛体のスライド接触、または深い接触で移動できない状態を調査する。剛体が接触一覧から欠落しても、接触深度1 px以上・衝突前速度10 px/s以上・1ステップの実変位0.1 px未満なら`stalled_penetration=true`として記録を継続する。`rigid_contact`、`deepest_contact`、`slide_count`も含む。`[PinningDiagnostic] CONTACT_STARTED`で直前8ステップの`HISTORY`と現在状態を出力し、接触中は30物理ティックごとに`PERSISTING`、移動／Z／X／上下入力またはガム状態・モードの変化時に`ACTION_CHANGED`、剛体接触も深い接触による停滞も報告されなくなると`CONTACT_ENDED`を出す。挟まったと断定する検出ではなく、通常のブロック接触も対象。入力、キック可否・猶予、移動前後位置・実変位、衝突前の入力／外部／合成速度、move_and_slide直後速度、衝突整理・摩擦後の入力／外部速度、床・壁・天井、safe_margin／max_slides、接触相手・法線・深度・位置・相手速度、剛体の質量・回転・速度・sleep/freeze、ガムの状態・張力・両端力・長さを含む。イベント時の`nearby`はプレイヤー衝突形状を2 px拡張した重なり検索（最大16件）で、スライド結果に現れない近接壁やブロックを補足する。近接候補は接触や挟まりの証明ではない。ガム切断後も剛体接触ログは継続する。物理挙動は変更せず、InspectorのDiagnosticsから無効化できる。
 
 `Player Contact`は壁・天井相当のブロック接触の反作用を調整する。床相当の支持接触は実カプセルの衝突に任せ、接触余白による分離や反発を加えない。本体カプセルのサイズを変更する設定ではない。`Pinning Diagnostics`の`CONTACT_IMPULSE`で接触点のインパルスと剛体速度の前後を確認できる。接触応答と検証条件は`player-controller.md`を参照。
 

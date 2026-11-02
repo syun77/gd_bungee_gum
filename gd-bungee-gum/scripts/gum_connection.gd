@@ -35,6 +35,35 @@ var release_reason := "READY"
 var mode := Mode.NONE
 var diagnostic_history: Array[Dictionary] = []
 var diagnostic_obstruction: Dictionary = {}
+var glow_canvas: Node2D
+
+func _ready() -> void:
+	glow_canvas = Node2D.new()
+	glow_canvas.name = "GumBloom"
+	glow_canvas.show_behind_parent = true
+	var additive := CanvasItemMaterial.new()
+	additive.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	glow_canvas.material = additive
+	glow_canvas.draw.connect(_draw_glow)
+	add_child(glow_canvas)
+
+func _draw_glow() -> void:
+	if not is_instance_valid(player) or state == State.READY:
+		return
+	if settings.gum_glow_radius <= 0.0 or settings.gum_glow_opacity <= 0.0:
+		return
+	var ratio := tension / settings.maximum_tension
+	var color := _gum_color(ratio)
+	var points := _display_points()
+	var width := settings.gum_line_width + ratio * settings.gum_tension_width
+	# Gaussian falloff keeps the bright inner halo soft at its outer edge.
+	for layer in range(24, 0, -1):
+		var fraction := float(layer) / 24.0
+		var halo := Color(color, color.a * settings.gum_glow_opacity * exp(-4.5 * fraction * fraction) / 6.0)
+		_draw_gum_shape(glow_canvas, points, halo, width, settings.gum_glow_radius * fraction)
+
+func _gum_color(ratio: float) -> Color:
+	return settings.gum_loosen_color if mode == Mode.LOOSEN else settings.gum_slack_color.lerp(settings.gum_taut_color, ratio)
 
 func origin() -> Vector2:
 	return player.global_position + Vector2(0, -34)
@@ -357,6 +386,8 @@ func update_aim(point: Vector2) -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	if is_instance_valid(glow_canvas):
+		glow_canvas.queue_redraw()
 	if not is_instance_valid(player):
 		return
 	if state == State.READY:
@@ -377,27 +408,19 @@ func _draw() -> void:
 		draw_arc(aim, settings.aim_reticle_radius, 0, TAU, 20, aim_color, settings.aim_reticle_width)
 		return
 	var ratio := tension / settings.maximum_tension
-	var color := settings.gum_slack_color.lerp(settings.gum_taut_color, ratio)
-	if mode == Mode.LOOSEN:
-		color = settings.gum_loosen_color
+	var color := _gum_color(ratio)
 	var points := _display_points()
 	var width := settings.gum_line_width + ratio * settings.gum_tension_width
-	# Wide translucent layers soften the silhouette without screen-wide bloom.
-	if settings.gum_glow_radius > 0.0 and settings.gum_glow_opacity > 0.0:
-		for layer in range(4, 0, -1):
-			var spread := settings.gum_glow_radius * layer / 4.0
-			var halo := Color(color, color.a * settings.gum_glow_opacity * (5.0 - layer) / 4.0)
-			_draw_gum_shape(points, halo, width, spread)
-	_draw_gum_shape(points, color, width, 0.0)
+	_draw_gum_shape(self, points, color, width, 0.0)
 	var core := color.lerp(Color(1.0, 1.0, 1.0, color.a), settings.gum_core_brightness)
-	_draw_gum_shape(points, core, maxf(1.0, width * 0.35), 0.0, 0.4)
+	_draw_gum_shape(self, points, core, maxf(1.0, width * 0.75), 0.0, 0.4)
 
-func _draw_gum_shape(points: PackedVector2Array, color: Color, width: float, spread: float, marker_scale: float = 1.0) -> void:
+func _draw_gum_shape(canvas: Node2D, points: PackedVector2Array, color: Color, width: float, spread: float, marker_scale: float = 1.0) -> void:
 	if points.size() > 1:
-		draw_polyline(points, color, width + spread * 2.0, true)
+		canvas.draw_polyline(points, color, width + spread * 2.0, true)
 	for pivot in path.pivots:
-		draw_circle(to_local(pivot.position), 3.0 * marker_scale + spread, color, true, -1.0, true)
-	draw_circle(to_local(endpoint()), 5.0 * marker_scale + spread, color, true, -1.0, true)
+		canvas.draw_circle(to_local(pivot.position), 3.0 * marker_scale + spread, color, true, -1.0, true)
+	canvas.draw_circle(to_local(endpoint()), 5.0 * marker_scale + spread, color, true, -1.0, true)
 
 func _world_display_points() -> PackedVector2Array:
 	var points := _display_points()

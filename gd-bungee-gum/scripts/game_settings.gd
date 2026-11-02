@@ -35,9 +35,9 @@ extends Resource
 @export_range(0.0, 200.0) var stiffness := 35.0
 @export_range(0.0, 100.0) var damping := 9.0
 @export_range(1.0, 1000.0) var contraction_speed := 180.0
-@export_range(1.0, 900.0) var minimum_length := 36.0
+@export_range(1.0, 900.0) var minimum_length := 4.0
 ## Maximum straight-line firing distance (px), independent of connected path length.
-@export_range(1.0, 3000.0) var attachment_range := 240.0
+@export_range(1.0, 3000.0) var attachment_range := 160.0
 ## Maximum connected path length, including wrapping (px).
 @export_range(1.0, 3000.0) var maximum_length := 400.0
 @export_range(1.0, 10000.0) var maximum_tension := 2800.0
@@ -73,17 +73,17 @@ extends Resource
 @export_group("Gum Appearance")
 ## Relaxed manual-length mode, independent of tension.
 @export var gum_loosen_color := Color("#B8A6AD")
-@export var gum_slack_color := Color(1.0, 0.52, 0.8, 1.0)
-@export var gum_taut_color := Color(1.0, 0.2, 0.28, 1.0)
-@export_range(1.0, 10.0) var gum_line_width := 2.0
+@export var gum_slack_color := Color("#FF8DD6")
+@export var gum_taut_color := Color("#FF62BD")
+@export_range(1.0, 10.0) var gum_line_width := 4.0
 ## Additional width at maximum tension (px).
 @export_range(0.0, 10.0) var gum_tension_width := 4.0
 
-## Soft halo radius beyond the gum edge (px); zero disables the halo.
-@export_range(0.0, 24.0) var gum_glow_radius := 8.0
-@export_range(0.0, 1.0) var gum_glow_opacity := 0.12
+## Additive bloom halo radius beyond the gum edge (px); zero disables the halo.
+@export_range(0.0, 24.0) var gum_glow_radius := 18.0
+@export_range(0.0, 1.0) var gum_glow_opacity := 0.18
 ## White mixed into the narrow luminous core; zero keeps the base color.
-@export_range(0.0, 1.0) var gum_core_brightness := 0.65
+@export_range(0.0, 1.0) var gum_core_brightness := 0.12
 
 @export_group("Camera Zoom")
 ## Camera2D scale: larger values show a closer view.
@@ -101,9 +101,9 @@ extends Resource
 
 @export_group("Diagnostics")
 ## Log rigid contacts or stalled penetration, movement, nearby bodies and gum force.
-@export var pinning_diagnostics := true
+@export var pinning_diagnostics := false
 ## Log gum releases with endpoint physics, obstruction details and eight preceding steps.
-@export var gum_diagnostics := true
+@export var gum_diagnostics := false
 ## Log contact kick-off requests, rejection reasons and rearming.
 @export var jump_diagnostics := true
 ## Log unexpected vertical control velocity and subsequent floor transitions.

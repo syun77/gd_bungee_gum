@@ -47,6 +47,7 @@ func verify() -> void:
 	gum = load("res://scripts/gum_connection.gd").new()
 	gum.settings = load("res://resources/game_settings.tres").duplicate()
 	gum.settings.gum_shot_speed = 2400.0
+	gum.settings.attachment_range = 240.0
 	gum.player = player
 	world.add_child(gum)
 	var wall := body_at(Vector2(220, -34))

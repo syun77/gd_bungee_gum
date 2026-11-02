@@ -5,7 +5,6 @@
 [resource]
 resource_name = "Game Settings"
 script = ExtResource("1")
-minimum_length = 4.0
-attachment_range = 160.0
-pinning_diagnostics = false
-gum_diagnostics = false
+gum_glow_radius = 18.0
+gum_glow_opacity = 0.18
+gum_core_brightness = 0.12

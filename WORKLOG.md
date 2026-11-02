@@ -1,3 +1,48 @@
+## Completed emission settings confirmation
+- Goal/status: Confirm saved game_settings tuning; complete.
+- Completed: Preserved saved Resource values glow radius18, opacity0.18, core brightness0.12; matched script defaults/specs/AGENTS. Other settings untouched.
+- Files: game_settings.gd, specs/game-settings.md, AGENTS.md, WORKLOG.md; existing game_settings.tres tuning preserved.
+- Decisions: Current saved Inspector values are authoritative.
+- Tests: Godot effective saved/default comparison PASS (57 properties); verify_aim_tile PASS; git diff --check PASS. Temporary comparison script removed. Final refactoring reviewed tuning references; no runtime structure change needed. Known sandbox CA warning only.
+- Blockers: None.
+- Next action: Continue with confirmed emission baseline18/0.18/0.12.
+
+## Completed uniform gum width
+- Goal/status: Remove distance-based widening; complete.
+- Completed: Removed taper setting/custom polygon geometry; shared antialiased polyline draws uniform-width halo/base/core. Emission colors and tension width retained; specs/AGENTS aligned.
+- Files: gum_connection.gd, game_settings.gd, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Decisions: User prefers uniform width along path.
+- Tests: verify_aim_tile PASS; git diff --check PASS. Final refactoring replaced custom ribbon tessellation with shared native antialiased polyline and removed unused tuning. Known sandbox CA warning only.
+- Blockers: None.
+- Next action: F5 inspect uniform-width luminous gum.
+
+## Completed reference gum appearance
+- Goal/status: Match supplied pale-pink tapered luminous gum reference; complete.
+- Completed: Tapered path-following ribbon (hand1×/target2.5×), wider pale core, pink tension palette,24-layer Gaussian additive halo. Loosen gray preserved.
+- Files: gum_connection.gd, game_settings.gd, WORKLOG.md, specs/game-settings.md, AGENTS.md.
+- Decisions: Keep physical path/sag/wrapping; width taper is visual only, no cone-shaped collision or physics.
+- Tests: verify_gum PASS; verify_aim_tile PASS; git diff --check PASS. Known sandbox CA warning only. Final refactoring reviewed shared ribbon geometry/colors and cumulative path taper; no physics changes. Interactive rendered appearance unverified.
+- Blockers: None.
+- Next action: F5 visually compare pale-pink tapered glow against reference; tune Gum Appearance if needed.
+
+## Completed settings baseline confirmation
+- Goal/status: Confirm effective current game_settings values; complete; defaults/docs aligned.
+- Completed: Preserved saved Resource; aligned minimum_length4, attachment_range160, pinning/gum diagnostics false in script defaults and settings specification. Existing bloom edits preserved.
+- Files: scripts/game_settings.gd, tools/verify_gum.gd, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Decisions: Current saved overrides are authoritative; all other effective values unchanged.
+- Tests: verify_aim_tile PASS; verify_gum PASS exit0; git diff --check PASS. Flight fixture explicitly sets240px range for its200px target (saved gameplay range remains160). Final refactoring review confirmed only four defaults changed and no runtime tuning drift.
+- Blockers: None.
+- Next action: Use current settings as the confirmed baseline; interactive feel review remains optional.
+
+## Completed gum bloom enhancement
+- Goal/status: Strengthen gum emission; complete.
+- Completed: Separate behind-parent additive CanvasItem with12 quadratic halo layers; shared path/color/markers; radius16px/opacity0.6 defaults. READY preview excluded; renderer/physics unchanged.
+- Files: gum_connection.gd, game_settings.gd, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Decisions: Local bloom approximation supports Compatibility and preserves loosen color.
+- Verification: verify_aim_tile PASS; verify_gum exit1 with9 flight/arrival/contraction assertions, identical failures confirmed with HEAD gum script (saved range160 vs fixture200). Known sandbox CA warning. Final refactoring reviewed shared color/geometry and draw lifecycle; git diff --check PASS.
+- Blockers: None for implementation; interactive rendered appearance unverified.
+- Next action: F5 inspect gum emission; tune Gum Appearance radius/opacity if desired. Existing gum fixture range mismatch remains outside this rendering change.
+
 ## Completed valid aim brightness
 - Goal/status: Brighten firing preview on attachable hit; complete.
 - Completed: Valid line/reticle use configured color alpha directly (default0.9); unavailable keeps aim_guide_opacity multiplier (default resulting0.27). Input-independent; tile blink unchanged. Aligned Inspector comment, specs and AGENTS.
