@@ -2,30 +2,10 @@ extends SceneTree
 ## Run from the project root: Godot --headless --path . --script res://tools/build_theater_stage.gd
 ## Rebuilds the authored scene and TileSet; manual scene edits will be overwritten.
 
-const TILE := 32
+const Layout = preload("res://scripts/stage_layout.gd")
+const TILE := Layout.TILE
 const STAGE_PATH := "res://scenes/stages/theater_stage.tscn"
 const TILESET_PATH := "res://assets/tilesets/theater_tileset.tres"
-const TERRAIN := [
-	# Left wall, upper boundary, right wall.
-	Rect2i(0, 2, 2, 22), Rect2i(2, 2, 156, 2), Rect2i(158, 2, 2, 22),
-	# 01: contact kick-off; open landing and raised step.
-	Rect2i(2, 20, 16, 4), Rect2i(18, 17, 7, 7),
-	# 02: ceiling swing; two recovery shelves over the open pit.
-	Rect2i(25, 8, 21, 2), Rect2i(29, 22, 5, 2), Rect2i(39, 20, 5, 4),
-	Rect2i(46, 17, 9, 7),
-	# 03: cargo manipulation; broad working floor and a high ledge.
-	Rect2i(55, 20, 17, 4), Rect2i(72, 16, 8, 8), Rect2i(59, 7, 15, 2),
-	# 04: heavy anchor; supported upper shelf and deep crossing.
-	Rect2i(80, 18, 6, 6), Rect2i(86, 10, 7, 2), Rect2i(96, 21, 4, 3),
-	Rect2i(103, 16, 6, 8),
-	# 05: projectile corridor; level working floor, cover and overhead surfaces.
-	Rect2i(109, 20, 23, 4), Rect2i(117, 17, 2, 3), Rect2i(125, 16, 2, 4),
-	Rect2i(112, 7, 18, 2),
-	# 06: final climb and exit landing.
-	Rect2i(132, 18, 6, 6), Rect2i(141, 15, 5, 2), Rect2i(150, 12, 8, 12),
-	Rect2i(136, 8, 9, 2),
-]
-const SECTION_NAMES := ["01 / CONTACT", "02 / SWING", "03 / LIGHT CARGO", "04 / HEAVY ANCHOR", "05 / REDIRECT", "06 / EXIT"]
 var stage: Node2D
 var tiles: TileSet
 
@@ -38,19 +18,20 @@ func _initialize() -> void:
 	for id in range(105):
 		atlas.create_tile(Vector2i(id % 16, id / 16))
 	tiles.add_source(atlas, 0)
+	add_one_way_source(tiles)
 	assert(ResourceSaver.save(tiles, TILESET_PATH) == OK)
 	tiles = load(TILESET_PATH)
 	stage = Node2D.new()
 	stage.name = "TheaterStage"
 	stage.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	var background := layer("Background", Color(0.65, 0.78, 0.72, 0.45))
-	for x in range(2, 158):
-		for y in range(4, 24):
+	for x in range(2, Layout.SIZE.x - 2):
+		for y in range(4, Layout.SIZE.y):
 			# Sparse masonry piers, with open dark bays for readable silhouettes.
 			if x % 26 < 3 or y >= 22:
 				put(background, x, y, 79 + (x + y) % 2)
 	var iron := layer("BackgroundIron", Color(0.8, 0.9, 0.82, 0.6))
-	for x in range(2, 158):
+	for x in range(2, Layout.SIZE.x - 2):
 		put(iron, x, 5, 66)
 	var terrain := layer("TerrainTiles")
 	var body := StaticBody2D.new()
@@ -58,8 +39,8 @@ func _initialize() -> void:
 	body.collision_layer = 1
 	body.collision_mask = 0
 	add(stage, body)
-	for i in range(TERRAIN.size()):
-		var rect: Rect2i = TERRAIN[i]
+	for i in range(Layout.TERRAIN.size()):
+		var rect: Rect2i = Layout.TERRAIN[i]
 		for x in range(rect.position.x, rect.end.x):
 			for y in range(rect.position.y, rect.end.y):
 				put(terrain, x, y, 56 + (x * 7 + y * 3) % 4)
@@ -79,32 +60,27 @@ func _initialize() -> void:
 		rim.width = 2
 		rim.default_color = Color("795747")
 		add(stage, rim)
+	add_one_way_layer()
 	var signs := layer("Signs")
-	for section in range(6):
+	for section in Layout.SECTION_NAMES.size():
 		var x := 4 + section * 26
 		put(signs, x, 12, 98)
-		label(SECTION_NAMES[section], Vector2(x * TILE, 192), Color("fff0cc"))
+		label(Layout.SECTION_NAMES[section], Vector2(x * TILE, 192), Color("fff0cc"))
 	put(signs, 5, 18, 99)
 	put(signs, 154, 10, 100)
-	for x in [25, 35, 86, 94, 138, 147]:
-		put(signs, x, 23, 102)
 	var markers := Node2D.new()
 	markers.name = "PlacementMarkers"
 	add(stage, markers)
-	marker(markers, "PlayerSpawn", Vector2(160, 620))
-	marker(markers, "LightBoxSpawn", Vector2(2048, 616))
-	marker(markers, "HeavyBoxSpawn", Vector2(2864, 296))
-	marker(markers, "ProjectileEmitter", Vector2(3584, 592))
-	marker(markers, "ProjectileTarget", Vector2(4096, 480))
-	marker(markers, "Exit", Vector2(4944, 364))
-	for section in range(6):
-		marker(markers, "Section%02d" % (section + 1), Vector2((4 + section * 26) * TILE, 384))
+	for marker_name in Layout.MARKERS:
+		marker(markers, marker_name, Layout.MARKERS[marker_name])
+	for section in Layout.SECTION_NAMES.size():
+		marker(markers, "Section%02d" % (section + 1), Layout.SECTION_STARTS[section])
 	label("ENTRANCE", Vector2(96, 552), Color("fff0cc"))
-	label("EXIT", Vector2(4896, 284), Color("fff0cc"))
+	label("EXIT", Vector2(4896, 292), Color("fff0cc"))
 	var scene := PackedScene.new()
 	assert(scene.pack(stage) == OK)
 	assert(ResourceSaver.save(scene, STAGE_PATH) == OK)
-	print("Saved theater stage: ", terrain.get_used_cells().size(), " terrain cells, ", TERRAIN.size(), " collision rectangles.")
+	print("Saved theater stage: ", terrain.get_used_cells().size(), " terrain cells, ", Layout.TERRAIN.size(), " collision rectangles.")
 	stage.free()
 	quit()
 
@@ -136,3 +112,35 @@ func marker(parent: Node, node_name: String, position: Vector2) -> void:
 	result.name = node_name
 	result.position = position
 	add(parent, result)
+
+func add_one_way_source(target: TileSet) -> void:
+	target.add_physics_layer()
+	target.set_physics_layer_collision_layer(0, 8)
+	target.set_physics_layer_collision_mask(0, 0)
+	var atlas := TileSetAtlasSource.new()
+	atlas.texture = load("res://assets/tilesets/restaurant_one_way_platform.png")
+	atlas.texture_region_size = Vector2i(TILE, TILE)
+	target.add_source(atlas, 1)
+	for x in 4:
+		var cell := Vector2i(x, 0)
+		atlas.create_tile(cell)
+		var data := atlas.get_tile_data(cell, 0)
+		data.add_collision_polygon(0)
+		data.set_collision_polygon_points(0, 0, PackedVector2Array([
+			Vector2(-16, -16), Vector2(16, -16), Vector2(16, -11), Vector2(-16, -11)]))
+		data.set_collision_polygon_one_way(0, 0, true)
+		data.set_collision_polygon_one_way_margin(0, 0, 1.0)
+
+func add_one_way_layer() -> void:
+	var platforms := layer("OneWayPlatforms")
+	platforms.collision_enabled = true
+	for rect in Layout.ONE_WAY_FLOORS:
+		for offset in rect.size.x:
+			var tile := 1
+			if rect.size.x == 1:
+				tile = 3
+			elif offset == 0:
+				tile = 0
+			elif offset == rect.size.x - 1:
+				tile = 2
+			platforms.set_cell(rect.position + Vector2i(offset, 0), 1, Vector2i(tile, 0))

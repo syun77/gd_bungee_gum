@@ -30,10 +30,10 @@ mass = 6.0
 modulate = Color(0.9, 0.6, 0.7, 1)
 
 [node name="PuzzleLightBox" parent="." instance=ExtResource("5")]
-position = Vector2(2048, 616)
+position = Vector2(1952, 620)
 
 [node name="PuzzleHeavyBox" parent="." instance=ExtResource("5")]
-position = Vector2(2864, 296)
+position = Vector2(2752, 428)
 mass = 6.0
 modulate = Color(0.9, 0.6, 0.7, 1)
 

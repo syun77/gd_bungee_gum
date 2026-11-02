@@ -132,24 +132,31 @@ func verify() -> void:
 	for tick in 300:
 		check(safe(path,Vector2(160,586),Vector2(160,128)), "Saved-map steady path")
 	print("Map geometry %.2f ms; steady path %.3f ms/tick; %d corners" % [build_ms,(Time.get_ticks_usec()-started)/300000.0,geometry.corners.size()])
-	# Section 04: shelf left corners must exist, not be replaced by floor right corner.
+	world.free()
+	# Large-coordinate shelf regression: preserve near-edge precision and pivot ordering.
+	world = Node2D.new()
+	root.add_child(world)
+	rectangle(Vector2(2560,96), Vector2(4992,64))
+	rectangle(Vector2(2864,352), Vector2(224,64))
+	rectangle(Vector2(2656,672), Vector2(192,192))
+	geometry.refresh(world,1)
 	check(not geometry.inside(Vector2(2751.99,352)), "Point immediately left of shelf stays outside at map coordinates")
 	for vertex in [Vector2(2752,320),Vector2(2752,384)]:
 		var found := false
 		for corner in geometry.corners:
 			if corner.vertex == vertex:
 				found = true
-		check(found, "Saved map shelf exposes left convex corner " + str(vertex))
+		check(found, "Large-coordinate shelf exposes left convex corner " + str(vertex))
 	for anchor_x in [2736,2742,2748,2750]:
 		path = Path.new()
 		path.reset(Vector2(2700,480),Vector2(anchor_x,128))
 		var prior_length: float = path.length
 		for x in range(2700,2820):
-			check(safe(path,Vector2(x,480),Vector2(anchor_x,128)), "Section 04 contact route stays valid")
+			check(safe(path,Vector2(x,480),Vector2(anchor_x,128)), "Large-coordinate contact route stays valid")
 			for pivot in path.pivots:
 				check(pivot.position.y < 400, "Contact shelf must not select unrelated floor corner")
 			check(absf(path.length-prior_length) < 3, "Contact introduces no large path-length jump")
-			check(path.start_direction().y < 0, "Section 04 contact keeps upward pull")
+			check(path.start_direction().y < 0, "Large-coordinate contact keeps upward pull")
 			prior_length = path.length
 	world.free()
 	# Translation must not change corner extraction or near-edge classification.

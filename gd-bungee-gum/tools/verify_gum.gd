@@ -394,15 +394,15 @@ func verify() -> void:
 		await ticks(1)
 	check(game_gum.connected() and game_player.position.is_finite(), "Live map corner contraction remains stable")
 	game_gum.detach()
-	game_player.position = Vector2(2700,514)
+	game_player.position = Vector2(2892,610)
 	game_player.external_velocity = Vector2(200,-50)
 	game_player.velocity = game_player.external_velocity
-	check(game_gum.attach_at(Vector2(2742,100)), "Section 04 ceiling anchor before shelf contact")
+	check(game_gum.attach_at(Vector2(2934,100)), "Section 04 ceiling anchor before shelf contact")
 	game_gum.mode = game_gum.Mode.LOOSEN
 	game_gum.rest_length = 250.0
-	game_player.position.x = 2760.0
+	game_player.position.x = 2952.0
 	game_gum.step(1.0/60.0)
-	check(game_gum.connected() and game_gum.support_point().is_equal_approx(Vector2(2751,385)), "Section 04 chooses contacted shelf bottom-left, not lower floor")
+	check(game_gum.connected() and game_gum.support_point().is_equal_approx(Vector2(2943,449)), "Section 04 chooses contacted shelf bottom-left, not lower floor")
 	check(game_gum.player_force.y < 0 and game_player.external_velocity.y < -50, "Section 04 contact tension pulls upward without false downward kick")
 	game.free()
 	if failures == 0:

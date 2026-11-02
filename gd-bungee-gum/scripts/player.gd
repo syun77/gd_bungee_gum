@@ -412,7 +412,8 @@ func _slide_contacts() -> Array[Dictionary]:
 	for index in get_slide_collision_count():
 		var collision := get_slide_collision(index)
 		contacts.append({"normal": collision.get_normal(), "body": collision.get_collider(),
-			"point": collision.get_position(), "shape": collision.get_collider_shape_index()})
+			"point": collision.get_position(), "shape": collision.get_collider_shape_index(),
+			"rid": collision.get_collider_rid()})
 	return contacts
 
 func _move_with_face_support(delta: float, grounded: bool) -> void:
@@ -438,7 +439,7 @@ func _predicted_support_angle(delta: float) -> float:
 	if not test_move(global_transform, velocity * delta, hit, safe_margin, true):
 		return floor_max_angle
 	var contact := {"normal": hit.get_normal(), "body": hit.get_collider(),
-		"shape": hit.get_collider_shape_index(), "point": hit.get_position()}
+		"shape": hit.get_collider_shape_index(), "point": hit.get_position(), "rid": hit.get_collider_rid()}
 	var normal: Vector2 = contact.normal
 	if not _is_support_normal(_support_face_normal(contact)):
 		return floor_max_angle
@@ -448,7 +449,11 @@ func _predicted_support_angle(delta: float) -> float:
 func _support_face_normal(contact: Dictionary) -> Vector2:
 	var normal: Vector2 = contact.normal
 	var body = contact.get("body")
-	if normal.dot(up_direction) <= 0.0 or not body is CollisionObject2D or not contact.has("shape"):
+	if normal.dot(up_direction) <= 0.0 or not contact.has("shape"):
+		return normal
+	if body is TileMapLayer:
+		return _tile_support_face_normal(contact)
+	if not body is CollisionObject2D:
 		return normal
 	var shape_index: int = contact.shape
 	var owner: int = body.shape_find_owner(shape_index)
@@ -479,6 +484,34 @@ func _support_face_normal(contact: Dictionary) -> Vector2:
 			if _is_support_normal(face_normal):
 				return face_normal
 	return normal
+
+func _tile_support_face_normal(contact: Dictionary) -> Vector2:
+	# TileMapLayer owns server bodies rather than CollisionObject2D shape owners.
+	var rid: RID = contact.get("rid", RID())
+	if not rid.is_valid() or not contact.body.has_body_rid(rid):
+		return contact.normal
+	var shape: RID = PhysicsServer2D.body_get_shape(rid, contact.shape)
+	if PhysicsServer2D.shape_get_type(shape) != PhysicsServer2D.SHAPE_CONVEX_POLYGON:
+		return contact.normal
+	var points: PackedVector2Array = PhysicsServer2D.shape_get_data(shape)
+	var transform: Transform2D = PhysicsServer2D.body_get_state(rid, PhysicsServer2D.BODY_STATE_TRANSFORM)
+	transform = transform * PhysicsServer2D.body_get_shape_transform(rid, contact.shape)
+	var center := Vector2.ZERO
+	for point in points:
+		center += transform * point
+	center /= points.size()
+	for index in points.size():
+		var a := transform * points[index]
+		var b := transform * points[(index + 1) % points.size()]
+		if Geometry2D.get_closest_point_to_segment(contact.point, a, b).distance_to(contact.point) > SUPPORT_FACE_TOLERANCE:
+			continue
+		var tangent := b - a
+		var normal := Vector2(tangent.y, -tangent.x).normalized()
+		if normal.dot((a + b) * 0.5 - center) < 0.0:
+			normal = -normal
+		if _is_support_normal(normal):
+			return normal
+	return contact.normal
 
 func _solve_rigid_contacts(delta: float, incoming: Vector2) -> Array[Dictionary]:
 	var contacts: Array[Dictionary] = []

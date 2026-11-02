@@ -112,8 +112,8 @@ func verify_corner_landing(game: Node2D) -> void:
 	game.add_child(recovery)
 	await physics_frame
 	for direction in [1.0, -1.0]:
-		# Step at x576 (rightward), mirrored contact at x800 (leftward).
-		player.position = Vector2(520 if direction > 0 else 856, 550)
+		# Exit step at x640 (rightward), mirrored contact at x832 (leftward).
+		player.position = Vector2(584 if direction > 0 else 888, 518)
 		player.control_velocity = Vector2(220 * direction, 0)
 		player.external_velocity = Vector2(700 * direction, 0)
 		player.velocity = player.control_velocity + player.external_velocity

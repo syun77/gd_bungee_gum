@@ -16,6 +16,8 @@ func _ready() -> void:
 	player.settings = settings
 	gum.settings = settings
 	player.global_position = $TheaterStage/PlacementMarkers/PlayerSpawn.global_position
+	$PuzzleLightBox.global_position = $TheaterStage/PlacementMarkers/LightBoxSpawn.global_position
+	$PuzzleHeavyBox.global_position = $TheaterStage/PlacementMarkers/HeavyBoxSpawn.global_position
 	gum.player = player
 	player.gum = gum
 	aim_direction = Vector2.LEFT if player.sprite.flip_h else Vector2.RIGHT

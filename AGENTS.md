@@ -25,7 +25,7 @@
 - Current setting/art direction is a pop-colored family restaurant: cream ceramic, coral/mint trim, painted frames and muted teal background. `theater_*` filenames remain the current resource identifiers. Edit both atlas copies together (`images/tilesets/` and `gd-bungee-gum/assets/tilesets/`); `restaurant_tileset_source.png` is the color-edit source.
 
 - The first editable map is `gd-bungee-gum/scenes/stages/theater_stage.tscn` (160 × 24 cells, 32 px grid). F6 opens the stage alone; F5 runs `scenes/game.tscn` with the Teto player (A/D or arrows, Z for detach/contact kick-off, R for restart). Open `scenes/map_preview.tscn` with F6 for arrows to pan, 1–6 to select a section and Tab for overview.
-- Map layers have collision disabled; `TheaterStage/Terrain` owns merged rectangular static shapes on physics layer 1. When editing terrain tiles, update matching shapes and outline nodes together. `tools/build_theater_stage.gd` regenerates the scene/TileSet and overwrites manual edits; run only intentionally.
+- Ordinary map layers have collision disabled (except native one-way `OneWayPlatforms`); `TheaterStage/Terrain` owns merged rectangular static shapes on physics layer 1. When editing terrain tiles, update matching shapes and outline nodes together. `tools/build_theater_stage.gd` regenerates the scene/TileSet and overwrites manual edits; run only intentionally.
 - Local Godot executable: `/Applications/Godot_mono.app/Contents/MacOS/Godot` (4.5.1). For sandboxed headless runs, use `--log-file /tmp/<task>.log` to avoid a crash writing default user logs. Run the saved-map collision check with `--headless --path gd-bungee-gum --log-file /tmp/map-check.log --script res://tools/verify_theater_stage.gd`.
 
 - `images/tilesets/theater_tileset.png` is a 512 × 512 RGBA manual-placement atlas (32 px cells, 16 columns, 105 occupied cells). See `specs/theater-tileset-assets.md` and `specs/theater-tileset-atlas.json`; 47-pattern autotiling and seamless joins are not yet validated.
@@ -87,9 +87,9 @@
 
 
 
-- Static corner wrapping is implemented in `gum_path.gd` / `gum_terrain_geometry.gd`; see specs/gum-wrapping.md. Collision-derived union corners (62 in saved stage), ordered pivots, <=1px endpoint sweep, total-path spring/length limit and terrain reactions. Dynamic obstacle wrapping is unsupported and releases explicitly. Run tools/verify_gum_path.gd alongside gum/controls/player/map suites.
+- Static corner wrapping is implemented in `gum_path.gd` / `gum_terrain_geometry.gd`; see specs/gum-wrapping.md. Collision-derived union corners (59 in saved stage), ordered pivots, <=1px endpoint sweep, total-path spring/length limit and terrain reactions. Dynamic obstacle wrapping is unsupported and releases explicitly. Run tools/verify_gum_path.gd alongside gum/controls/player/map suites.
 
-- Wrapping geometry uses edge-relative convex half-plane containment: Geometry2D.is_point_in_polygon misclassified near-edge points at section-04 coordinates, dropping valid shelf corners. Keep translated-shape and saved-map shelf pivot regressions in verify_gum_path.gd.
+- Wrapping geometry uses edge-relative convex half-plane containment: Geometry2D.is_point_in_polygon misclassified near-edge points at section-04 coordinates, dropping valid shelf corners. Keep translated-shape, large-coordinate shelf and saved-map beam pivot regressions in verify_gum_path.gd.
 
 
 
@@ -158,3 +158,11 @@
 - Corner support resolves the contacted rectangle edge (shape index/transform, <=0.5px face distance), sharing its actual face normal for momentum cleanup and friction; raw capsule normals still own engine contacts. All four edges support rotated boxes; unknown shapes retain raw normals. verify_player.gd checks 42 mirrored original-ledge landings including impact drift, upward departure/downward load and retained horizontal momentum.
 
 - Extreme corner normals can be wall-classified even on a walkable rectangular top. Player predicts that geometric support with test_move, temporarily widens floor classification only during move_and_slide, then restores the configured angle. Supported motion removes into-face velocity before movement; external momentum remains for post-move rigid reaction. Rigid proximity contacts share face classification via shape indices. verify_player covers offsets9/9.8px, diagonal pushback, true walls/undersides and restored slope limit.
+
+- One-way floor artwork: `images/tilesets/restaurant_one_way_platform.png` and matching Godot copy;128×32 RGBA, four32px cells left/middle/right/single, visible top y0,height10px (collision remains5px, same top). Registered as source1 in theater_tileset.tres; paint on collision-enabled OneWayPlatforms. Physics bit8, player mask13, box mask9; gum mask5 passes through. Current layout has15 strips/76cells. See specs/one-way-platforms.md and verify_one_way.gd.
+
+- In Godot text resources serialize collision masks as integer values, never `1 | 2 | 4` expressions: Godot4.5.1 loaded that existing box expression as1. Box mask9 preserves terrain collision and adds one-way platforms.
+
+- Stage geometry/markers are authored in `scripts/stage_layout.gd`; generator now intentionally produces1212 solid cells/27rectangles/59gum corners. Preserve160×24 grid. Current tuning gives69.48px floor-kick rise at60Hz: use64px kick steps,128px gum lifts,222px chest-to-beam shots within range240. `tools/verify_stage_route.gd` traverses actual Game including boxes through7 lifts without teleport/tuning overrides; rerun after terrain/tuning changes.
+
+- TileMapLayer support faces use collision RID/server convex polygon geometry (not CollisionObject2D shape owners); guard has_body_rid against erased tiles. verify_one_way covers mirrored outer-edge landings0/5/7/8px for60ticks without sideways drift; native one-way passage remains authoritative.

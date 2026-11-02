@@ -1,3 +1,53 @@
+## Completed one-way extreme-edge landing repair
+- Goal/status: Fix one-way edge sliding; complete locally.
+- Findings: TileMapLayer bypassed CollisionObject2D rectangle support correction; capsule corner converted downward momentum into outward drift. Baseline offset5px fell with90px drift.
+- Completed: Slide/prediction contact records carry collision RID; dedicated TileMap server-convex face resolver feeds existing support classification, momentum cleanup and friction. has_body_rid rejects erased tile contacts. Native collision geometry/margins/passage and actual horizontal momentum unchanged.
+- Files: scripts/player.gd; tools/verify_one_way.gd; specs/one-way-platforms.md; AGENTS.md; WORKLOG.md.
+- Verification: Mirrored outer-edge offsets0/5/7/8px retain support for60ticks with drift<0.1px. Native upward/side passage, fast/seam landing, kick, rigid support, gum ray and paint/erase PASS. Post-review player/compression/stage_route/one_way all exit0 with no assertions/script errors (/tmp/edge-final-*.log); git diff --check PASS. Known macOS CA warning only.
+- Refactoring: Kept TileMap server lookup isolated from CollisionObject shape-owner lookup; shared existing support pipeline. Reviewed stale-RID lifecycle and polygon winding/transform handling; final suites above run after cleanup.
+- Limits: User4.7.2 unavailable; verified4.5.1. No snapping outside native contact; extremely shallow overlap can miss native one-way contact (9.8px outside a10px radius capsule), outside this contact-response repair.
+- Blockers: None.
+- Next action: F5 repeat edge landings in user4.7.2.
+
+## Completed one-way floor artwork thickness
+- Goal/status: Double visible tile thickness5→10px; complete.
+- Completed: Built-in imagegen geometric edit, point-normalized visible band to10px at top of128×32 RGBA strip; saved identical source/runtime copies. Updated asset docs, physics/art distinction and AGENTS knowledge.
+- Decisions: Artwork-only: top position/32px cells/layout/collision5px unchanged. Original generation source preserved. Prompt requests vertical-only thickness doubling while retaining X layout/palette; recorded in asset specification.
+- Files changed: images/tilesets/restaurant_one_way_platform.png; gd-bungee-gum/assets/tilesets/restaurant_one_way_platform.png; specs/theater-tileset-assets.md; specs/one-way-platforms.md; AGENTS.md; WORKLOG.md.
+- Verification/refactoring: Enlarged final image inspected. RGBA128×32, visible y0..9, lower22px transparent and matching copies PASS. Reviewed all touched thickness documentation for visual/physical distinction; git diff --check PASS. No runtime code change; physics reruns unnecessary.
+- Blockers: None.
+- Next action: Godot automatically reimports updated PNG; F5 inspect thicker platforms.
+
+## Completed tuning-based stage rebuild
+- Goal/status: Complete and locally verified with saved movement/gum tuning.
+- Completed: Central scripts/stage_layout.gd owns27 terrain rectangles,15 one-way strips/76cells, markers and7 lift tests. Generator intentionally regenerated1212 solid cells,59 gum corners; old unmatched terrain gone. Props use map markers. Stage route uses actual Game including four boxes, real Gum.fire, retained momentum, saved settings and Player.simulate with no teleports after entrance; seven lifts and64px kicks reach exit. Actual60Hz kick height69.48px/airtime0.7s/running range154px measured.
+- Decisions: 128px gum lifts,64px kick shelves,222px vertical shot distance against240px range. Safe basins and higher optional routes; final climb offsets lower/upper beams so upper shot stays clear. No tuning/controller/gum changes.
+- Files changed: stage_layout.gd, build_theater_stage.gd, regenerated stage/TileSet, game.gd/game.tscn prop placements, verify_stage_route/verify_theater_stage/verify_one_way/verify_player/verify_gum/verify_gum_path; map/one-way/wrapping specs and AGENTS.md.
+- Verification: New map grid art/collision checker PASS (1212solid,27shapes,76one-way,59corners); actual Game full-route PASS. Generator PASS. All seven other suites (one_way/player/compression/gum/controls/gum_path/camera) PASS exit0 with no script errors/assertions. Existing geometry-specific regressions updated to current beams; large-coordinate precision case preserved as standalone fixture.
+- Blockers: None.
+- Refactoring: Shared Layout owns stage dimensions, terrain, shelves, markers and per-lift kick targets; removed route index coupling and obsolete pit-warning decoration. Preserved large-coordinate shelf regression as isolated geometry fixture. Regenerated after cleanup.
+- Final verification: Post-refactor all9 suites PASS exit0 (stage_route/theater_stage/one_way/player/compression/gum/controls/gum_path/camera), /tmp/stage-final-*.log inspected with no script errors/assertions. Game60-tick and map-preview5-tick smoke PASS; editor import generated scriptUID files. git diff --check PASS. Known sandbox CA warnings; editor-only Mono socket/settings warnings. Interactive visual/feel QA remains unperformed.
+- Next action: F5 play rebuilt route; F6 map_preview for overview. Upper shortcuts remain optional/unverified for optimal timing; lower full route including boxes is verified.
+
+## Completed one-way TileMap implementation
+- Goal/status: One-way tiles and saved-map sample complete and locally verified.
+- Completed: Native source1 four one-way polygons; OneWayPlatforms collision-enabled layer at cells10..15,y17. Player mask13, box mask9; gum passes through. Generator, layer names and specs aligned; preserved all original scene data.
+- Decisions: Top5px polygons, margin1; native physics, no new controls. Box original serialized bitwise expression actually loads1; numeric9 adds only platform collision, preserving existing effective behavior.
+- Files changed: theater_tileset.tres, stage/player/box scenes, project.godot, build_theater_stage.gd, verify_one_way.gd, specs/one-way-platforms.md, tile asset docs, AGENTS.md, WORKLOG.md; new tile assets from prior task included.
+- Verification: verify_one_way PASS (real player upward/side passage, fast/seam landing, kick, rigid upward/landing, gum ray, single-tile paint/erase collision updates); player/compression/gum/controls/gum_path/camera PASS. Saved-map check has pre-existing failure:1228 actual vs1222 expected; six hand-edited cells(89/90,18),(91/92,19),(93/94,20) have no static collision. Temporary audit confirms other1222 covered,24 shapes/markers/62 gum corners correct. No changes to those cells or weakening of existing test.
+- Blockers: Existing saved-map verification mismatch outside requested floor implementation; local engine4.5.1 only.
+- Refactoring/verification: Reviewed native resource/generator parity and masks; atlas is registered before polygon creation. Generator ran successfully with only output paths redirected to /tmp (saved map untouched); final new suite and git diff --check PASS. All six other runtime suites exit0 with no assertions/script errors. Known sandbox CA warning only in headless checks. No interactive visual playtest.
+- Next action: F5 try entrance shelf; paint source1 tiles on OneWayPlatforms. Existing unrelated six uncollidable hand-edited terrain cells remain for a separate terrain repair.
+
+## Completed one-way platform tile asset
+- Goal/status: Add missing one-way floor artwork; complete as artwork only.
+- Completed: Generated thin restaurant shelf strip; normalized to128×32 RGBA, four32px cells (left/middle/right/single), top y0,height5px. Saved source and matching source/runtime final copies; documented slicing and pending physics integration.
+- Decisions: Separate asset preserves original atlas layout. No TileSet/map/collision changes in this first asset task.
+- Files changed: images/tilesets/restaurant_one_way_platform{,_source}.png; gd-bungee-gum/assets/tilesets/restaurant_one_way_platform.png; specs/theater-tileset-assets.md; AGENTS.md; WORKLOG.md.
+- Verification: Enlarged visual inspection; Pillow checks dimensions/RGBA/transparent lower27px/identical copies PASS. Reviewed asset naming, scope and documentation; no runtime code to refactor/test.
+- Blockers: None.
+- Next action: Register artwork and implement one-way collision when requested; consider gum ray/wrapping behavior explicitly during physics design.
+
 ## Completed extreme-edge landing follow-up
 - Goal/status: Fix remaining edge slip and apparent side rebound in user4.7.2 log; locally implemented and verified.
 - Findings: Static terrain normal(-.941842,-.336056) is wall-classified. Projecting external(0,278.3334) yields exactly(-88.09582,246.9001): sideways momentum from slope projection, not restitution. Old raw45deg gate excluded genuine top support; engine movement also drifted each tick when driven downward into steep rounded contact.
