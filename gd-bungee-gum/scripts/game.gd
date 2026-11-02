@@ -21,6 +21,7 @@ func _ready() -> void:
 	gum.player = player
 	player.gum = gum
 	$GumAttachmentEffect.bind(gum)
+	$LandingDustEffect.bind(player)
 	aim_direction = Vector2.LEFT if player.sprite.flip_h else Vector2.RIGHT
 	camera.position = player.position
 	camera.zoom = Vector2.ONE * settings.camera_normal_zoom
@@ -31,6 +32,7 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("restart") or player.position.y > settings.restart_y:
 		restarting = true
 		gum.detach("RESTART")
+		$LandingDustEffect.stop()
 		get_tree().call_deferred("reload_current_scene")
 		return
 	gum.validate_connection()

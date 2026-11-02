@@ -15,7 +15,7 @@ GodotのFileSystemで `res://resources/game_settings.tres` を選択し、Inspec
 | Camera Zoom | 通常／長距離時の倍率、距離範囲、追従速度 |
 | Stage Rules | 落下時に再スタートするY座標 |
 
-READY時に表示する命中予告の補助線（発射から回収完了までは非表示）は **Aim Valid Color / Aim Invalid Color** で変更する。カラーピッカーの **A（アルファ）** が透明度で、1が不透明。初期値は両方0.9、**Aim Line Width** は2 px。色とアルファは照準円にも適用する。方向入力にかかわらず`Aim Guide Opacity`（0.3）をアルファに掛け、常に薄く表示する。描画側は `scripts/gum_connection.gd` の `_draw()`。
+READY時に表示する命中予告の補助線（発射から回収完了までは非表示）は **Aim Valid Color / Aim Invalid Color** で変更する。カラーピッカーの **A（アルファ）** が透明度で、1が不透明。初期値は両方0.9、**Aim Line Width** は2 px。色とアルファは照準円にも適用する。接着可能な予測では有効色のアルファをそのまま使い、明るく表示する（初期0.9）。対象なし／接着不可では`Aim Guide Opacity`（0.3）を無効色のアルファに掛ける（初期0.27）。方向入力の有無では明るさを変えない。描画側は `scripts/gum_connection.gd` の `_draw()`。
 
 `scenes/game.tscn` のGameノードのSettingsが設定の参照元。Gameは起動時に同じResourceをPlayerとGumへ渡す。Player単体のシーンにも既定ファイルを割り当てる。パラメータをスクリプト側へコピーせず参照しており、接続解除時の運動量保持や双方への力の適用方式は変わらない。
 
@@ -52,3 +52,5 @@ READY時に表示する命中予告の補助線（発射から回収完了まで
 `Pinning Diagnostics`（初期値ON）はプレイヤーと剛体のスライド接触、または深い接触で移動できない状態を調査する。剛体が接触一覧から欠落しても、接触深度1 px以上・衝突前速度10 px/s以上・1ステップの実変位0.1 px未満なら`stalled_penetration=true`として記録を継続する。`rigid_contact`、`deepest_contact`、`slide_count`も含む。`[PinningDiagnostic] CONTACT_STARTED`で直前8ステップの`HISTORY`と現在状態を出力し、接触中は30物理ティックごとに`PERSISTING`、移動／Z／X／上下入力またはガム状態・モードの変化時に`ACTION_CHANGED`、剛体接触も深い接触による停滞も報告されなくなると`CONTACT_ENDED`を出す。挟まったと断定する検出ではなく、通常のブロック接触も対象。入力、キック可否・猶予、移動前後位置・実変位、衝突前の入力／外部／合成速度、move_and_slide直後速度、衝突整理・摩擦後の入力／外部速度、床・壁・天井、safe_margin／max_slides、接触相手・法線・深度・位置・相手速度、剛体の質量・回転・速度・sleep/freeze、ガムの状態・張力・両端力・長さを含む。イベント時の`nearby`はプレイヤー衝突形状を2 px拡張した重なり検索（最大16件）で、スライド結果に現れない近接壁やブロックを補足する。近接候補は接触や挟まりの証明ではない。ガム切断後も剛体接触ログは継続する。物理挙動は変更せず、InspectorのDiagnosticsから無効化できる。
 
 `Player Contact`は壁・天井相当のブロック接触の反作用を調整する。床相当の支持接触は実カプセルの衝突に任せ、接触余白による分離や反発を加えない。本体カプセルのサイズを変更する設定ではない。`Pinning Diagnostics`の`CONTACT_IMPULSE`で接触点のインパルスと剛体速度の前後を確認できる。接触応答と検証条件は`player-controller.md`を参照。
+
+`Landing Dust`は着地土煙の表示しきい値。`landing_dust_minimum_speed`は80px/s未満を省略し、`landing_dust_heavy_speed`は450px/s以上で強着地画像を選ぶ。いずれも床法線方向の接触直前相対速度で、横移動速度を含めない。強着地しきい値を最小速度未満に設定した場合は最小速度を下限にする。物理への影響はない。

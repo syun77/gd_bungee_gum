@@ -1,0 +1,259 @@
+{
+  "frames": [
+    {
+      "filename": "landing_dust_normal 0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 32
+      },
+      "duration": 33
+    },
+    {
+      "filename": "landing_dust_normal 1",
+      "frame": {
+        "x": 64,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 32
+      },
+      "duration": 33
+    },
+    {
+      "filename": "landing_dust_normal 2",
+      "frame": {
+        "x": 128,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 32
+      },
+      "duration": 33
+    },
+    {
+      "filename": "landing_dust_normal 3",
+      "frame": {
+        "x": 0,
+        "y": 32,
+        "w": 64,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 32
+      },
+      "duration": 33
+    },
+    {
+      "filename": "landing_dust_normal 4",
+      "frame": {
+        "x": 64,
+        "y": 32,
+        "w": 64,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 32
+      },
+      "duration": 33
+    },
+    {
+      "filename": "landing_dust_normal 5",
+      "frame": {
+        "x": 128,
+        "y": 32,
+        "w": 64,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 32
+      },
+      "duration": 33
+    },
+    {
+      "filename": "landing_dust_normal 6",
+      "frame": {
+        "x": 0,
+        "y": 64,
+        "w": 64,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 32
+      },
+      "duration": 33
+    },
+    {
+      "filename": "landing_dust_normal 7",
+      "frame": {
+        "x": 64,
+        "y": 64,
+        "w": 64,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 32
+      },
+      "duration": 33
+    },
+    {
+      "filename": "landing_dust_normal 8",
+      "frame": {
+        "x": 128,
+        "y": 64,
+        "w": 64,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 32
+      },
+      "duration": 33
+    },
+    {
+      "filename": "landing_dust_normal 9",
+      "frame": {
+        "x": 0,
+        "y": 96,
+        "w": 64,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 32
+      },
+      "duration": 0
+    }
+  ],
+  "meta": {
+    "app": "https://github.com/patch-gg/pixelfx",
+    "version": "1",
+    "image": "landing_dust_normal.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 192,
+      "h": 128
+    },
+    "scale": "1",
+    "frameTags": [
+      {
+        "name": "landing_dust_normal",
+        "from": 0,
+        "to": 9,
+        "direction": "forward"
+      }
+    ],
+    "pixelfx": {
+      "id": "impacts/landing-dust",
+      "name": "Landing dust",
+      "fps": 30,
+      "loop": false,
+      "frames": 10,
+      "frameSize": [
+        64,
+        32
+      ],
+      "pivot": [
+        32,
+        26
+      ],
+      "columns": 3
+    }
+  }
+}

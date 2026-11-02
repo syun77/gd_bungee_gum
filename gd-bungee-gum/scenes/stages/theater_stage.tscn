@@ -1,6 +1,6 @@
 [gd_scene format=4 uid="uid://ce4n05g8mwopm"]
 
-[ext_resource type="TileSet" path="res://assets/tilesets/theater_tileset.tres" id="1_jd0rl"]
+[ext_resource type="TileSet" uid="uid://cx8raxqtl52fj" path="res://assets/tilesets/theater_tileset.tres" id="1_jd0rl"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_sbul5"]
 size = Vector2(64, 704)

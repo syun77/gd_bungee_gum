@@ -15,6 +15,12 @@ extends Resource
 @export_range(0.0, 0.3, 0.01) var coyote_time := 0.2
 @export_range(0.01, 1000.0) var player_mass := 1.0
 
+@export_group("Landing Dust")
+## Minimum floor-normal relative impact speed for visible dust (px/s).
+@export_range(0.0, 2000.0) var landing_dust_minimum_speed := 80.0
+## Floor-normal relative impact speed selecting the heavy burst (px/s).
+@export_range(0.0, 2000.0) var landing_dust_heavy_speed := 450.0
+
 @export_group("Player Contact")
 ## Repulsion skin around the unchanged player capsule; floor support uses real collisions (px).
 @export_range(0.0, 2.0) var contact_clearance := 0.75
@@ -54,7 +60,7 @@ extends Resource
 @export_range(1, 128) var wrap_max_repairs := 32
 
 @export_group("Aim Guide")
-## Guide alpha multiplier, independent of direction input.
+## Unavailable-target alpha multiplier; valid targets use their color alpha directly.
 @export_range(0.0, 1.0) var aim_guide_opacity := 0.3
 ## Target available / unavailable. Alpha controls both guide and reticle opacity.
 @export var aim_valid_color := Color(0.45, 1.0, 0.75, 0.9)

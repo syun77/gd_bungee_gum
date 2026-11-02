@@ -5,6 +5,7 @@ signal adhesion_ended
 
 const Settings = preload("res://scripts/game_settings.gd")
 const RIGID_CONTACT_TOLERANCE := 2.0
+const AIM_TILE_BLINK_HZ := 3.0
 const GumPath = preload("res://scripts/gum_path.gd")
 var path = GumPath.new()
 var terrain_forces := PackedVector2Array()
@@ -28,6 +29,8 @@ var player_force := Vector2.ZERO
 var target_force := Vector2.ZERO
 var aim_point := Vector2.ZERO
 var aim_valid := false
+var aim_tile_polygon := PackedVector2Array()
+var aim_blink_time := 0.0
 var release_reason := "READY"
 var mode := Mode.NONE
 var diagnostic_history: Array[Dictionary] = []
@@ -310,9 +313,41 @@ func step(delta: float, length_input := 0.0) -> void:
 		# apply_force takes force (not impulse) and a world-oriented offset from origin.
 		(target as RigidBody2D).apply_force(target_force, endpoint() - target.global_position)
 
+func _aim_hit_tile(hit: Dictionary) -> PackedVector2Array:
+	if hit.is_empty():
+		return PackedVector2Array()
+	var body = hit.collider
+	var layer: TileMapLayer
+	var cell: Vector2i
+	if body is TileMapLayer and body.has_body_rid(hit.rid):
+		layer = body
+		cell = layer.get_coords_for_body_rid(hit.rid)
+	elif body is StaticBody2D and body.name == "Terrain":
+		layer = body.get_parent().get_node_or_null("TerrainTiles") as TileMapLayer
+		if layer == null:
+			return PackedVector2Array()
+		# Terrain rectangles merge many cells; sample just inside the hit face.
+		cell = layer.local_to_map(layer.to_local(hit.position - hit.normal * 0.1))
+	else:
+		return PackedVector2Array()
+	if layer.get_cell_source_id(cell) == -1:
+		return PackedVector2Array()
+	var center := layer.map_to_local(cell)
+	var half := Vector2(layer.tile_set.tile_size) * 0.5
+	var polygon := PackedVector2Array()
+	for corner in [Vector2(-half.x, -half.y), Vector2(half.x, -half.y), half, Vector2(-half.x, half.y)]:
+		polygon.append(to_local(layer.to_global(center + corner)))
+	return polygon
+
 func update_aim(point: Vector2) -> void:
 	var hit := cast_to(point)
 	aim_valid = attachable(hit)
+	var polygon := _aim_hit_tile(hit) if state == State.READY else PackedVector2Array()
+	if polygon != aim_tile_polygon:
+		aim_blink_time = 0.0
+	else:
+		aim_blink_time += get_physics_process_delta_time()
+	aim_tile_polygon = polygon
 	if aim_valid:
 		aim_point = _attachment_point(hit)
 	elif not hit.is_empty():
@@ -325,10 +360,19 @@ func _draw() -> void:
 	if not is_instance_valid(player):
 		return
 	if state == State.READY:
+		if not aim_tile_polygon.is_empty():
+			var pulse := 0.5 + 0.5 * cos(aim_blink_time * TAU * AIM_TILE_BLINK_HZ)
+			var tile_color := settings.aim_valid_color if aim_valid else settings.aim_invalid_color
+			var highlight := Color(tile_color, lerpf(0.04, 0.4, pulse))
+			draw_colored_polygon(aim_tile_polygon, highlight)
+			var outline := aim_tile_polygon.duplicate()
+			outline.append(outline[0])
+			draw_polyline(outline, Color(highlight, lerpf(0.15, 0.9, pulse)), 2.0)
 		var start := to_local(player.gum_visual_origin())
 		var aim := to_local(aim_point)
 		var aim_color := settings.aim_valid_color if aim_valid else settings.aim_invalid_color
-		aim_color.a *= settings.aim_guide_opacity
+		if not aim_valid:
+			aim_color.a *= settings.aim_guide_opacity
 		draw_dashed_line(start, aim, aim_color, settings.aim_line_width, settings.aim_dash_length)
 		draw_arc(aim, settings.aim_reticle_radius, 0, TAU, 20, aim_color, settings.aim_reticle_width)
 		return

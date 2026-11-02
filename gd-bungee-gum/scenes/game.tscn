@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/stages/theater_stage.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/characters/player.tscn" id="2"]
@@ -10,6 +10,8 @@
 [ext_resource type="Resource" path="res://resources/game_settings.tres" id="6"]
 
 [ext_resource type="PackedScene" path="res://scenes/effects/gum_attachment_effect.tscn" id="7"]
+
+[ext_resource type="PackedScene" path="res://scenes/effects/landing_dust_effect.tscn" id="8"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("3")
@@ -24,6 +26,8 @@ z_index = 5
 script = ExtResource("4")
 
 [node name="GumAttachmentEffect" parent="." instance=ExtResource("7")]
+
+[node name="LandingDustEffect" parent="." instance=ExtResource("8")]
 
 [node name="LightBox" parent="." instance=ExtResource("5")]
 position = Vector2(360, 610)

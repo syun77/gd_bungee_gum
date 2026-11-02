@@ -1,3 +1,56 @@
+## Completed valid aim brightness
+- Goal/status: Brighten firing preview on attachable hit; complete.
+- Completed: Valid line/reticle use configured color alpha directly (default0.9); unavailable keeps aim_guide_opacity multiplier (default resulting0.27). Input-independent; tile blink unchanged. Aligned Inspector comment, specs and AGENTS.
+- Files: gum_connection.gd, game_settings.gd, specs/keyboard-controls.md, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Verification: Final refactoring review kept shared line/reticle color with single conditional alpha; focused verify_aim_tile.gd PASS, git diff --check PASS. Known sandbox CA warning only. Visual appearance not checked interactively.
+- Blockers: None.
+- Next action: F5 inspect brighter valid-target prediction.
+
+## Completed aim tile highlight
+- Goal/status: Blink the tile hit by firing prediction; complete.
+- Completed: READY-only 3Hz translucent fill/outline using prediction valid/invalid colors; merged terrain inward cell lookup, ring RID cell, target-change phase reset and miss/flight/attachment/return hiding. No physics changes.
+- Files: gum_connection.gd, tools/verify_aim_tile.gd, specs/keyboard-controls.md, AGENTS.md, WORKLOG.md. Existing landing dust/stage edits preserved.
+- Verification: Focused real-ray fixture PASS terrain cell/ring cell/phase switch/miss/outbound; existing verify_gum_anchors PASS. Final refactor reviewed cell resolution/drawing, named blink frequency and aligned colors; focused fixture rerun PASS; git diff --check PASS. Known sandbox CA warning only.
+- Blockers: None. Interactive appearance not checked.
+- Next action: F5 inspect prediction blink at terrain and rings.
+
+## Completed landing dust integration
+- Goal/status: Integrate normal/heavy landing dust; complete.
+- Completed: Player.landed after real airborne floor transition; Game binding/restart cleanup; reusable nearest Sprite2D with rigid point/normal following; runtime PNG copies; shared Landing Dust speed settings; focused fixture/specs/AGENTS updated.
+- Decisions: Suppress first spawn settling, <0.05s/<2px airborne flicker and compression recovery; select80/450px/s relative normal impact; capture pre-contact velocity, emit before rigid impulses. No physics changes. Unrelated stage edits preserved.
+- Files: player.gd/game.gd/game_settings.gd, landing_dust_effect.gd/tscn, game.tscn, assets/effects/landing_dust_*, tools/verify_landing_dust.gd, specs/landing-dust-effect.md/game-settings.md, AGENTS.md, WORKLOG.md.
+- Verification: Focused final refactor fixture PASS real normal/heavy/horizontal-speed/rotated-rigid landing, spawn/flicker/compression suppression,30fps/expiry, rigid follow/deletion and cleanup. Controls/compression PASS exit0. Player regression PASS exit0 including both high-speed corners and full movement checks. Import successful; known sandbox CA/Mono/editor-settings warnings. git diff --check PASS.
+- Refactoring: Reviewed touched areas; named airborne eligibility constants, shared both variants in one node, explicit following flag handles freed rigid bodies, thresholds use shared tuning resource. Final focused fixture rerun after review.
+- Blockers: None. Interactive gameplay appearance not checked.
+- Next action: F5 inspect landing dust at normal/strong falls and box landings; tune shared Landing Dust impact thresholds if needed.
+
+## Completed landing dust assets
+- Goal/status: Create PixelFX landing dust under images/; complete.
+- Completed: Normal/heavy warm-gray dust PNG atlases, JSON, contact sheets, GIF previews and shared editable source. Two visual review rounds refined lobes and dissipation. Existing PixelFX license/notices apply.
+- Decisions:64×32px cells,192×128 atlas,3columns,10frames (9visible+transparent endpoint),30fps,0.30s,pivot32/26. JSON endpoint0ms; previews add end pause. No game integration.
+- Files: images/effects/landing-dust.mjs and landing_dust_*; specs/landing-dust-effect.md; AGENTS.md; WORKLOG.md. Unrelated theater_stage.tscn edits preserved.
+- Verification: Both variants ×4seeds PASS deterministic replay/expanded-canvas bounds/empty ending. Pillow PASS RGBA dimensions,9visible frames and transparent end. Both final contact sheets visually reviewed. git diff --check PASS.
+- Refactoring: Reviewed full authoring source, kept shared field/shading and options for both variants, removed temporary review module; final exports/verification use refined source.
+- Blockers: None for assets; actual game-scale appearance remains unverified.
+- Next action: Integrate assets using proposed landing event/relative impact filtering when requested.
+
+## Completed firing-range tuning confirmation
+- Goal/status: Confirm current saved game_settings tuning; complete.
+- Completed: Reviewed sole pending settings change: attachment_range=160px; maximum_length remains400px. Existing minimum_length=4 and disabled pinning/gum diagnostics are unchanged.
+- Files changed: gd-bungee-gum/resources/game_settings.tres; WORKLOG.md.
+- Verification: Focused git diff --check PASS; configuration-only change, no code/refactoring needed.
+- Blockers: None.
+- Next action: Play F5 to assess160px firing range; unrelated working changes retained.
+
+## Completed landing dust proposal
+- Goal/status: Consider PixelFX workflow for character landing dust; proposal complete, asset/runtime implementation not requested.
+- Completed: Inspected local heavy-landing effect, authoring/export tools and current Player landing transition. Wrote specs/landing-dust-effect.md with palette, timing, two strengths, export workflow, event/relative-impact design and acceptance checks.
+- Decisions: Short warm-gray non-glowing dust,64×32 proposed canvas,0.30s/30fps; exclude cracks/debris/hitstop. Thresholds and sizes are provisional; use pre-contact velocity relative to supporting surface, not total speed.
+- Files changed: specs/landing-dust-effect.md; AGENTS.md; WORKLOG.md.
+- Verification: Proposal checked against local PixelFX and Player code; final design review separated existing behavior from proposed event/filtering. git diff --check PASS. No runtime tests needed for proposal only.
+- Blockers: None. Appearance/export remain unverified until authoring.
+- Next action: Author normal/heavy variants, render/contact-sheet review on stage backgrounds, then integrate approved assets.
+
 ## Completed Godot gum adhesion effect integration
 - Goal/status: Integrate authored adhesion VFX into Godot; complete.
 - Completed: Runtime copies of surface/ring atlases and license notices; reusable nearest-filtered Sprite2D scene/script; Gum adhesion_started/adhesion_ended signals; Game binding. Effect follows live endpoint/rotating surface tangent; ring stays centered.9visible frames at30fps, hides at0.30s/release/restart/invalid target. Physics ownership/timing untouched.

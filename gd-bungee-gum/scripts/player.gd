@@ -1,5 +1,7 @@
 extends CharacterBody2D
 ## Feet-origin controller. Game calls simulate() once after gum forces each physics tick.
+signal landed(point: Vector2, normal: Vector2, impact_speed: float, surface: Node2D)
+
 const GUM_HANDS := {
 	&"gum_fire": [Vector2(180, 143), Vector2(176, 142), Vector2(185, 140), Vector2(196, 135), Vector2(207, 122), Vector2(216, 123), Vector2(214, 123), Vector2(211, 123)],
 	&"gum_pull": [Vector2(220, 109), Vector2(216, 109), Vector2(217, 109), Vector2(218, 110), Vector2(220, 106), Vector2(217, 106), Vector2(217, 104), Vector2(219, 102)],
@@ -9,6 +11,8 @@ const GUM_HANDS := {
 
 const COMPRESSION_CLEARANCE := 0.25
 const SUPPORT_FACE_TOLERANCE := 0.5
+const LANDING_MINIMUM_AIR_TIME := 0.05
+const LANDING_MINIMUM_AIR_DISTANCE := 2.0
 const Settings = preload("res://scripts/game_settings.gd")
 @export var settings: Settings
 var external_velocity := Vector2.ZERO
@@ -17,6 +21,9 @@ var kick_available := true
 var coyote_remaining := 0.0
 var coyote_gravity_velocity := Vector2.ZERO
 var landing_time := 0.0
+var landing_floor_seen := false
+var landing_air_time := 0.0
+var landing_air_distance := 0.0
 var gum: Node2D
 var contact_diagnostic_next_tick := 0
 var compression_diagnostic_next_tick := 0
@@ -120,6 +127,7 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 		coyote_gravity_velocity = Vector2.ZERO
 	# 外部速度は空中で保持し、接地後に床面方向の摩擦で減速する。
 	velocity = control_velocity + external_velocity
+	var landing_incoming := velocity
 	var pending_impulses := _solve_rigid_contacts(delta, velocity)
 	velocity = control_velocity + external_velocity
 	var incoming_velocity := velocity
@@ -130,7 +138,8 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 	var slide_velocity := velocity
 	var collision_contacts: Array[Dictionary] = pending_impulses.duplicate()
 	collision_contacts.append_array(_slide_contacts())
-	if _recover_rigid_compression(delta, incoming_velocity):
+	var compression_recovered := _recover_rigid_compression(delta, incoming_velocity)
+	if compression_recovered:
 		collision_contacts.append_array(_slide_contacts())
 		if is_on_floor():
 			collision_contacts.append({"normal": get_floor_normal()})
@@ -158,6 +167,7 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 			if not impulse.is_zero_approx():
 				pending_impulses.append({"body": body, "point": contact.point, "normal": normal,
 					"impulse": impulse, "kind": "support"})
+	_update_landing_event(delta, grounded, before_position, landing_incoming, compression_recovered)
 	_apply_ground_friction(delta, support_normal)
 	_apply_rigid_impulses(pending_impulses)
 	velocity = control_velocity + external_velocity
@@ -169,6 +179,41 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 		_log_jump_state("AFTER_MOVE", incoming_velocity)
 	_log_landing_state(grounded, incoming_velocity, removed_control_y)
 	_log_pinning_state(delta, direction, jump_requested, before_position, before_control, before_external, incoming_velocity, slide_velocity)
+
+func _update_landing_event(delta: float, was_grounded: bool, before_position: Vector2,
+		incoming: Vector2, compression_recovered: bool) -> void:
+	if not is_on_floor():
+		if landing_floor_seen:
+			landing_air_time += delta
+			landing_air_distance += global_position.distance_to(before_position)
+		return
+	# Spawn settling and brief contact flicker are not landings.
+	if (not was_grounded and landing_floor_seen and landing_air_time >= LANDING_MINIMUM_AIR_TIME
+			and landing_air_distance >= LANDING_MINIMUM_AIR_DISTANCE and not compression_recovered):
+		var strongest := 0.0
+		var support: Dictionary = {}
+		for contact in _slide_contacts():
+			var normal := _support_face_normal(contact)
+			if not _is_support_normal(normal):
+				continue
+			var surface_velocity := Vector2.ZERO
+			var body = contact.body
+			if body is RigidBody2D:
+				var state := PhysicsServer2D.body_get_direct_state(body.get_rid())
+				if state != null:
+					var radius: Vector2 = contact.point - (state.transform.origin + state.center_of_mass)
+					surface_velocity = state.linear_velocity + Vector2(-radius.y, radius.x) * state.angular_velocity
+			elif body is StaticBody2D:
+				surface_velocity = body.constant_linear_velocity
+			var speed := maxf(0.0, -(incoming - surface_velocity).dot(normal))
+			if speed > strongest:
+				strongest = speed
+				support = contact.merged({"face_normal": normal})
+		if not support.is_empty():
+			landed.emit(support.point, support.face_normal, strongest, support.body as Node2D)
+	landing_floor_seen = true
+	landing_air_time = 0.0
+	landing_air_distance = 0.0
 
 func _log_jump_state(event: String, incoming := Vector2.ZERO) -> void:
 	if not settings.jump_diagnostics:
