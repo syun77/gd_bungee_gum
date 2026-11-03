@@ -96,7 +96,7 @@ func verify() -> void:
 	player.external_velocity = Vector2.ZERO
 	await ticks(3)
 	var box: RigidBody2D = load("res://scenes/props/gum_box.tscn").instantiate()
-	check(box.collision_mask == 9, "Rigid scene must include terrain and one-way layers")
+	check(box.collision_mask == 73, "Rigid scene must include terrain, one-way and gum-pass barrier layers")
 	box.position = Vector2(400, 600)
 	root.add_child(box)
 	await ticks(2)

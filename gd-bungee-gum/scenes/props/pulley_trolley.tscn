@@ -1,0 +1,49 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/props/restaurant_pulley_single_wheel.png" id="1"]
+[ext_resource type="Script" path="res://scripts/pulley_trolley.gd" id="2"]
+[sub_resource type="AtlasTexture" id="RailTexture"]
+atlas = ExtResource("1")
+region = Rect2(32, 148, 600, 52)
+[sub_resource type="AtlasTexture" id="CarriageTexture"]
+atlas = ExtResource("1")
+region = Rect2(960, 54, 256, 512)
+[sub_resource type="ConvexPolygonShape2D" id="PadShape"]
+points = PackedVector2Array(-8, -13, 8, -13, 14, -5, 13, 2, 0, 18, -13, 2, -14, -5)
+
+[node name="PulleyTrolley" type="Node2D"]
+texture_filter = 1
+script = ExtResource("2")
+rail_texture = SubResource("RailTexture")
+
+[node name="Rails" type="Node2D" parent="."]
+
+[node name="RailSupport" type="StaticBody2D" parent="."]
+collision_layer = 0
+collision_mask = 0
+
+[node name="Carriage" type="RigidBody2D" parent="."]
+position = Vector2(80, 0)
+collision_layer = 16
+collision_mask = 0
+mass = 1.5
+gravity_scale = 0.0
+lock_rotation = true
+linear_damp = 0.35
+continuous_cd = 2
+
+[node name="Artwork" type="Sprite2D" parent="Carriage"]
+position = Vector2(0.32, 21.76)
+scale = Vector2(0.16, 0.16)
+texture = SubResource("CarriageTexture")
+
+[node name="AdhesionPad" type="CollisionShape2D" parent="Carriage"]
+position = Vector2(0, 42)
+shape = SubResource("PadShape")
+
+[node name="Guide" type="GrooveJoint2D" parent="."]
+rotation = -1.5707963267949
+node_a = NodePath("../RailSupport")
+node_b = NodePath("../Carriage")
+length = 288.0
+initial_offset = 80.0

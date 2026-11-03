@@ -32,6 +32,7 @@ func activate(animate := true) -> void:
 	elapsed = 0.0
 	sprite.frame = 0 if animate else sprite.hframes * sprite.vframes - 1
 	set_process(animate)
+	$Effect.activate(animate)
 
 func _process(delta: float) -> void:
 	elapsed += delta

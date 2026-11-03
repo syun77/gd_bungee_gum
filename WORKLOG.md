@@ -1,3 +1,180 @@
+## Hit-driven waypoint pulley
+- Goal/status: Implement per-hit waypoint travel with LOOP/PING_PONG; complete.
+- Completed: Pulley script/scene and Game adhesion binding; exported local2D points/mode/speed/force, generated rail segments including loop closure, force motor and per-segment native guide. Specs/AGENTS aligned.
+- Decisions: Fresh successful adhesion advances1segment; moving hits ignored/no queue; sustained connection does not repeat; arrival waits, detach does not stop motor. Default3-point horizontal ping-pong (80→184→288),140px/s/18000force. Powered hold replaces passive drifting; reciprocal gum forces/player momentum remain physical.
+- Files: scripts/pulley_trolley.gd(+uid), scenes/props/pulley_trolley.tscn, scripts/game.gd, tools/verify_pulley_trolley.gd, specs/pulley-trolley.md, AGENTS.md/WORKLOG.md.
+- Verification: Initial focused suite PASS: mode cycles/reversals,2D loop/native guide, real-hit-only/moving-hit/no-queue/arrival wait, loaded hanging/reciprocal forces/release fall, pass-through, actual Game preview/launch/arrival and R reset. Known sandbox import/CA/exit-resource warnings remain. Final refactor simplified rail creation to an assigned shared AtlasTexture, removed template Sprite/lifecycle; reviewed motor/state/force ownership. Final focused and gum/controls regression PASS; git diff --check PASS.
+- Blockers: None. Native gameplay rendered QA not performed. Next action: F5 gameplay review; configure PulleyTrolley Route Points/Route Mode for authored courses.
+
+## Elevate hanging pulley
+- Goal/status: Move pulley to a high position; complete.
+- Completed: Game rail origin(944,384), axle(1024,384), pad(1024,426); approach from one-way platform at(1024,512). Synced spec/AGENTS and actual-stage shot fixture.
+- Decisions: Raise196px, preserve horizontal travel and physics; upper beam ends y352, leaving room for wheel. Upper platform owns reachable firing position with saved160px range.
+- Files: scenes/game.tscn, tools/verify_pulley_trolley.gd, specs/pulley-trolley.md, AGENTS.md/WORKLOG.md.
+- Verification: Final refactor reviewed all current placement references and approach/geometry; Focused suite PASS including grounded upper-platform approach/UP shot, hanging-only physics and R reset; git diff --check PASS. Known sandbox CA/exit-resource warnings remain; native gameplay visual QA not performed.
+- Blockers: None. Next action: F5 review elevated pulley above the section2 upper platform.
+
+## Integrate single-wheel hanging pulley
+- Goal/status: Replace serving trolley with approved hanging-only single-wheel pulley; complete.
+- Completed: Source-identical runtime PNG and new atlas regions; platform removed; convex pad at(0,42) is rigid bit16/mask0, player/props pass through. Native mass1.5/288px rail/initial80px and stage placement preserved. Removed superseded runtime art/import and palette shader; specs/AGENTS aligned.
+- Files: scenes/props/pulley_trolley.tscn; assets/props/restaurant_pulley_single_wheel.png(+import); tools/verify_pulley_trolley.gd; specs/pulley-trolley.md; AGENTS.md/WORKLOG.md. Deleted old runtime trolley PNG/import and pulley_rail shader/uid; concept sources retained.
+- Verification: Import and focused test PASS: real pad ray/reciprocal tension/horizontal movement/release momentum/end stops, player+box pass-through, no floor support, sustained gum hanging, falling after release, saved-stage UP flight and R reload. Original/runtime PNG parity verified. Final refactor reviewed scene-only ownership, shape/art origin alignment, gum-only masks and removal of obsolete support/material resources; no core player/gum changes. Final focused rerun, gum/controls/anchors regression and git diff --check PASS. Known sandbox CA/editor and exit-resource warnings remain; native rendered visual QA not performed.
+- Blockers: None. Next action: F5 visual/playfeel review of hanging-only pulley in section2; existing full-route range mismatch remains outside task.
+
+## Single-wheel hanging pulley concept
+- Goal/status: Generate approved single-wheel hanging-only design; complete as concept, gameplay unchanged.
+- Completed: Built-in imagegen edit of hanging concept, visually reviewed exactly one coral wheel, narrow cream vertical bracket, smaller pink teardrop and dark gray-green rail; no connecting plate/platform. Saved images/props/restaurant_pulley_single_wheel_concept.png.
+- Final prompt: Replace two wheels/connecting plate with exactly one centered round coral wheel and gold axle; narrow short cream vertical pendant with mint trim, filled pink downward teardrop smaller than wheel; retain dark desaturated gray-green rail, chunky side-view pixel art, transparent background; no standing surfaces/text/characters/rope.
+- Files: New concept PNG and WORKLOG.md. No new verified implementation knowledge for AGENTS.md.
+- Verification: Generated appearance reviewed against approved silhouette/palette; no runtime changes/tests required.
+- Blockers: None. Next action: Use selected single-wheel concept for hanging-only runtime asset/physics integration when requested.
+
+## Hanging-only pulley artwork concept
+- Goal/status: Generate approved hanging-only redesign; complete as concept, runtime unchanged.
+- Completed: Built-in imagegen edit of original concept; removed serving platform/side supports, compact coral wheel carriage, cream pendant and downward pink teardrop pad, dark gray-green rail. Transparent result visually reviewed and saved to images/props/restaurant_pulley_hanging_concept.png.
+- Final prompt: Edit original into strict side-view chunky pixel-art hanging-only pulley; remove all lower standing surfaces, keep two coral wheels/thin mint frame/gold hardware, short cream pendant and filled downward pink teardrop pad, long dark desaturated gray-green rail, transparent background, no characters/text/gum rope/scenery.
+- Files: New concept PNG and WORKLOG.md. No new verified implementation knowledge for AGENTS.md.
+- Verification: Generated visual satisfies silhouette/palette/pad requirements. No runtime changes/tests needed.
+- Blockers: None. Next action: If integrated, replace atlas regions and remove player-support collision while preserving rigid gum force and native rail constraint.
+
+## Subdue pulley rail color
+- Goal/status: Reduce rail brightness/saturation so it does not read as floor; complete.
+- Completed: Shared source-coordinate shader on stationary rail and baked carriage rail; mint pixels in original y108–171 band use25% saturation and62% brightness. Other carriage artwork preserved.
+- Files: shaders/pulley_rail.gdshader, scenes/props/pulley_trolley.tscn, specs/pulley-trolley.md, AGENTS.md/WORKLOG.md.
+- Decisions: Render-time palette treatment preserves source PNG and applies consistently to both atlas regions. No physics changes.
+- Verification: Final refactor reviewed shared material/no duplicate palette code, atlas coordinates and alpha preservation. Final focused pulley suite PASS; rail-band mask sampling PASS; git diff --check PASS. Known sandbox CA warning only. Native rendered visual QA not performed.
+- Blockers: None. Next action: F5 review subdued gray-green rail at gameplay camera scale.
+
+## Integrate physics pulley trolley
+- Goal/status: Integrate generated serving trolley; complete.
+- Completed: Reusable native GrooveJoint2D horizontal rail and RigidBody2D carriage, physical platform/pad, AtlasTexture artwork, F5 Game placement(944,580), spec and AGENTS guidance; existing gum/player interaction reused.
+- Decisions:288px engine-constrained travel, initial80px, mass1.5, damping0.35, rotation locked. Platform top y650 in section2. Both pad/platform attachable; rail visual only; wheel art static. Source/runtime PNGs identical.
+- Files: scenes/props/pulley_trolley.tscn, scenes/game.tscn, assets/props/restaurant_pulley_trolley.png(+import), tools/verify_pulley_trolley.gd(+uid), specs/pulley-trolley.md, AGENTS.md/WORKLOG.md.
+- Verification: Final strengthened focused suite PASS for actual ray/reciprocal tension/pull/release momentum/rail bounds/rider support+carry/saved-stage LEFT shot/R reload; gum, controls, compression and saved-map suites PASS. Route suite FAILS at lift0; removing trolley reproduces identical failures (saved range160 vs authored222px shot); temporary diagnostic removed. Known sandbox CA/editor/exit warnings remain. Final refactor reviewed native constraint ownership, shape/art alignment, isolated scene and strengthened end-stop assertion to track actual approach (joint may recoil after impact). git diff --check PASS.
+- Blockers: No trolley blockers. Native gameplay visual QA not performed. Next action: F5 visual/playfeel review in section2. Baseline route/tuning mismatch remains outside this task.
+
+## Rising checkpoint idle trails
+- Goal/status: Implement approved rising side lights/top stars; complete.
+- Completed: Replaced scattered idle sparkles with paired50px rising lights, tapered tails,10px top-star bloom and1s stagger. Re-exported source/runtime sheets; current specs/AGENTS aligned.
+- Decisions: Keep96px cells/60frames/2s and runtime lifecycle; activation burst retained. Inactive cream/coral, registered mint/cream; central flag/check unobscured.
+- Files: checkpoint-idle.mjs, checkpoint_idle.png/checkpoint_active.png and runtime copies, specs/checkpoints.md, AGENTS.md/WORKLOG.md.
+- Verification: Both color variants contact-sheet visual review PASS; source/runtime parity/dimensions PASS; Godot import/checkpoint suite/diff check PASS (known sandbox editor/CA/exit warnings). Final refactor reviewed shared palette constants, phase/brightness boundaries, tail-to-star transition and existing runtime/export interfaces; no runtime code changes required. Native gameplay visual QA not performed.
+- Blockers: None. Next action: F5 review at gameplay camera scale.
+
+## Checkpoint idle visibility concept
+- Goal/status: Propose stronger idle visibility; concept complete, runtime/assets unchanged.
+- Completed: Reviewed current four small side sparkles and2s loop.
+- Proposal: Paired mint/cream rising side trails with staggered stars and a periodic top sparkle; emphasize coherent vertical motion over scattered extra particles. Keep flag/check center clear, avoid full ring and rapid flashing. Inactive cream/coral, registered mint/cream.
+- Files changed: WORKLOG.md only; proposal is not adopted tuning. No new verified implementation knowledge for AGENTS.md.
+- Verification: Source review only; no runtime changes/tests needed.
+- Blockers: None. Next action: On adoption, revise PixelFX idle source/export both variants, review at gameplay camera scale and run checkpoint verification.
+
+## Pulley trolley concept image
+- Goal/status: Generate the proposed serving pulley trolley image; complete.
+- Completed: Built-in imagegen produced a transparent side-view pixel-art concept; visually reviewed exposed wheels/rail, pink solid adhesion pad and cream serving platform. Saved images/props/restaurant_pulley_trolley_concept.png; no runtime integration.
+- Final prompt: Single isolated orthographic side-view restaurant serving pulley trolley; long mint rail, two exposed coral wheels, gold axles, cream suspension with solid pink adhesion disk and broad cream/mint serving platform; crisp chunky pixel art, brown outlines, transparent background; no characters/text/arrows/perspective.
+- Verification: Generated output visually reviewed. Concept only; sprite slicing, physical dimensions and motion design remain undecided. No tests needed. No new durable implementation knowledge for AGENTS.md.
+- Blockers: None. Next action: Review concept before producing separate rail/carriage/wheel game assets.
+
+## Gum-driven pulley visual concept
+- Goal/status: Propose artwork for a pulley-like gum-driven gimmick; concept complete, no implementation/art asset changes.
+- Completed: Reviewed current worklog, restaurant palette and stage/physics direction.
+- Proposal: Mint rail-mounted cream trolley with coral wheel, exposed axle and distinct gum adhesion pad; alternatives are a kitchen serving lift and a wall crank. Show motion through visible rails/wheel rotation and tension response rather than a hit-triggered scripted result.
+- Decisions: Concept only; motion axis, load and exact mechanics remain undecided. Keep adhesion target distinct from existing hollow gum-only rings.
+- Files changed: WORKLOG.md only. No new verified durable repository knowledge for AGENTS.md.
+- Verification: Existing art/spec conventions reviewed; no runtime changes/tests required.
+- Blockers: None. Next action: Select visual concept, then prepare a side-view idle/pulled concept image before production sprites.
+
+## Increase checkpoint effect visibility
+- Goal/status: Make checkpoint PixelFX moderately more visible; complete.
+- Completed: Idle4 larger particles/stars in both states with subtle glow; activation arcs2px with bright core; burst stars up to9px with glow and slower visual fade. Source/runtime sheets regenerated; specs/AGENTS aligned.
+- Files: checkpoint-idle.mjs/checkpoint-activate.mjs, three effect PNGs and runtime copies, specs/checkpoints.md, AGENTS.md/WORKLOG.md.
+- Verification: Contact-sheet visual review PASS; sheet parity/transparent final frame PASS; Godot import and focused checkpoint suite PASS (known sandbox CA/editor/exit warnings). Final refactor reviewed effect bounds, numeric colors, fading, export consistency and existing timing/lifecycle; no runtime change required. git diff --check PASS.
+- Blockers: None. Next action: F5 visual review at gameplay camera scale.
+
+## Food idle PixelFX implementation
+- Goal/status: Create and integrate approved food availability sparkles; complete.
+- Completed: PixelFX source/exporter, identical transparent sheets, animated preview; all foods create child idle sprite, immediate hide on reel/collect and restore on cancelled reel; docs/AGENTS and lifecycle verification.
+- Decisions:96px cells/60frames/30fps/2s, cream/gold four-point stars outside dish, maximum7px; deterministic per-position phase; existing success burst unchanged.
+- Files: images/effects/food-idle.mjs, food_idle.png, food_idle_preview.gif; tools/build_food_idle_effect.mjs; runtime sheet/import and food_idle_effect.gd; food_collectible.gd; verify_food_collect_effect.gd; specs/food-idle-effect.md, food-item-assets.md; AGENTS.md/WORKLOG.md.
+- Verification: PixelFX export via connected Node runtime PASS (shell node unavailable); light/dark composite visual review PASS; sheet parity PASS; Godot import and food collect effect/collectibles/reel suites PASS. Known sandbox CA and exit-resource warnings remain. Refactor reviewed child ownership, setter visibility and shared frame update; no duplicate physics or collection flow. git diff --check PASS. Native in-game visual review unperformed.
+- Blockers: None. Next action: F5 review at normal camera scale if desired; edit PixelFX source/exporter to tune appearance.
+
+## Checkpoint PixelFX implementation
+- Goal/status: Create and integrate idle/activation/registered checkpoint effects; complete.
+- Completed: Two editable PixelFX modules, three transparent sheets and runtime copies, reproducible Node exporter, art-only child effect and checkpoint activation integration. Docs/AGENTS and focused lifecycle tests aligned.
+- Decisions:60-frame96×96 idle variants/2s;25-frame128×96 burst/0.8s; six stars0.4s after activation; no replay on respawn/repeated contact. Idle hidden during burst. Feet origin/nearest rendering, no physics changes.
+- Files: images/effects/checkpoint-{idle,activate}.mjs and checkpoint_{idle,active,activate}.png; runtime copies; tools/build_checkpoint_effects.mjs; checkpoint_effect.gd; checkpoint scene/script; verify_checkpoints.gd; specs/checkpoints.md; AGENTS.md/WORKLOG.md.
+- Verification: PixelFX contact-sheet review PASS; exporter rerun PASS; nonempty PNGs/runtime parity/transparent final burst frame PASS. Final Godot import/checkpoint suite/spike suite/diff check PASS (known sandbox CA/editor and exit-resource warnings). Refactor reviewed ownership, one-shot lifecycle, editor isolation, common sprite factory and exporter reuse; corrected px alpha use to fading line and guarded floating-point final time. Native in-game visual QA remains unperformed.
+- Blockers: None. Next action: F5 review at normal camera scale; editable PixelFX sources and exporter support later art tuning.
+
+## Checkpoint PixelFX concept
+- Goal/status: Propose surrounding checkpoint effects; concept complete, implementation unchanged.
+- Completed: Reviewed existing PixelFX gum-attach/landing-dust modules and current flag→check artwork/timing.
+- Proposal: Sparse warm-cream idle sparkles, then mint/cream elastic side arcs and small upward sparkles synchronized with final check (~0.4s after activation); restrained active idle sparkle. Avoid enclosing rings that resemble gum anchors or large opaque bursts hiding the flip.
+- Files changed: WORKLOG.md only. No new verified durable implementation knowledge for AGENTS.md.
+- Verification: Local PixelFX exports support seeded drawing, glow/ellipse/px/shade and independent loop/one-shot metadata; no runtime changes/tests required.
+- Blockers: None. Next action: If adopted, author independent idle/activation PixelFX modules and transparent sprite sheets; bind activation once, suppress burst on respawn and keep art-only effects outside physics.
+
+## Replace inactive checkpoint circle with flag
+- Goal/status: Adopt muted coral flag → mint check artwork; complete.
+- Completed: Built-in imagegen edit, composited only inactive sign interiors, original alpha and active-frame RGBA restored exactly; source/runtime copies updated. Specs include final prompt and edit-source provenance; test label and AGENTS aligned.
+- Decisions: Preserve existing base alignment/active check/4x2 flip timing. Generated edit retained separately as restaurant_checkpoint_flag_edit.png.
+- Files changed: images/props/restaurant_checkpoint_{flip_source,flag_edit}.png, runtime restaurant_checkpoint.png, specs/checkpoints.md, verify_checkpoints.gd label, AGENTS.md, WORKLOG.md.
+- Verification: Final unique-path visual review PASS;1774×887 RGBA, byte-exact alpha and active4 frames, runtime parity PASS. Godot import and focused checkpoint suite PASS (known sandbox editor/CA warnings). Refactor review: retained existing art-only pipeline, no scene/script behavior changes; current documentation/test terminology aligned. git diff --check PASS.
+- Blockers: None. Next action: F5 review in-game flag at normal camera scale if desired.
+
+## Inactive checkpoint design review
+- Goal/status: Consider a clearer alternative to the inactive circle; design recommendation complete, artwork/runtime unchanged.
+- Completed: Inspected current eight-frame flip sheet, checkpoint scene and specification.
+- Decision/proposal: Recommend a muted coral checkpoint flag silhouette on the existing cream tabletop sign; retain mint check on activation and horizontal-axis flip. Current circle resembles the functional gum anchor and has ambiguous inactive meaning. This is a proposal, not adopted art direction.
+- Files changed: WORKLOG.md only.
+- Verification: Source image and actual scene scale reviewed; no runtime changes/tests required. No new verified durable implementation knowledge for AGENTS.md.
+- Blockers: None. Next action: If adopted, redesign inactive-side frames consistently while retaining base alignment, active check and eight-frame timing.
+
+## Subdue glass highlights
+- Goal/status: Slightly darken reflection streaks; complete.
+- Decisions: Built-in imagegen edit, preserve pale blue glass/light frame, placements and physics.
+- Completed: Built-in imagegen reflection edit; restored original alpha with ImageMagick CopyOpacity after generated variants changed transparency, normalized both copies. Preview reviewed; docs/AGENTS updated.
+- Files: source/final/runtime PNGs, specs/gum-pass-barrier-tile.md, AGENTS.md/WORKLOG.md.
+- Tests: Original alpha byte-for-byte preserved and runtime PNG parity PASS; visual review PASS. Refactor reviewed source normalization (unchanged) and documented alpha restoration. Highlights mean RGB246→212 (14% darker); Godot import and diff check PASS (known sandbox settings/CA warnings). Physics/placements unchanged. Blockers: None. Next action: F5 visual review as desired.
+
+## Light frame and pale blue glass
+- Goal/status: Brighten gray frame and add transparent blue glass tint; complete.
+- Decisions: Built-in imagegen edit, translucent blue instead of dithering; preserve32px footprint and reflections, physics and placements.
+- Completed: Built-in imagegen edited source, crop updated to silver-frame bounds156..1098, both32px copies regenerated. Enlarged review confirms light frame, blue pane and retained diagonal highlights; specs/AGENTS updated.
+- Files: source/final/runtime PNGs, tools/build_gum_pass_barrier.py, specs/gum-pass-barrier-tile.md, AGENTS.md/WORKLOG.md.
+- Tests: Visual PASS; sampled blue pane alpha23/255, frame253/255. Refactor reviewed explicit crop/current source authority. RGBA32px, low-alpha pane, copy parity and diff checks PASS; Godot import completed (known sandbox settings/CA warnings). Physics and placements unchanged. Blockers: None. Next action: F5 appearance review as desired.
+
+## Gray glass barrier with more reflections
+- Goal/status: Increase highlight coverage and shift frame toward gray; complete.
+- Decisions: Built-in imagegen edit current source; preserve transparency,32px grid and collision/placements.
+- Completed: Two built-in imagegen edits, source copied and normalized to both32px copies. First edit had colored speckles; final edit plus20px crop preserves clean gray frame and six reflections. Enlarged preview checked. Specs/AGENTS updated.
+- Files: source/final/runtime PNGs, tools/build_gum_pass_barrier.py, specs/gum-pass-barrier-tile.md, AGENTS.md/WORKLOG.md.
+- Tests: Visual PASS;712/784 interior pixels fully transparent (91%). Refactor reviewed source normalization, made crop explicit for current1254px source. PNG dimension/neutral frame/transparency/copy parity and diff checks PASS; Godot import completed (known sandbox settings/CA warnings). Physics/placements unchanged. Blockers: None. Next action: F5 appearance review if desired.
+
+## Thin glass barrier artwork
+- Goal/status: Thin frame and add subtle transparent glass highlights; complete.
+- Decisions: Preserve32px grid, placements and physics; built-in imagegen edit with original tile, keep alpha and restaurant palette.
+- Completed: Built-in imagegen edited original to thin frame/sparse reflections; saved generated source and nearest32px copies, visually inspected enlarged result. Replaced procedural authoring with source-normalization utility; specs/AGENTS updated.
+- Files: barrier images/runtime PNG, restaurant_gum_pass_barrier_source.png, tools/build_gum_pass_barrier.py, specs/gum-pass-barrier-tile.md, AGENTS.md/WORKLOG.md.
+- Tests: Center alpha0, only16 nontransparent pixels inside28px interior; enlarged visual review PASS. Refactor reviewed utility/source authority and removed obsolete procedural design. 32px RGBA/byte parity and diff check PASS; Godot import completed with known sandbox editor settings/CA warnings. Collision/placements unchanged. Blockers: None. Next action: F5 appearance review as desired.
+
+## Place gum-pass barriers in stage
+- Goal/status: Integrate frame tiles into playable stage; complete.
+- Decisions: Two three-cell horizontal screens below existing rings in sections01/03, optional overhead geometry preserves lower route. Layout owns placements; update saved scene without regenerating unrelated content.
+- Completed: Added six cells to layout/saved layer and generator; real saved-screen ring attachment/path continuity PASS. Added saved-screen body-block check; docs updated.
+- Files: stage_layout.gd, build_theater_stage.gd, theater_stage.tscn, verify_gum_pass_barrier.gd, specs/gum-pass-barrier-tile.md, AGENTS.md/WORKLOG.md.
+- Tests: Final focused PASS (saved6 cells, both ring connections/path continuity, saved-screen body block and existing four-direction/drop-mask suite); map PASS; diff check PASS. Refactor reviewed layout ownership, collision separation and preserved unrelated authored content. Known headless CA/exit-resource warnings only. Full route/native rendered playtest not run. Blockers: None. Next action: F5 review sections01/03 screens; edit GUM_PASS_BARRIERS for further placement changes.
+
+## Gum-pass barrier tile
+- Goal/status: Transparent framed tile blocks bodies and passes gum; complete; artwork, integration, refactor and verification finished.
+- Decisions: 32px restaurant enamel square frame, transparent22px center and coral passage chevrons; independent physics bit64 avoids one-way drop-through toggles. source3 and empty GumPassBarriers layer; existing route untouched.
+- Completed: Procedural pixel artwork/source and identical copies, saved TileSet + stage/generator, player77/box73 masks, focused real-physics suite and specification/durable guidance. Refactor reviewed mask isolation, full-cell semantics and generator/saved consistency; test nodes explicitly freed.
+- Files: tools/build_gum_pass_barrier.py; images/runtime barrier PNGs; theater_tileset.tres; stage/player/box scenes; project.godot; build_theater_stage.gd; verify_gum_pass_barrier.gd/verify_one_way.gd; specs/gum-pass-barrier-tile.md + affected mask docs; AGENTS.md/WORKLOG.md.
+- Tests: Initial focused suite PASS after correcting test-only state API; map and gum anchors PASS; PNG dimensions/transparent center/byte parity and visual preview PASS. Final focused rerun PASS with clean resource teardown. One-way regression exposed its obsolete exact box-mask9 assertion; updated to73 including barrier bit; full rerun PASS. Import succeeded with known sandbox editor/CA warnings. No generator run (preserves authored scene).
+- Blockers: None. Next action: Paint source3/(0,0) on GumPassBarriers and save the scene when choosing placements. Native gameplay appearance remains for user review.
+
 ## Remove wall kicks
 - Goal/status: Remove wall-derived kicks; complete; implementation, refactor and verification finished.
 - Decisions: Keep ceiling kicks; wall contact permits existing coyote/one-use air jump but never grants/refills a jump. Floor/gum jumps unchanged.

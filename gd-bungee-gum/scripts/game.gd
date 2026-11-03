@@ -35,6 +35,7 @@ func _ready() -> void:
 	$PuzzleHeavyBox.global_position = $TheaterStage/PlacementMarkers/HeavyBoxSpawn.global_position
 	gum.player = player
 	player.gum = gum
+	$PulleyTrolley.bind(gum)
 	$GumAttachmentEffect.bind(gum)
 	$GumShotParticles.bind(gum, settings)
 	$GumHitParticles.bind(gum, settings)

@@ -132,3 +132,5 @@
 > Edit this food sprite into a production game collectible. Keep brown oval doria dish, golden cheese, reddish meat sauce. CRITICAL: remove ALL background, dark backdrop, glow, haze, vignette and shadow: outside the dish must be fully transparent alpha=0, including every corner. Reduce detail drastically to a tiny SNES-style icon drawn on a uniform 64x64 pixel grid, enlarged with nearest neighbor only. Single square canvas, centered horizontal oval dish occupying about 56x34 logical pixels. 16-color palette, bold dark brown 1-pixel outline, large simple clusters of cheese and sauce, clean stair-step edges. No fine texture or tiny subpixels. No spoon or tray. Actual transparent background.
 
 獲得成功時はPixelFXの共通パーティクルを再生する。接触・ガム回収とも同じ演出を使う。詳細は[アイテム獲得エフェクト](food-collect-effect.md)。
+
+取得待ちの料理には共通の四芒星ループを表示する。詳細は[取得可能エフェクト](food-idle-effect.md)。

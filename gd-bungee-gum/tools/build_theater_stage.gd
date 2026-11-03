@@ -20,6 +20,7 @@ func _initialize() -> void:
 	tiles.add_source(atlas, 0)
 	add_one_way_source(tiles)
 	add_gum_anchor_source(tiles)
+	add_gum_pass_barrier_source(tiles)
 	assert(ResourceSaver.save(tiles, TILESET_PATH) == OK)
 	tiles = load(TILESET_PATH)
 	stage = Node2D.new()
@@ -68,6 +69,12 @@ func _initialize() -> void:
 	anchors.collision_enabled = true
 	for cell in Layout.GUM_ANCHORS:
 		anchors.set_cell(cell, 2, Vector2i.ZERO)
+	var barriers := layer("GumPassBarriers")
+	barriers.collision_enabled = true
+	for rect in Layout.GUM_PASS_BARRIERS:
+		for x in range(rect.position.x, rect.end.x):
+			for y in range(rect.position.y, rect.end.y):
+				barriers.set_cell(Vector2i(x, y), 3, Vector2i.ZERO)
 	var spikes := layer("Spikes")
 	spikes.tile_set = load("res://assets/hazards/spike_tileset.tres")
 	spikes.z_index = 3
@@ -188,3 +195,17 @@ func add_gum_anchor_source(target: TileSet) -> void:
 	# Filled target includes the hole so aiming through the ring center attaches.
 	data.add_collision_polygon(1)
 	data.set_collision_polygon_points(1, 0, PackedVector2Array(Layout.GUM_ANCHOR_POLYGON))
+
+func add_gum_pass_barrier_source(target: TileSet) -> void:
+	target.add_physics_layer()
+	target.set_physics_layer_collision_layer(2, 64)
+	target.set_physics_layer_collision_mask(2, 0)
+	var atlas := TileSetAtlasSource.new()
+	atlas.texture = load("res://assets/tilesets/restaurant_gum_pass_barrier.png")
+	atlas.texture_region_size = Vector2i(TILE, TILE)
+	target.add_source(atlas, 3)
+	atlas.create_tile(Vector2i.ZERO)
+	var data := atlas.get_tile_data(Vector2i.ZERO, 0)
+	data.add_collision_polygon(2)
+	data.set_collision_polygon_points(2, 0, PackedVector2Array([
+		Vector2(-16, -16), Vector2(16, -16), Vector2(16, 16), Vector2(-16, 16)]))

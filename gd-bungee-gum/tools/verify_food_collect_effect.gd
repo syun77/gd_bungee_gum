@@ -14,7 +14,18 @@ func verify() -> void:
 	var food = load("res://scenes/items/foods/milano_doria.tscn").instantiate()
 	layer.add_child(food)
 	food.global_position = Vector2(200, 150)
+	var idle = food.idle_effect
+	idle.set_process(false)
+	check(idle.visible and idle.texture.get_size() == Vector2(960, 576), "Food has the sliced availability sheet")
+	var start_frame: int = idle.frame
+	idle._process(2.0)
+	check(idle.frame == start_frame, "Idle loops seamlessly after two seconds")
+	food.being_pulled = true
+	check(not idle.visible, "Reeling immediately hides idle")
+	food.being_pulled = false
+	check(idle.visible, "Cancelled reel restores availability")
 	food.collect()
+	check(not idle.visible, "Collected food stops idle before deletion")
 	food.collect()
 	var effects := get_nodes_in_group("food_collect_effects")
 	check(effects.size() == 1, "Collection creates exactly one burst")

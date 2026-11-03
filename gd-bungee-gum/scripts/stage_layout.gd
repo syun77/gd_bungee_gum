@@ -45,6 +45,9 @@ const ONE_WAY_FLOORS := [
 	Rect2i(118, 16, 6, 1),
 	Rect2i(142, 18, 8, 1), Rect2i(144, 16, 6, 1), Rect2i(146, 12, 4, 1),
 ]
+# Overhead screens below rings: body-solid, gum-transparent, lower route stays open.
+const GUM_PASS_BARRIERS := [Rect2i(4, 15, 3, 1), Rect2i(59, 16, 3, 1)]
+
 # Gum-only hit area intentionally extends 9px beyond the 30px artwork.
 const GUM_ANCHOR_POLYGON := [
 	Vector2(-16, -24), Vector2(16, -24), Vector2(24, -16), Vector2(24, 16),
