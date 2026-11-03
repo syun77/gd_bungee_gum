@@ -152,6 +152,8 @@ func _attach_hit(hit: Dictionary) -> void:
 		state = State.REELING
 		target.being_pulled = true
 		player.reset_motion()
+	else:
+		player.on_gum_attached()
 	SoundEffects.play(&"hit")
 	adhesion_started.emit(normal, target is TileMapLayer)
 

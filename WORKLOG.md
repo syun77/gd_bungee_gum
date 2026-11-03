@@ -1,3 +1,80 @@
+## Double-jump vertical velocity assignment
+- Goal/status: Replace all existing vertical momentum with configured double-jump speed; complete.
+- Decisions: Accepted air jump assigns external_velocity.y = -double_jump_kick_speed, retaining X; current gravity and prior upward/downward speed cannot affect launch. Gravity resumes next tick; other jumps unchanged.
+- Completed: Directly assign double-jump Y speed; compensation diagnostics record canceled old vertical velocity. Other jump branches retain compensation plus additive impulse. Updated focused and control/player/food expectations and current specs/AGENTS; saved tuning untouched. Refactor: removed obsolete gravity reconstruction, renamed focused matrix to vertical-speed assignment, removed unused additive-test variables.
+- Files: player.gd; tools/verify_double_jump.gd/verify_controls.gd/verify_player.gd/verify_food_reel.gd; specs/player-controller.md/keyboard-controls.md/game-settings.md; AGENTS.md, WORKLOG.md.
+- Tests:72 launch cases and Game adhesion/rejump PASS. Controls, final food rerun, post-refactor72-case rerun and full player (including42 corner conditions) PASS. Final test cleanup moved third-press baseline capture to its actual use. git diff --check PASS. Known CA/exit-resource warnings only. Blockers: None. Next action: F5 jump-feel review as desired.
+
+## Gravity-free double-jump launch tick
+- Goal/status: Ignore downward gravity at double-jump launch before upward impulse; complete.
+- Findings: Existing launch cancels downward external speed but upward momentum still loses current-tick gravity. Current user tuning: kick_speed inherits400, double_jump_kick_speed300, rotation3; preserve resource.
+- Decisions: Only accepted double jump removes current-tick gravity, then cancels remaining downward external speed and adds independent kick. Retain pre-gravity upward/horizontal momentum; gravity resumes next tick. Other jump types unchanged.
+- Completed: Added air-jump-specific gravity removal before downward cancellation; shared impulse/deformation/diagnostics remain intact. Updated control/settings specs and verified current tuning guidance without editing saved Resource. Refactor reviewed calculation ordering, rising-to-falling boundary, no double gravity removal and other jump branches; reused compensation path.
+- Files: player.gd, verify_double_jump.gd, specs/player-controller.md/keyboard-controls.md/game-settings.md, AGENTS.md, WORKLOG.md.
+- Tests: Focused72-case gravity/timestep/vertical/horizontal matrix and actual Game gum rejump PASS; food/controls/deformation and post-refactor focused rerun PASS; git diff --check PASS. Known headless CA/exit-resource warnings only. Blockers: None. Next action: F5 jump-feel review as desired; native playback not performed.
+
+## Separate first and double-jump kick speeds
+- Goal/status: Expose independent initial/contact and double-jump impulse speeds; complete.
+- Decisions: Existing Player Movement/kick_speed retains normal/contact/coyote/gum-release/food/ladder behavior; new Player Double Jump/double_jump_kick_speed applies only to the one-use spinning air jump. Current saved kick_speed380 is preserved and seeds new saved/schema380.
+- Completed: Added independent export/saved380, selected launch speed by accepted air-jump type in existing shared impulse pipeline, aligned controller/keyboard/settings specs and AGENTS. Refactor reviewed all impulse consumers and named local launch_speed to distinguish selected speed from setting; no parallel jump implementation.
+- Files: game_settings.gd/.tres, player.gd, verify_double_jump.gd, specs/game-settings.md/player-controller.md/keyboard-controls.md, AGENTS.md, WORKLOG.md.
+- Tests: Distinct310/470 first/air/gum-release physical fixture PASS. Final post-refactor focused, actual Game gum adhesion/rejump, controls, food reel and deformation suites PASS; git diff --check PASS. Known CA/exit-resource warnings only. Blockers: None. Next action: Tune the two Inspector values independently as desired.
+
+## Gum adhesion cancels spin and restores air jump
+- Goal/status: Stop double-jump rotation at gum adhesion and allow another double jump after release; complete.
+- Decisions: Successful terrain/rigid/ring adhesion restores one air allowance once and resets visual spin immediately, without velocity changes. Food reeling retains independent reward/lock rules; misses/outbound do not restore. Attached Z remains detach jump, followed by one fresh airborne double jump.
+- Completed: Non-food Gum._attach_hit calls Player.on_gum_attached; reuse spin-stop/animation/deformation helpers for immediate visual restoration. Dedicated real Game swept-flight→adhesion→Z release→fresh air jump PASS; immediate direct-adhesion momentum preservation and held-connection no-refill PASS. Source/controller/keyboard specs and AGENTS updated.
+- Files: player.gd, gum_connection.gd, verify_double_jump_gum.gd, specs/player-controller.md/keyboard-controls.md/character-sprite-audit.md, AGENTS.md, WORKLOG.md.
+- Tests: Final dedicated real Game suite (including food exclusion), double-jump, gum/live Game, controls and food reel PASS; git diff --check PASS. Final refactor reviewed one-shot event boundary and reused existing visual pipeline without extra fixed-step state. Known sandbox CA and headless exit-resource warnings only. Blockers: None. Next action: F5 appearance/feel review as desired; native playback not performed.
+
+## Facing-dependent double-jump rotation
+- Goal/status: Make spin direction follow character facing; complete.
+- Decisions: Right-facing clockwise, left-facing counterclockwise. Read current sprite flip each fixed step, reverse continuously on midair facing changes, neutral input retains facing. Shared speed remains magnitude; no physics changes.
+- Completed: Applied current facing sign after animation selection with positive angular wrapping. Expanded real-input custom-speed tests through left→neutral→right→neutral. Refactor reviewed: reuse sprite.flip_h, no duplicated facing state, isolated speed magnitude/direction; Inspector tooltip explains direction. Files: player.gd, game_settings.gd, verify_double_jump.gd, specs/game-settings.md/player-controller.md/keyboard-controls.md, AGENTS.md, WORKLOG.md.
+- Tests: Initial focused test exposed stale assumption that saved speed is2.5; user tuning is6.0 and preserved. Fixture now explicitly sets2.5 rather than asserting gameplay tuning; final focused rerun PASS (both directions, live reversal, neutral retention, custom/zero speed, momentum/collision invariants). Deformation/afterimages PASS; diff check PASS. Known CA/exit-resource warnings only. Blockers: None. Next action: F5 visual review as desired.
+
+## Configurable double-jump rotation speed
+- Goal/status: Expose visual rotation speed in shared Settings; complete.
+- Decisions: Player Double Jump / Double Jump Rotation Speed in revolutions per second, default2.5 (=0.4s/revolution);0 freezes rotation without changing pose or physics. Read live each fixed step.
+- Completed: Exported speed with rev/s Inspector suffix, saved/schema2.5 baseline, replaced fixed-period constant, documented controls/settings and durable guidance. Refactor reviewed shared visual path and separated rev/s→radians conversion for clarity. Files: game_settings.gd/.tres, player.gd, verify_double_jump.gd, specs/game-settings.md/player-controller.md/keyboard-controls.md, AGENTS.md, WORKLOG.md.
+- Tests: Dedicated double-jump PASS including custom1/4rev/s, live tuning, zero freeze, shared defaults and unchanged velocities. Deformation and post-refactor focused rerun PASS; git diff --check PASS. Known headless CA/exit resource warnings only. Blockers: None. Next action: Adjust Player Double Jump / Double Jump Rotation Speed in shared resource as desired.
+
+## Tuck pose runtime integration
+- Goal/status: Use approved knees-hugged artwork during double-jump rotation; complete.
+- Completed: Registered cropped single-frame double_jump art and source scale; spin priority, mirrored/rotating hand sample and actual landing/reel restoration verified. Reviewed full visual pipeline: reuse existing SpriteFrames/deformation/afterimages, keep source intact, named source constants, no duplicate state or physics edits.
+- Decisions: Keep source pixels intact; AtlasTexture clips visible body region, runtime scale0.175 matches existing head width. Tuck pose takes priority while spinning; ladder/landing/reel reset restores normal poses. No physics changes.
+- Files: player.gd, player.tscn, runtime teto_double_jump.png(+import), verify_double_jump.gd, specs/player-controller.md and character-sprite-audit.md, AGENTS.md, WORKLOG.md.
+- Tests: Final double-jump (pose, scale, mirrored hand, outbound priority, actual landing/reset), deformation, afterimages, gum hand origin,17304-case hanging poses and physical controls PASS. Runtime import, PNG byte parity and git diff --check PASS. Known sandbox CA/Mono editor warnings and headless exit-resource warnings; no assertion failures. Initial new test type-inference parse error corrected with explicit Vector2.
+- Blockers: None. Next action: F5 appearance review; native rendered playback not performed.
+
+## Tucked rotation-jump pose
+- Goal/status: Create Teto hugging-knees pose using supplied somersault posture reference; complete as asset.
+- Completed: Built-in imagegen with existing jump/front art for identity and supplied image for posture; visually verified both arms holding folded legs, compact silhouette and intact hair/boots. Saved project copy; existing runtime assets unchanged.
+- Decisions: Single upright right-facing pose on transparent background; engine rotates artwork. Runtime normalization/integration remains a separate task.
+- Files: images/teto_double_jump.png, specs/character-sprite-audit.md (prompt/use guidance), AGENTS.md, WORKLOG.md.
+- Verification:1254×1254 RGBA, alpha0–255, corner alpha0/0/1/0 (nearly transparent); faint low-alpha peripheral pixels retained; visual review PASS. Naming/scope/spec review complete; no runtime implementation changes to refactor or test.
+- Blockers: None. Next action: Normalize to existing head/body scale and integrate only when requested.
+
+## Double jump implementation
+- Goal/status: Add one airborne jump with sprite-only rotation; complete.
+- Decisions: One air allowance refreshed on floor only; contact/coyote/gum/food/ladder actions take priority without refilling/consuming it. Shared kick_speed, gum-style downward cancellation; sprite spins every0.4s until floor/ladder/reset. Body/collider and movement physics remain independent of spin. New request overrides prior no-air-jump scope.
+- Completed: Controller, dedicated real-physics suite, affected legacy rejection fixtures, controller/keyboard/food specs and AGENTS guidance. Refactor: named spin period and shared special-jump eligibility, reused existing impulse/deformation/sound pipeline.
+- Files: scripts/player.gd; tools/verify_double_jump/player/controls/player_deformation/jump_buffer/food_reel.gd; specs/player-controller.md, keyboard-controls.md, food-gum-reel.md; AGENTS.md, WORKLOG.md. Existing local Git visibility entries preserved.
+- Tests: Dedicated double-jump, physical controls, full player (42 corner conditions), deformation, jump buffer and food reel PASS. Post-refactor double-jump/deformation/buffer/food suites repeated PASS; final food test covers third-press rejection. git diff --check PASS. Known headless CA warning and intermittent exit resource warnings remain; no failed assertions.
+- Blockers: None. Next action: F5 appearance/feel review; native visual playback not performed.
+
+## Hide local PixelFX checkout
+- Goal/status: Hide pixelfx from GitHub Desktop changes only; complete.
+- Completed: Added /pixelfx/ to .git/info/exclude; checkout and shared .gitignore unchanged.
+- Files: Local .git/info/exclude, AGENTS.md, WORKLOG.md. Verification: git check-ignore identifies local rule; git status no longer lists pixelfx. Reviewed single-rule scope; no runtime tests needed.
+- Blockers: None. Next action: None.
+
+## PixelFX GitHub Desktop plus indicator investigation
+- Goal/status: Explain persistent pixelfx plus indicator; complete, no Git tracking policy changed.
+- Findings: Parent git status reports `?? pixelfx/`; directory is an independent nested clone, neither tracked nor ignored nor registered as a submodule. Nested status also has untracked src/fx/impacts/gum-attach.js. Effect authoring sources import its core; preserve checkout.
+- Files: WORKLOG.md and AGENTS.md only. Verification: Parent/nested status, tracked entries, ignore rules, origin and effect imports inspected. No runtime changes/tests needed.
+- Blockers: None. Next action: Choose local ignore versus a reproducible shared dependency only if requested.
+
 ## Sound effect assignment
 - Goal/status: Assign eight non-2 sounds to gameplay events; complete.
 - Decisions: Global capped one-shot audio survives reload; checkpoint first activation only, accepted kicks/qualified landings, successful hit/fire, actual first contraction tick including food reel; relaxed-to-contract repeats once. Manual restart silent.
@@ -1275,7 +1352,7 @@
 - Completed: Built-in imagegen generation; nearest-neighbor normalization; inspected enlarged final sprite with six wells and herb butter.
 - Decisions: 64×64 transparent RGBA static sprite matching food asset convention; outer white serving plate omitted. Gameplay integration outside scope.
 - Files changed: images/foods/escargot_oven_baked.png; specs/food-item-assets.md (including final prompt); AGENTS.md; WORKLOG.md.
-- Verification: Pillow confirms 64×64 RGBA, alpha range 0–255 and four transparent corners; final visual review passed. Reviewed naming/docs for consistency; git diff --check passed.
+- Verification: Pillow confirms 64×64 RGBA, alpha range 0–255 and corner alpha0/0/1/0 (nearly transparent); faint low-alpha peripheral pixels retained; final visual review passed. Reviewed naming/docs for consistency; git diff --check passed.
 - Blockers: None.
 - Next action: Use saved sprite; copy into res:// with nearest filtering when integrating collectibles.
 

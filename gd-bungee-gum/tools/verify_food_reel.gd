@@ -81,10 +81,15 @@ func verify() -> void:
 	check(player.velocity.y < -350 and not player.food_jump_available, "Fresh Z jumps in air and consumes reward")
 	await tick(game)
 	Input.action_press("jump")
-	var before: float = player.external_velocity.y
 	await tick(game)
 	Input.action_release("jump")
-	check(player.external_velocity.y > before, "No repeat free air jump")
+	check(is_equal_approx(player.external_velocity.y, -game.settings.double_jump_kick_speed) and not player.air_jump_available, "Food reward preserves the separate one-use double jump")
+	await tick(game)
+	var before: float = player.external_velocity.y
+	Input.action_press("jump")
+	await tick(game)
+	Input.action_release("jump")
+	check(player.external_velocity.y > before, "Exhausted food reward and air allowance reject a third jump")
 	player.reset_motion()
 	food = add_food(gum.origin() + Vector2(100, 0))
 	await physics_frame

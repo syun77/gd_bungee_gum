@@ -45,6 +45,7 @@ func verify() -> void:
 	check(player.sprite.scale.is_equal_approx(rest_scale * player.settings.jump_stretch), "Jump uses custom settings multipliers")
 	check(player.sprite.scale.x < rest_scale.x and player.sprite.scale.y > rest_scale.y, "Accepted upward kick stretches vertically")
 	check(player.sprite.position.is_equal_approx(rest_position * (player.sprite.scale / rest_scale)), "Visual deformation keeps feet pivot")
+	player.air_jump_available = false
 	await tick(player, true)
 	check(player.visual_deformation_time < player.settings.jump_stretch_duration - 0.02, "Rejected airborne kick does not restart stretch")
 	var landed := false

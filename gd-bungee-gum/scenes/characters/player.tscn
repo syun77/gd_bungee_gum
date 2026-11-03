@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://bguqxp7elhkdd" path="res://assets/characters/teto_run.png" id="3"]
 [ext_resource type="Texture2D" uid="uid://dc8ciatug8okq" path="res://assets/characters/teto_jump.png" id="4"]
 [ext_resource type="Resource" uid="uid://cg8q5jqsbnmcs" path="res://resources/game_settings.tres" id="5"]
+[ext_resource type="Texture2D" path="res://assets/characters/teto_double_jump.png" id="6"]
 
 [sub_resource type="CapsuleShape2D" id="Body"]
 height = 52.0
@@ -97,8 +98,21 @@ region = Rect2(512, 256, 256, 256)
 atlas = ExtResource("3")
 region = Rect2(768, 256, 256, 256)
 
+[sub_resource type="AtlasTexture" id="double_jump"]
+atlas = ExtResource("6")
+region = Rect2(328, 145, 606, 935)
+filter_clip = true
+
 [sub_resource type="SpriteFrames" id="Frames"]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("double_jump")
+}],
+"loop": false,
+"name": &"double_jump",
+"speed": 1.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("idle_0")

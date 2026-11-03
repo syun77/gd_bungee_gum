@@ -103,3 +103,13 @@ Shader hit wave: enabled by default, radius56px, duration0.32s, refraction stren
 例：`angle_deg=32.4 animation=gum_hang_angles frame=2 nominal_angle_deg=30 selection_error_deg=2.4` なら30度のコマが選択されている。上方セクター内で5度未満は真上ループ、コマ切り替え境界は15/25/35/45/55/65度。真上基準70度以上（上半分では水平から20度以内）は横寄りの発射／牽引姿勢を使用し、80度コマは現在使わない。同距離は小さい角度側、5度・70度境界と最寄り判定には浮動小数誤差0.0001度の許容を適用。発射中は地上／空中を問わず方向選択を優先し、接続中は空中・張力10超で方向選択する。速度・支持点までの高さは選択条件ではない。接続中の接地／弛緩時は通常姿勢、下方接続／発射は既存fire/pull素材を使う。
 
 `Gum Appearance / Gum Hand Follow Speed` は線の手元側の描画起点の追従速度（初期値360px/s）。ポーズ・左右反転・描画変形による手先座標の差を固定ステップで連続的に追い、Player自体の移動には即追従する。物理の接続点や張力には影響しない。`HangingPoseDiagnostic` の `hand_origin`（現在の線起点）、`hand_target`（姿勢の手先目標）、`hand_gap_px`（追従中の差）で確認する。ログは姿勢選択直後・同ステップの追従更新前の値。
+
+## Player Double Jump
+
+`resources/game_settings.tres` の **Player Double Jump → Double Jump Rotation Speed** (`double_jump_rotation_speed`) は2段ジャンプ中の描画回転速度。単位は回転/秒 (rev/s)、既定2.5（1回転0.4秒）。大きいほど速く、1なら1秒に1回転、0なら現在の角度で停止する。空中で値を変えても次の固定更新から反映し、膝抱えポーズ・ジャンプの強さ・速度・重力・当たり判定は変わらない。着地時には速度設定にかかわらず正立へ戻る。
+
+回転ジャンプの向きは表示中のキャラクターに従い、右向きは時計回り、左向きは反時計回り。空中で左右入力により振り向くと、角度をリセットせずその更新から逆回転する。無入力時は直前の向きを保持する。`double_jump_rotation_speed` は両方向共通の速さで、移動速度や外部運動量には影響しない。
+
+**Player Movement → Kick Speed** (`kick_speed`) は初段・床／壁／天井・コヨーテ・ガム解除・フード報酬・ハシゴのジャンプ速度。**Player Double Jump → Double Jump Kick Speed** (`double_jump_kick_speed`) は回転する二段目の空中ジャンプだけに適用する。単位はpx/s、二段目の既定380、現在の保存値は初段400・二段目300。上下・横の運動量処理、下降補正、ジャンプ回数・回転速度は各設定を変更しても同じ規則を使う。
+
+二段ジャンプの発動更新では縦速度を `-double_jump_kick_speed` に代入する。発動前の上昇・下降速度とその更新の重力は引き継がず、横速度だけを保持する。次更新から重力を再開する。初段・ガム解除などの補正は各既存規則を使う。

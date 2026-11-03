@@ -13,3 +13,5 @@ Xで発射したガムが食べ物へ命中すると、REELING状態で自動的
 Gameが入力→Gum.step→Player.simulateを所有する。Gumは引き寄せ状態と食べ物移動、Playerは速度リセット・硬直・消費型ジャンプ権を所有する。Gameは更新前後の引き寄せ状態を使い、命中・完了フレームにも硬直を適用する。
 
 検証: `Godot --headless --path gd-bungee-gum --log-file /tmp/food-reel.log --script res://tools/verify_food_reel.gd`。実発射、地形遮蔽、速度リセット、重力・入力停止、手元回収、一回のジャンプ、対象消失、再起動時の解除を検証する。
+
+通常の二段ジャンプ枠はフード報酬と独立し、回収では補充しない。報酬ジャンプを優先し、その後に未使用の二段ジャンプを一度だけ使用できる。

@@ -2,6 +2,9 @@ extends CharacterBody2D
 ## Feet-origin controller. Game calls simulate() once after gum forces each physics tick.
 signal landed(point: Vector2, normal: Vector2, impact_speed: float, surface: Node2D)
 
+# Source crop is larger than the 256px sheets; match head size without stretching the tuck.
+const DOUBLE_JUMP_ART_SCALE := 0.175
+const DOUBLE_JUMP_HAND_OFFSET := Vector2(143, 194)
 const GUM_LATERAL_ANGLE := 70.0 # From world up:20deg above horizontal.
 const HANG_ANGLES := [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0]
 const GUM_HANDS := {
@@ -26,6 +29,9 @@ var sprite_rest_position := Vector2.ZERO
 var external_velocity := Vector2.ZERO
 var control_velocity := Vector2.ZERO
 var kick_available := true
+var air_jump_available := true
+var double_jump_spinning := false
+var double_jump_rotation := 0.0
 var drop_through_remaining := 0.0
 var drop_through_clear_y := 0.0
 var ladder: Node2D
@@ -87,7 +93,12 @@ func _update_gum_hand_origin(delta: float) -> void:
 	gum_hand_offset = gum_hand_offset.move_toward(to_local(gum_visual_target()), settings.gum_hand_follow_speed * delta)
 
 func gum_visual_target() -> Vector2:
-	# Drawing-only hand samples in the 256px cells; physical attachment stays at chest.
+	# Drawing-only hand samples; physical attachment stays at chest.
+	if sprite.animation == &"double_jump":
+		var hand := DOUBLE_JUMP_HAND_OFFSET
+		if sprite.flip_h:
+			hand.x = -hand.x
+		return sprite.to_global(hand)
 	var hands: Array = GUM_HANDS.get(sprite.animation, [])
 	if hands.is_empty():
 		return global_position + Vector2(-12 if sprite.flip_h else 12, -34)
@@ -99,9 +110,16 @@ func gum_visual_target() -> Vector2:
 func apply_external_force(force: Vector2, delta: float) -> void:
 	external_velocity += force / settings.player_mass * delta
 
+func on_gum_attached() -> void:
+	air_jump_available = true
+	_stop_double_jump_spin()
+	_update_animation(Input.get_axis("move_left", "move_right"))
+	_update_visual_deformation(0.0)
+
 func reset_motion() -> void:
 	_leave_ladder()
 	jump_buffer_remaining = 0.0
+	_stop_double_jump_spin()
 	velocity = Vector2.ZERO
 	control_velocity = Vector2.ZERO
 	external_velocity = Vector2.ZERO
@@ -139,6 +157,7 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 	var grounded := is_on_floor() and drop_through_remaining <= 0.0
 	var touching := grounded or is_on_wall() or is_on_ceiling()
 	if grounded:
+		air_jump_available = true
 		coyote_remaining = settings.coyote_time
 		coyote_gravity_velocity = Vector2.ZERO
 	else:
@@ -170,14 +189,23 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 	var coyote_kick := not touching and coyote_remaining > 0.0
 	attached_jump = attached_jump and fresh_jump
 	var food_jump := food_jump_available and fresh_jump
-	var world_up_jump := attached_jump or food_jump or ladder_jump
-	var can_kick := world_up_jump or (kick_available and (touching or coyote_kick))
+	var contact_kick := kick_available and (touching or coyote_kick)
+	var special_jump := attached_jump or food_jump or ladder_jump
+	var air_jump := fresh_jump and air_jump_available and not touching and not coyote_kick and not special_jump
+	var world_up_jump := special_jump or air_jump
+	var can_kick := world_up_jump or contact_kick
 	if jump_requested:
 		var result := "REJECTED_NO_CONTACT" if not touching else "REJECTED_NOT_REARMED"
 		if can_kick:
 			result = "ACCEPTED_LADDER" if ladder_jump else ("ACCEPTED_FOOD" if food_jump else ("ACCEPTED_GUM" if attached_jump else ("ACCEPTED_COYOTE" if coyote_kick else "ACCEPTED")))
+		if air_jump:
+			result = "ACCEPTED_DOUBLE"
 		_log_jump_state(result)
 	if jump_requested and can_kick:
+		if air_jump:
+			air_jump_available = false
+			double_jump_spinning = true
+			double_jump_rotation = 0.0
 		SoundEffects.play(&"jump")
 		jump_buffer_remaining = 0.0
 		var kick_direction := Vector2.UP
@@ -185,21 +213,27 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 			kick_direction = get_wall_normal() if is_on_wall() else Vector2.DOWN
 		var external_before := external_velocity
 		var compensation := Vector2.ZERO
-		if world_up_jump:
+		if air_jump:
+			compensation = Vector2(0.0, -external_velocity.y)
+		elif world_up_jump:
 			compensation = Vector2.UP * maxf(external_velocity.y, 0.0)
 		elif coyote_kick:
 			var falling_speed := maxf(external_velocity.y, 0.0)
 			var gravity_fall := maxf(coyote_gravity_velocity.y, 0.0)
 			compensation = Vector2.UP * minf(falling_speed, gravity_fall)
-		external_velocity += compensation
-		var impulse := kick_direction * settings.kick_speed
-		external_velocity += impulse
+		var launch_speed: float = settings.double_jump_kick_speed if air_jump else settings.kick_speed
+		var impulse := kick_direction * launch_speed
+		if air_jump:
+			external_velocity.y = -launch_speed
+		else:
+			external_velocity += compensation
+			external_velocity += impulse
 		if impulse.y < 0.0 and (control_velocity + external_velocity).y < 0.0:
 			_start_visual_deformation(settings.jump_stretch, settings.jump_stretch_duration)
 		if settings.jump_diagnostics:
 			print("[JumpDiagnostic] KICK_APPLIED tick=%d feet=%s source=%s normal=%s angle_from_up_deg=%.3f impulse=%s compensation=%s external_before=%s external_after=%s control=%s launch=%s delta=%.6f" % [
 				Engine.get_physics_frames(), global_position,
-				"ladder" if ladder_jump else ("food" if food_jump else ("gum" if attached_jump else ("coyote" if coyote_kick else ("floor" if grounded else ("wall" if is_on_wall() else "ceiling"))))),
+				"double" if air_jump else "ladder" if ladder_jump else ("food" if food_jump else ("gum" if attached_jump else ("coyote" if coyote_kick else ("floor" if grounded else ("wall" if is_on_wall() else "ceiling"))))),
 				kick_direction, rad_to_deg(Vector2.UP.angle_to(kick_direction)), impulse, compensation,
 				external_before, external_velocity, control_velocity, control_velocity + external_velocity, delta])
 		food_jump_available = false
@@ -257,6 +291,8 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 	if not grounded and is_on_floor():
 		landing_time = 0.12
 	landing_time = maxf(landing_time - delta, 0.0)
+	if is_on_floor() or is_instance_valid(ladder):
+		_stop_double_jump_spin()
 	_update_animation(direction)
 	_update_visual_deformation(delta)
 	_update_gum_hand_origin(delta)
@@ -378,9 +414,21 @@ func _update_visual_deformation(delta: float) -> void:
 	if visual_deformation_time > 0.0:
 		weight = pow(visual_deformation_time / visual_deformation_duration, 2.0)
 	var deformation := Vector2.ONE.lerp(visual_deformation, weight)
-	sprite.scale = sprite_rest_scale * deformation
+	var pose_scale := DOUBLE_JUMP_ART_SCALE if sprite.animation == &"double_jump" else 1.0
+	sprite.scale = sprite_rest_scale * deformation * pose_scale
 	sprite.position = sprite_rest_position * deformation
+	if double_jump_spinning:
+		var angular_speed := TAU * maxf(settings.double_jump_rotation_speed, 0.0)
+		var spin_direction := -1.0 if sprite.flip_h else 1.0
+		double_jump_rotation = fposmod(double_jump_rotation + angular_speed * spin_direction * delta, TAU)
+	sprite.rotation = double_jump_rotation
 	visual_deformation_time = maxf(visual_deformation_time - delta, 0.0)
+
+func _stop_double_jump_spin() -> void:
+	double_jump_spinning = false
+	double_jump_rotation = 0.0
+	if is_instance_valid(sprite):
+		sprite.rotation = 0.0
 
 func _log_jump_state(event: String, incoming := Vector2.ZERO) -> void:
 	if not settings.jump_diagnostics:
@@ -420,6 +468,10 @@ func _select_animation(direction: float) -> void:
 		sprite.play("climb")
 		if absf(velocity.y) < 1.0:
 			sprite.pause()
+		return
+	if double_jump_spinning:
+		sprite.play("double_jump")
+		sprite.pause()
 		return
 	if is_instance_valid(gum) and (gum.connected() or gum.state == gum.State.OUTBOUND):
 		var aim := _gum_pose_direction()

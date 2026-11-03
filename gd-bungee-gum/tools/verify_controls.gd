@@ -117,6 +117,7 @@ func verify_attached_jump() -> void:
 			check(gum.attach_at(Vector2(160, 100)), "Release-jump fixture attaches")
 			if relaxed:
 				gum.relax()
+			player.air_jump_available = true
 			player.kick_available = false
 			player.coyote_remaining = 0.0
 			player.external_velocity = Vector2(75, rising_speed)
@@ -130,10 +131,9 @@ func verify_attached_jump() -> void:
 			check(player.external_velocity.y > expected_y, "Held Z cannot repeat release jump")
 			key(KEY_Z, false)
 			await ticks(1)
-			var before: float = player.external_velocity.y
 			key(KEY_Z, true)
 			await ticks(1)
-			check(player.external_velocity.y > before, "Detached airborne Z cannot jump again")
+			check(is_equal_approx(player.external_velocity.y, -game.settings.double_jump_kick_speed), "Detached airborne fresh Z assigns double-jump speed")
 			key(KEY_Z, false)
 
 func verify() -> void:

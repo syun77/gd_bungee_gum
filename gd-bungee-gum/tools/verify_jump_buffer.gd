@@ -29,6 +29,7 @@ func verify() -> void:
 		world.add_child(player)
 		await step(player)
 		player.external_velocity = Vector2(0, 240)
+		player.air_jump_available = false
 		await step(player, true)
 		assert(player.external_velocity.y > 0, "Buffered input must not create an air jump")
 		var launched := false
@@ -47,6 +48,7 @@ func verify() -> void:
 	player.settings.jump_buffer_time = 0.12
 	player.position = Vector2(0, 450)
 	world.add_child(player)
+	player.air_jump_available = false
 	await step(player, true)
 	for index in 70:
 		await step(player)

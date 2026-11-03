@@ -5,6 +5,8 @@
 [resource]
 resource_name = "Game Settings"
 script = ExtResource("1")
+double_jump_kick_speed = 300.0
+double_jump_rotation_speed = 3.0
 afterimage_minimum_speed = 100.0
 afterimage_interval = 0.1
 afterimage_lifetime = 1.0

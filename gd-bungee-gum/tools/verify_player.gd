@@ -55,12 +55,11 @@ func verify() -> void:
 	assert(sprite.animation == &"jump")
 	Input.action_release("jump")
 	await ticks(3)
-	var rising_speed: float = player.velocity.y
 	Input.action_press("jump")
 	await ticks(2)
-	assert(player.velocity.y > rising_speed, "Air input must not add a second impulse")
+	assert(is_equal_approx(player.velocity.y, -game.settings.double_jump_kick_speed + game.settings.gravity / 60.0), "Second press assigns air-jump speed; next tick applies gravity")
 	Input.action_release("jump")
-	await ticks(55)
+	await ticks(100)
 	assert(player.is_on_floor())
 	assert(sprite.animation == &"idle")
 	# Real floor contact must dissipate momentum gradually in either direction.
@@ -95,7 +94,7 @@ func verify() -> void:
 	await verify_wall_landing_jump(game)
 	await verify_corner_retention(game)
 	await verify_corner_landing(game)
-	print("PASS: physical A/D/arrow bindings and PageUp exclusion, spawn, floor alignment, idle/run/jump/landing, no air jump, wall momentum cleanup, ground friction and retained air momentum")
+	print("PASS: physical A/D/arrow bindings and PageUp exclusion, spawn, floor alignment, idle/run/jump/landing, double jump, wall momentum cleanup, ground friction and retained air momentum")
 	quit()
 
 func verify_corner_landing(game: Node2D) -> void:
@@ -200,6 +199,7 @@ func verify_coyote_time(game: Node2D) -> void:
 		for tick in (10 if scenario == "expired" else 2):
 			await physics_frame
 			player.simulate(1.0 / 60.0)
+		player.air_jump_available = false
 		var before: Vector2 = player.external_velocity
 		var gravity_budget: Vector2 = player.coyote_gravity_velocity + Vector2(0, game.settings.gravity / 60.0)
 		await physics_frame

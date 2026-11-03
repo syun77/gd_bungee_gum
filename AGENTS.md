@@ -114,7 +114,7 @@
 
 - Corner-jump diagnostics use existing Jump Diagnostics: KICK_APPLIED records selected normal/angle and exact launch velocity changes; ACCEPTED/AFTER_MOVE include collider paths, contact points/depths and real displacement. Contact/real-motion fields before movement describe the previous move_and_slide result.
 
-- Settings script defaults match the saved tuning baseline: kick_speed400, coyote_time0.2, maximum_length400, camera_long_gum_zoom1.0. Keep specs/game-settings.md default descriptions aligned.
+- Settings schema kick_speed is400 (current saved tuning400); other documented baseline values: coyote_time0.2, maximum_length400, camera_long_gum_zoom1.0. Keep specs/game-settings.md default descriptions aligned.
 
 
 
@@ -242,3 +242,19 @@
 - Gum visual origin is a bounded player-local hand offset (Gum Appearance/gum_hand_follow_speed360px/s), updated once after deformation in normal and food-lock simulation; gum_visual_target returns raw pose sample. Renderer getters never advance tracking; player world translation follows immediately. Physics chest origin unchanged. verify_gum_hand_origin.gd covers pose/mirror/deformation/timestep/lock behavior.
 
 - Gameplay SFX: root sounds/*.wav originals (non-2 variants) copied to assets/sounds; SoundEffects autoload owns up to24 overlapping non-positional one-shots and survives scene reload. Cue timing/spec: specs/sound-effects.md; verify_sound_effects.gd. Pull plays on first contraction step/relaxed restart (including food reel), checkpoint only first activation, manual restart silent.
+
+- `pixelfx/` is an independent nested upstream clone, untracked by the game repository and locally hidden via `.git/info/exclude` (not a submodule). `images/effects/*.mjs` import its core for asset authoring; preserve the checkout when adjusting Git visibility.
+
+- Double jump: one fresh airborne Z/Cross impulse, refreshed on floor or successful non-food gum adhesion; existing contact/coyote/gum-release/food/ladder jumps take priority without consuming it. Initial/contact/special jumps use kick_speed, spinning air jump uses Player Double Jump/double_jump_kick_speed (schema380/current saved300); vertical speed assignment for air jumps, gum-style downward cancellation for gum release; sprite-only rotation persists until landing/ladder/reset/non-food gum adhesion. Motion reset/reeling clears spin without restoring air allowance. See specs/player-controller.md and tools/verify_double_jump.gd; exhausted-air fixtures isolate landing-buffer/rejection tests.
+
+- Rotation-jump tuck source: images/teto_double_jump.png,1254×1254 transparent RGBA single right-facing knees-hugged pose. Runtime copy assets/characters/teto_double_jump.png is byte-identical; player.tscn double_jump uses AtlasTexture region(328,145,606,935), sprite-only0.175 source scale on top of normal0.3125. Outbound spin prioritizes tuck; non-food adhesion stops spin and restores ordinary gum poses; mirrored/rotated visual hand uses crop-relative(143,194). See specs/character-sprite-audit.md.
+
+- Double-jump visual speed is shared Player Double Jump/double_jump_rotation_speed in rev/s (schema2.5, current saved tuning3.0;0 freezes current angle); read live per step, physics/pose unchanged. verify_double_jump.gd checks custom/live/zero speed and momentum invariants.
+
+- Double-jump spin follows current sprite.flip_h after pose selection: right clockwise/left counterclockwise, midair reversal retains angle, neutral retains facing. fposmod wraps signed rotation; settings speed is magnitude. verify_double_jump.gd exercises real left/right/neutral input with custom/zero speeds and fixed collision/momentum.
+
+- Gum._attach_hit notifies Player.on_gum_attached only for non-food terrain/rigid/ring hits: one-shot air-jump refill and immediate rotation/pose/scale reset with unchanged velocities. Food retains reset_motion/reel reward rules. verify_double_jump_gum.gd covers actual Game flight→adhesion→release→air jump, held-attachment no-refill and food exclusion.
+
+- Kick tuning is independent: Player Movement/kick_speed controls initial/contact/coyote/gum-release/food/ladder jumps; Player Double Jump/double_jump_kick_speed controls spinning air jumps only. Current saved values400/300; preserve user tuning. verify_double_jump.gd uses distinct310/470 fixtures and verifies gum-release priority.
+
+- Double-jump launch directly assigns external_velocity.y = -double_jump_kick_speed, replacing upward/downward momentum and current-tick gravity while preserving X; gravity resumes next tick. Other jump types retain existing compensation. verify_double_jump.gd covers72 combinations of gravity/timestep/vertical+horizontal speed.
