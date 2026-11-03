@@ -155,7 +155,8 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 		attached_jump = false
 	# 接触判定は直前の move_and_slide() の結果。今回の移動後に更新される。
 	var grounded := is_on_floor() and drop_through_remaining <= 0.0
-	var touching := grounded or is_on_wall() or is_on_ceiling()
+	var jump_contact := grounded or is_on_ceiling()
+	var touching := jump_contact or is_on_wall()
 	if grounded:
 		air_jump_available = true
 		coyote_remaining = settings.coyote_time
@@ -186,12 +187,12 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 	# Stored input is floor-only; special air/contact actions require a fresh press.
 	var fresh_jump := jump_requested
 	jump_requested = jump_requested or (grounded and jump_buffer_remaining > 0.0)
-	var coyote_kick := not touching and coyote_remaining > 0.0
+	var coyote_kick := not jump_contact and coyote_remaining > 0.0
 	attached_jump = attached_jump and fresh_jump
 	var food_jump := food_jump_available and fresh_jump
-	var contact_kick := kick_available and (touching or coyote_kick)
+	var contact_kick := kick_available and (jump_contact or coyote_kick)
 	var special_jump := attached_jump or food_jump or ladder_jump
-	var air_jump := fresh_jump and air_jump_available and not touching and not coyote_kick and not special_jump
+	var air_jump := fresh_jump and air_jump_available and not jump_contact and not coyote_kick and not special_jump
 	var world_up_jump := special_jump or air_jump
 	var can_kick := world_up_jump or contact_kick
 	if jump_requested:
@@ -209,8 +210,8 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 		SoundEffects.play(&"jump")
 		jump_buffer_remaining = 0.0
 		var kick_direction := Vector2.UP
-		if touching and not grounded and not world_up_jump:
-			kick_direction = get_wall_normal() if is_on_wall() else Vector2.DOWN
+		if is_on_ceiling() and not grounded and not world_up_jump:
+			kick_direction = Vector2.DOWN
 		var external_before := external_velocity
 		var compensation := Vector2.ZERO
 		if air_jump:
@@ -233,7 +234,7 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 		if settings.jump_diagnostics:
 			print("[JumpDiagnostic] KICK_APPLIED tick=%d feet=%s source=%s normal=%s angle_from_up_deg=%.3f impulse=%s compensation=%s external_before=%s external_after=%s control=%s launch=%s delta=%.6f" % [
 				Engine.get_physics_frames(), global_position,
-				"double" if air_jump else "ladder" if ladder_jump else ("food" if food_jump else ("gum" if attached_jump else ("coyote" if coyote_kick else ("floor" if grounded else ("wall" if is_on_wall() else "ceiling"))))),
+				"double" if air_jump else "ladder" if ladder_jump else ("food" if food_jump else ("gum" if attached_jump else ("coyote" if coyote_kick else ("floor" if grounded else "ceiling")))),
 				kick_direction, rad_to_deg(Vector2.UP.angle_to(kick_direction)), impulse, compensation,
 				external_before, external_velocity, control_velocity, control_velocity + external_velocity, delta])
 		food_jump_available = false

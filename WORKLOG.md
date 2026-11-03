@@ -1,3 +1,10 @@
+## Remove wall kicks
+- Goal/status: Remove wall-derived kicks; complete; implementation, refactor and verification finished.
+- Decisions: Keep ceiling kicks; wall contact permits existing coyote/one-use air jump but never grants/refills a jump. Floor/gum jumps unchanged.
+- Completed: Removed wall-normal impulse/diagnostic source, separated jump-eligible contacts from all contacts, updated current specs and durable guidance. Added mirrored real-wall regression for exhausted allowance rejection and ordinary vertical double jump.
+- Files: player.gd; verify_double_jump.gd; specs/keyboard-controls.md/player-controller.md/game-settings.md; AGENTS.md; WORKLOG.md.
+- Tests: Focused double-jump suite incl. both real walls and72 launch cases PASS before/after refactor; controls PASS; git diff --check PASS. Full player PASS (42 mirrored corner conditions, wall-adjacent floor jumps, coyote, landing/momentum). Known CA/exit-resource warnings only. Blockers: None. Next action: Optional F5 playtest of wall-adjacent jumping.
+
 ## Double-jump vertical velocity assignment
 - Goal/status: Replace all existing vertical momentum with configured double-jump speed; complete.
 - Decisions: Accepted air jump assigns external_velocity.y = -double_jump_kick_speed, retaining X; current gravity and prior upward/downward speed cannot affect launch. Gravity resumes next tick; other jumps unchanged.

@@ -118,7 +118,7 @@
 
 
 
-- Floor and coyote kicks add world-up velocity; wall/ceiling retain contact kicks. Contact normals still own collision/friction, never floor launch direction. verify_player.gd includes real left/right tilted corner floor and delayed-coyote launches.
+- Floor and coyote kicks add world-up velocity; ceiling retains downward contact kicks; walls never grant kicks (wall contact permits an available coyote/double jump). Contact normals still own collision/friction, never floor launch direction. verify_player.gd includes real left/right tilted corner floor and delayed-coyote launches.
 
 
 
@@ -140,7 +140,7 @@
 
 - Pinning Diagnostics defaults OFF: player `[PinningDiagnostic]` logs rigid slide contact start/end, input/gum mode changes and30-tick summaries with8-step history, pre/post collision velocities, displacement, collider/rigid state and gum force. Event-only nearby2px shape query (max16) supplements slide contacts; proximity does not prove pinning. verify_player.gd covers blocked fixture/history/toggle.
 
-- Pinning reproduction can report only4 repeated static wall hits (depth5.28px, floor=false), omitting the rigid block. Watch stalled penetration as well as rigid contacts: depth>=1px, incoming>=10px/s, displacement<0.1px/step. Supplied log shows slack/detached gum does not resolve it; gravity accumulates and wall kick consumes rearm. Do not infer block absence from slide contacts.
+- Pinning reproduction can report only4 repeated static wall hits (depth5.28px, floor=false), omitting the rigid block. Watch stalled penetration as well as rigid contacts: depth>=1px, incoming>=10px/s, displacement<0.1px/step. Supplied log shows slack/detached gum does not resolve it; gravity accumulates. Do not infer block absence from slide contacts.
 
 - Detailed pinning log confirms compressed gap: wall x64,40px LightBox center96.446 (rotation~-PI/2) gives12.446px gap for20px capsule; player wall depth grows1.45→5.67px, then4 repeated wall hits exhaust max_slides4, hide floor/block and accumulate gravity despite zero displacement. Rightward input remains positive but cannot escape; gum tension0 and later rigid sleep rule out continuous gum pull as persistence cause. Behavioral fix must address compressed contact geometry, not only input/jump/tension.
 
@@ -258,3 +258,5 @@
 - Kick tuning is independent: Player Movement/kick_speed controls initial/contact/coyote/gum-release/food/ladder jumps; Player Double Jump/double_jump_kick_speed controls spinning air jumps only. Current saved values400/300; preserve user tuning. verify_double_jump.gd uses distinct310/470 fixtures and verifies gum-release priority.
 
 - Double-jump launch directly assigns external_velocity.y = -double_jump_kick_speed, replacing upward/downward momentum and current-tick gravity while preserving X; gravity resumes next tick. Other jump types retain existing compensation. verify_double_jump.gd covers72 combinations of gravity/timestep/vertical+horizontal speed.
+
+- Wall contact never grants a kick or restores air jumps. Wall-only Z uses an available floor coyote jump or ordinary one-use vertical double jump; ceiling kicks remain. verify_double_jump.gd covers both real wall sides.

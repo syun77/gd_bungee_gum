@@ -110,6 +110,6 @@ Shader hit wave: enabled by default, radius56px, duration0.32s, refraction stren
 
 回転ジャンプの向きは表示中のキャラクターに従い、右向きは時計回り、左向きは反時計回り。空中で左右入力により振り向くと、角度をリセットせずその更新から逆回転する。無入力時は直前の向きを保持する。`double_jump_rotation_speed` は両方向共通の速さで、移動速度や外部運動量には影響しない。
 
-**Player Movement → Kick Speed** (`kick_speed`) は初段・床／壁／天井・コヨーテ・ガム解除・フード報酬・ハシゴのジャンプ速度。**Player Double Jump → Double Jump Kick Speed** (`double_jump_kick_speed`) は回転する二段目の空中ジャンプだけに適用する。単位はpx/s、二段目の既定380、現在の保存値は初段400・二段目300。上下・横の運動量処理、下降補正、ジャンプ回数・回転速度は各設定を変更しても同じ規則を使う。
+**Player Movement → Kick Speed** (`kick_speed`) は初段・床／天井・コヨーテ・ガム解除・フード報酬・ハシゴのジャンプ速度。**Player Double Jump → Double Jump Kick Speed** (`double_jump_kick_speed`) は回転する二段目の空中ジャンプだけに適用する。単位はpx/s、二段目の既定380、現在の保存値は初段400・二段目300。上下・横の運動量処理、下降補正、ジャンプ回数・回転速度は各設定を変更しても同じ規則を使う。
 
 二段ジャンプの発動更新では縦速度を `-double_jump_kick_speed` に代入する。発動前の上昇・下降速度とその更新の重力は引き継がず、横速度だけを保持する。次更新から重力を再開する。初段・ガム解除などの補正は各既存規則を使う。

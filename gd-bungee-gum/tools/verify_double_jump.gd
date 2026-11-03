@@ -117,6 +117,7 @@ func verify() -> void:
 	assert(player.sprite.rotation == 0.0 and not player.double_jump_spinning and player.velocity == Vector2.ZERO)
 	assert(player.sprite.animation != &"double_jump", "Reel reset restores ordinary pose")
 	player.food_reel_locked = false
+	await verify_wall_jump_removal(player)
 	await verify_vertical_speed_assignment(player)
 	player.queue_free()
 	floor_body.queue_free()
@@ -147,3 +148,36 @@ func verify_vertical_speed_assignment(player) -> void:
 					await process_frame
 					assert(player.external_velocity.is_equal_approx(expected + Vector2(0, gravity * delta)), "Gravity resumes immediately after launch")
 	print("PASS:72 double-jump launch cases across gravity, timesteps and upward/downward/horizontal momentum")
+
+func verify_wall_jump_removal(player) -> void:
+	player.settings.gravity = 1100.0
+	for side in [-1.0, 1.0]:
+		var wall := StaticBody2D.new()
+		var collision := CollisionShape2D.new()
+		var rectangle := RectangleShape2D.new()
+		rectangle.size = Vector2(40, 2000)
+		collision.shape = rectangle
+		wall.add_child(collision)
+		wall.position = Vector2(side * 5000, 0)
+		root.add_child(wall)
+		player.position = wall.position - Vector2(side * 30, 0)
+		player.reset_motion()
+		player.air_jump_available = false
+		Input.action_press("move_right" if side > 0 else "move_left")
+		for i in 3:
+			await tick(player)
+		assert(player.is_on_wall() and not player.is_on_floor() and not player.is_on_ceiling())
+		var before: Vector2 = player.external_velocity
+		await tick(player, true)
+		assert(player.external_velocity.is_equal_approx(before + Vector2(0, player.settings.gravity * STEP)), "Wall alone cannot launch or cancel falling momentum")
+		assert(not player.air_jump_available and not player.double_jump_spinning, "Wall cannot replenish an exhausted air jump")
+		player.air_jump_available = true
+		await tick(player)
+		await tick(player, true)
+		assert(is_equal_approx(player.external_velocity.y, -player.settings.double_jump_kick_speed), "Wall contact permits the ordinary vertical double jump")
+		assert(is_zero_approx(player.external_velocity.x) and not player.air_jump_available, "No wall-normal impulse; ordinary air allowance consumed")
+		Input.action_release("move_left")
+		Input.action_release("move_right")
+		wall.queue_free()
+		await process_frame
+	print("PASS: mirrored real wall contacts reject wall kicks and retain one-use vertical double jumps")
