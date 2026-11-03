@@ -87,3 +87,7 @@ Shader hit wave: enabled by default, radius56px, duration0.32s, refraction stren
 ### Food Collection
 
 `food_reel_speed`: 手元への引き寄せ速度、既定600px/s（Inspector範囲1〜4000）。速度・重力停止と回収後ジャンプの詳細は [food-gum-reel.md](food-gum-reel.md)。
+
+- `Player Movement/jump_buffer_time`: 着地前ジャンプの入力保存秒数。既定0.12秒、0で無効。床接触後の最初の物理ティックで一度だけ通常キックを実行し、成功・降下・移動リセット・フード回収ロックで消費／消去する。
+
+ハシゴ範囲内では上下で昇降（Ladder / ladder_speed既定120px/s）。左右・Z・ガム発射で離れる。詳細は [ladders.md](ladders.md)。

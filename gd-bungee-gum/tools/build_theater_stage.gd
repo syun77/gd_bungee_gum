@@ -67,11 +67,21 @@ func _initialize() -> void:
 	anchors.collision_enabled = true
 	for cell in Layout.GUM_ANCHORS:
 		anchors.set_cell(cell, 2, Vector2i.ZERO)
+	var spikes := layer("Spikes")
+	spikes.tile_set = load("res://assets/hazards/spike_tileset.tres")
+	spikes.z_index = 3
+	for cell in Layout.SPIKES:
+		spikes.set_cell(cell, 0, Vector2i.ZERO, 0)
 	var foods := layer("Foods")
 	foods.tile_set = load("res://assets/foods/food_tileset.tres")
 	foods.z_index = 3
 	for food in Layout.FOODS:
 		foods.set_cell(Vector2i(food.x, food.y), 0, Vector2i.ZERO, food.z)
+	for placement in Layout.LADDERS:
+		var ladder = load("res://scenes/props/ladder.tscn").instantiate()
+		ladder.position = Vector2(placement.x, placement.y)
+		ladder.height = placement.z
+		add(stage, ladder)
 	var signs := layer("Signs")
 	for section in Layout.SECTION_NAMES.size():
 		var x := 4 + section * 26

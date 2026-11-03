@@ -1,11 +1,14 @@
 extends Node2D
 ## Fixed-step owner: validate -> direction / actions -> gum -> player -> presentation.
 const Settings = preload("res://scripts/game_settings.gd")
+const SPIKE_LAYER := 64
 @export var settings: Settings
 @onready var player: CharacterBody2D = $Player
+@onready var player_shape: CollisionShape2D = $Player/CollisionShape2D
 @onready var camera: Camera2D = $Camera2D
 @onready var gum: Node2D = $Gum
 @onready var status: Label = $HUD/Status
+var spike_sweep: ShapeCast2D
 var restarting := false
 var aim_direction := Vector2.RIGHT
 var up_wait_release := false
@@ -13,6 +16,14 @@ var down_wait_release := false
 var manual_down_pressed := false
 
 func _ready() -> void:
+	spike_sweep = ShapeCast2D.new()
+	spike_sweep.shape = player_shape.shape
+	spike_sweep.collision_mask = SPIKE_LAYER
+	spike_sweep.collide_with_areas = true
+	spike_sweep.collide_with_bodies = false
+	spike_sweep.margin = 0.0
+	spike_sweep.enabled = false
+	add_child(spike_sweep)
 	player.settings = settings
 	gum.settings = settings
 	player.global_position = $TheaterStage/PlacementMarkers/PlayerSpawn.global_position
@@ -33,13 +44,11 @@ func _physics_process(delta: float) -> void:
 	if restarting:
 		return
 	if Input.is_action_just_pressed("restart") or player.position.y > settings.restart_y:
-		restarting = true
-		gum.detach("RESTART")
-		$LandingDustEffect.stop()
-		$GumShotParticles.stop()
-		$GumHitParticles.stop()
-		$GumHitShockwave.stop()
-		get_tree().call_deferred("reload_current_scene")
+		restart()
+		return
+	var previous_shape_transform: Transform2D = player_shape.global_transform
+	if _touches_spikes(previous_shape_transform, Vector2.ZERO):
+		restart()
 		return
 	gum.validate_connection()
 	var was_reeling: bool = gum.reeling_food()
@@ -51,9 +60,30 @@ func _physics_process(delta: float) -> void:
 	gum.step(delta, length_input)
 	player.food_reel_locked = was_reeling or gum.reeling_food()
 	player.simulate(delta, jump_requested, attached_jump)
+	var movement: Vector2 = player_shape.global_position - previous_shape_transform.origin
+	if _touches_spikes(previous_shape_transform, movement):
+		restart()
+		return
 	_update_camera(delta)
 	gum.update_aim(_aim_target())
 	_update_status()
+
+func restart() -> void:
+	if restarting:
+		return
+	restarting = true
+	gum.detach("RESTART")
+	$LandingDustEffect.stop()
+	$GumShotParticles.stop()
+	$GumHitParticles.stop()
+	$GumHitShockwave.stop()
+	get_tree().call_deferred("reload_current_scene")
+
+func _touches_spikes(start: Transform2D, movement: Vector2) -> bool:
+	spike_sweep.global_transform = start
+	spike_sweep.target_position = start.basis_xform_inv(movement)
+	spike_sweep.force_shapecast_update()
+	return spike_sweep.is_colliding()
 
 func _update_camera(delta: float) -> void:
 	camera.position = player.position

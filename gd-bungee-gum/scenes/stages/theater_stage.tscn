@@ -3,6 +3,10 @@
 [ext_resource type="TileSet" uid="uid://cx8raxqtl52fj" path="res://assets/tilesets/theater_tileset.tres" id="1_jd0rl"]
 [ext_resource type="TileSet" uid="uid://bdsbmytxvc077" path="res://assets/foods/food_tileset.tres" id="foods"]
 
+[ext_resource type="PackedScene" path="res://scenes/props/ladder.tscn" id="ladder"]
+
+[ext_resource type="TileSet" path="res://assets/hazards/spike_tileset.tres" id="spikes"]
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_sbul5"]
 size = Vector2(64, 704)
 
@@ -470,4 +474,12 @@ text = "EXIT"
 z_index = 3
 tile_map_data = PackedByteArray("AAAHABMAAAAAAAAABQAJABEAAAAAAAAACAAQAA8AAAAAAAAACQASABMAAAAAAAAABgAXAA8AAAAAAAAABAAQAAoAAAAAAAAAAwAdABUAAAAAAAAABwAhAA8AAAAAAAAABgAmABEAAAAAAAAACAAtABEAAAAAAAAACQAzAA8AAAAAAAAAAAAhAAkAAAAAAAAAAwA5ABMAAAAAAAAAAQA/ABMAAAAAAAAABQBEAA8AAAAAAAAACgBGAA0AAAAAAAAACABLAA0AAAAAAAAAAgBEAAoAAAAAAAAABABSABUAAAAAAAAABgBWAA0AAAAAAAAAAQBaAA8AAAAAAAAABwBgABEAAAAAAAAACQBnAA8AAAAAAAAAAgBVAAcAAAAAAAAAAwBsABMAAAAAAAAACABuABEAAAAAAAAACQByABEAAAAAAAAAAAB4AA8AAAAAAAAACgB/AA8AAAAAAAAABAB4AAoAAAAAAAAAAQCHABUAAAAAAAAABwCMABUAAAAAAAAABQCQABEAAAAAAAAACgCTAA8AAAAAAAAAAACUAAsAAAAAAAAAAgCaAAsAAAAAAAAAAwA=")
 tile_set = ExtResource("foods")
+collision_enabled = false
+
+[node name="Ladder" parent="." instance=ExtResource("ladder")]
+position = Vector2(464, 640)
+
+[node name="Spikes" type="TileMapLayer" parent="."]
+z_index = 3
+tile_set = ExtResource("spikes")
 collision_enabled = false

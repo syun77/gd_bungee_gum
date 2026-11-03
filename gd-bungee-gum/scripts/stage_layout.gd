@@ -1,5 +1,7 @@
 extends RefCounted
 ## Authored 32px geometry and placements for the current saved-tuning prototype.
+const SPIKES: Array[Vector2i] = []
+const LADDERS := [Vector3(464, 640, 128)] # Bottom x/y, height; optional first shelf.
 const TILE := 32
 const SIZE := Vector2i(160, 24)
 const TERRAIN := [

@@ -1,3 +1,61 @@
+## Two-frame ladder sprite task
+- Goal/status: Create rear-facing alternating climb pixel sprites and integrate; complete.
+- Integration confirmation: User requested installation again; verified active Player loads runtime climb SpriteFrames and plays it while gripping. Re-ran verify_ladder.gd: PASS exit0 (both frames/play/pause/no flip plus physical ladder behavior). No further implementation changes needed.
+- Completed: Inspected provided pose and current Player animation/ladder verification.
+- Decisions: Keep images/teto_climb.png as reference; new two-frame climb animation, pause on hold, fixed rear orientation. Preserve ladder physics.
+- Files: images/teto_climb_sheet_source.png, images/normalized/teto_climb.png, runtime PNG/climb_animations.tres, player.gd, verify_ladder.gd, specs/ladders.md, AGENTS.md, WORKLOG.md.
+- Completed artwork/integration: Generated rear-view two poses, saved source and nearest normalized512×256 sheet/runtime copy; dedicated climb SpriteFrames6fps, hold pause/no flip. Existing reference untouched; ladder spec/durable guidance updated.
+- Tests: Ladder suite PASS including both playing frames, fixed orientation and hold freeze. Normalized visual review/size/binary alpha/runtime parity/reference preservation PASS. Import PASS with known sandbox CA/Mono/settings warnings.
+- Refactoring: Shared resource merge loop for gum/climb; reviewed full animation priority and fixed collision geometry; ladder physics untouched. Final ladder rerun and full Player suite PASS exit0; git diff --check PASS. Blockers: None. Next action: F5 playtest dedicated climb animation at first optional ladder; interactive appearance remains unverified.
+
+## Ladder climbing character image task
+- Goal/status: Generate Teto climbing pose; complete.
+- Completed: Built-in imagegen reference-matched single rear-three-quarter climbing pose; saved images/teto_climb.png, visually reviewed full-body raised-hand/knee silhouette.
+- Decisions: Standalone character only, no ladder/gameplay integration; preserve existing work.
+- Files: images/teto_climb.png, AGENTS.md, WORKLOG.md.
+- Prompt: Reference Teto identity/pixel style, rear three-quarter vertical climb, staggered raised hands/one raised knee, full body, transparent background, no ladder/text/multiple frames. Built-in imagegen used.
+- Tests: Pillow size/mode/alpha inspection and visual review complete; no implementation/refactoring needed.
+- Blockers: None. Next action: Optional animation normalization/integration when requested.
+
+## Lethal spike gameplay task
+- Goal/status: Implement paintable lethal spikes; complete.
+- Decisions: Dedicated scene-tile Spikes layer, three blade shapes/base, player-only swept hazard query in Game, shared idempotent deferred restart. Default layer empty to preserve authored route.
+- Completed: Reusable three-blade/base scene tile, runtime art/TileSet, saved empty Spikes layer/generator parity, Game swept capsule and common restart; specs aligned.
+- Files: Hazard script/scene/TileSet/runtime artwork, Game, saved stage/generator, specs/test planned.
+- Tests: Focused real Game spike suite PASS (paint/erase,overlap,fast horizontal/vertical sweep,safe pass,gum exclusion,actual movement death,once-only reload,spawn/gum reset). Import PASS with known sandbox CA/Mono/settings warnings.
+- Refactoring: Reviewed full Game update/restart and hazard ownership; shared one restart path, no hazard callbacks or new player state.
+- Verification: Final spike suite PASS after refactor; controls PASS; saved-map PASS1212cells/27shapes/76one-way/59corners; git diff --check PASS. Runtime artwork matches source32px asset. Known sandbox CA warning only during tests.
+- Blockers: None. Next action: Paint Spikes layer and F5 playtest desired placements; native interactive visual QA remains separate.
+
+## Ladder gameplay task
+- Goal/status: Implement reusable climbable ladder and first optional stage placement; complete.
+- Completed: Transparent runtime artwork/reusable editor-preview scene, collision-aware Player climbing, tuning120px/s, first optional shelf placement bottom(464,640)/height128, layout/generator parity and current specifications.
+- Decisions: Up/Down grips/climbs, neutral holds; sideways/Z/active gum releases. Z is one world-up ladder kick. Grip absorbs momentum, exit retains climb speed; no teleport or solid/gum target. Ignore only one-way bit8 while gripping; restore on endpoint exit/reset/deletion/reel. Regrab requires release of vertical input. Mandatory gum lifts preserved.
+- Files: scripts/ladder.gd,player.gd,game_settings.gd,stage_layout.gd; scenes/props/ladder.tscn,stages/theater_stage.tscn; assets/props/restaurant_ladder.png; tools/build_theater_stage.gd,verify_ladder.gd; specs/ladders.md,player-controller.md,keyboard-controls.md,game-settings.md,stage-action-concept.md; AGENTS.md,WORKLOG.md.
+- Tests: New real saved-stage ladder suite PASS after final refactoring (climb/hold/top shelf/down/Z/no-regrab/bottom/side/disable/reel/deletion/actual Game X). Full Player, controls, one-way, jump-buffer, food-reel and saved-map suites PASS exit0; PNG copies identical; git diff --check PASS. Known sandbox CA warning; import also known Mono/editor-settings warnings. Native interactive appearance not verified.
+- Refactoring: Shared ladder exit/mask restoration, orphan cleanup, guarded drop-through timer, endpoint clamp/exits, normal tree drawing behind Player, editor height preview; diagnostics identify ladder kick. Existing unrelated jump-buffer/artwork changes preserved.
+- Blockers: None. Next action: F5 playtest ladder at x464 in first section; tune Ladder/ladder_speed or scene height as desired.
+
+## Ladder image task
+- Goal/status: Create ladder image in images; complete.
+- Completed: Built-in imagegen generated front-facing mint/cream/coral pixel-style ladder, saved images/restaurant_ladder.png; visually inspected.
+- Decisions: Asset only, no gameplay integration; preserve ongoing jump-buffer work.
+- Files: images/restaurant_ladder.png, AGENTS.md, WORKLOG.md.
+- Tests: Pillow confirms1024×1536 RGBA, transparent corner and inter-rung center (alpha0); visual review confirms isolated ladder. No code/tests needed.
+- Prompt: Single orthographic restaurant ladder, mint rails, cream rungs/coral fittings, teal outlines, pixel art, transparent background, no text.
+- Review: Final asset/path and scope checked; no code refactoring applicable.
+- Blockers: None. Next action: Use as source artwork if ladder gameplay is requested.
+
+## Jump buffering task
+- Goal/status: Add missing pre-landing jump buffering; complete.
+- Completed: Configurable0.12s floor-only input buffer; one-shot consumption; success/drop/reset/reel clear it. Fresh-only gum/food/wall/ceiling actions preserved. Current specs and durable guidance aligned.
+- Files: player.gd, game_settings.gd, verify_jump_buffer.gd, specs/player-controller.md,game-settings.md,keyboard-controls.md,stage-action-concept.md, AGENTS.md, WORKLOG.md.
+- Decisions: First supported physics tick executes usual floor kick; no free air jump or held-button repeat. Existing fixed-step ownership retained.
+- Tests: New real-physics buffer suite PASS twice (landing/disabled/expiry/no-repeat/reel/reset); controls, one-way, food-reel and full Player regression PASS exit0. git diff --check PASS. Known sandbox CA warning only.
+- Refactoring: Reviewed all touched controller/input/reset paths; reuse common kick logic and scalar timer, fresh input kept separate for special actions. Strengthened expiry regression to detect any transient launch.
+- Blockers: None.
+- Next action: F5 playtest landing input feel; tune Player Movement/jump_buffer_time if desired.
+
 ## Shockwave rendering correction
 - Goal/status: Compare linked Qiita implementation and fix missing rendered wave; complete.
 - Findings: Godot4.5 Polygon2D emits UVs only with a valid texture; textureless quad UV assignment was ignored. Previous headless lifecycle tests missed this.

@@ -93,7 +93,7 @@
 
 
 
-- Player input velocity stays horizontal, including after collision projection; external velocity retains physical sliding/momentum. verify_player.gd covers both high-speed corner directions on actual physics ticks and stable landing.
+- Normal locomotion input velocity stays horizontal, including after collision projection; ladder climbing explicitly supplies vertical control; external velocity retains physical sliding/momentum. verify_player.gd covers both high-speed corner directions on actual physics ticks and stable landing.
 - Landing Diagnostics defaults OFF: [LandingDiagnostic] logs CONTROL_COLLISION_RESOLVED / HIGH_SPEED_LANDING (30-tick detail throttle), plus persistent unexpected control-Y diagnostics; includes incoming/control/external velocity, discarded Y, normals and gum state. See specs/game-settings.md.
 
 - Runtime camera zoom is owned by Game._update_camera after Player.simulate; Camera Zoom settings control normal/path-length scales, distance thresholds and exponential response. Uses wrapped total path length; X does not change zoom. Verify with tools/verify_camera.gd.
@@ -212,3 +212,15 @@
 - Hit shockwave shader uses a broad refraction band and narrow pink/white core, holds brightness through45% then fades; mask screen sample only once to avoid double attenuation. Saved tuning160px/1s/16px/opacity1 differs from schema defaults; verification sets duration explicitly.
 
 - Textureless Polygon2D ignores its UV array in Godot4.5; shockwave radial coordinates must use vertex position/quad_radius varying. Run verify_gum_hit_shockwave_render.gd without --headless for GPU pixel regression; before/after captures live in /tmp.
+
+- Jump buffering: Player Movement/jump_buffer_time defaults0.12s (0 disables), floor-only pending input executes on first supported physics tick; success/drop/reset/reel clears. Special gum/food/wall/ceiling actions require fresh presses. Run tools/verify_jump_buffer.gd with player/controls/one-way/food-reel suites.
+
+- Ladder source artwork: `images/restaurant_ladder.png`,1024×1536 transparent RGBA, front-facing mint rails/cream rungs/coral fittings; runtime copy under `assets/props/`, used by the ladder scene.
+
+- Climbable ladder: `scenes/props/ladder.tscn`, feet-origin bottom/height128, Up/Down grip/climb120px/s, neutral hold, sideways/Z/active gum release. Shared Player collision pipeline; bit8 ignored only while gripping, restored on release/reset/deletion. `stage_layout.LADDERS` owns saved optional first-shelf placement(464,640). See specs/ladders.md and tools/verify_ladder.gd.
+
+- Spike artwork: `images/tilesets/restaurant_spikes.png` is32×32 transparent RGBA (three upward spikes/coral base), nearest filtering; matching `_source.png` is generated original. Runtime copy/scene TileSet live under assets/hazards; paint source0/scene0 on Spikes (default empty), generator uses Layout.SPIKES. Non-solid Area bit64; Game sweeps Player capsule before/after simulate and shares idempotent restart() with R/fall. Run tools/verify_spikes.gd; see specs/spike-tile-assets.md.
+
+- Climbing character source: `images/teto_climb.png`, single full-body rear-three-quarter Teto ladder-climb pose generated from character references; artwork only, not normalized or integrated into ladder animation.
+
+- Ladder climb animation: `images/normalized/teto_climb.png` and matching runtime copy,512×256/two256px cells,4px pixel clusters/baseline232. Back-facing alternating left-hand/right-foot then right-hand/left-foot; climb_animations.tres6fps, neutral pauses and no facing flip. `images/teto_climb.png` stays reference-only; generated sheet source is images/teto_climb_sheet_source.png.

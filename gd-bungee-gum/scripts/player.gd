@@ -25,8 +25,12 @@ var control_velocity := Vector2.ZERO
 var kick_available := true
 var drop_through_remaining := 0.0
 var drop_through_clear_y := 0.0
+var ladder: Node2D
+var ladder_wait_release := false
+var ladder_ignoring_one_way := false
 var food_reel_locked := false
 var food_jump_available := false
+var jump_buffer_remaining := 0.0
 var coyote_remaining := 0.0
 var coyote_gravity_velocity := Vector2.ZERO
 var landing_time := 0.0
@@ -54,14 +58,14 @@ func _ready() -> void:
 	add_child(afterimages)
 	sprite_rest_scale = sprite.scale
 	sprite_rest_position = sprite.position
-	var poses: SpriteFrames = preload("res://assets/characters/teto/gum_animations.tres")
 	sprite.sprite_frames = sprite.sprite_frames.duplicate()
-	for animation in poses.get_animation_names():
-		sprite.sprite_frames.add_animation(animation)
-		sprite.sprite_frames.set_animation_speed(animation, poses.get_animation_speed(animation))
-		sprite.sprite_frames.set_animation_loop(animation, poses.get_animation_loop(animation))
-		for index in poses.get_frame_count(animation):
-			sprite.sprite_frames.add_frame(animation, poses.get_frame_texture(animation, index), poses.get_frame_duration(animation, index))
+	for poses in [preload("res://assets/characters/teto/gum_animations.tres"), preload("res://assets/characters/teto/climb_animations.tres")]:
+		for animation in poses.get_animation_names():
+			sprite.sprite_frames.add_animation(animation)
+			sprite.sprite_frames.set_animation_speed(animation, poses.get_animation_speed(animation))
+			sprite.sprite_frames.set_animation_loop(animation, poses.get_animation_loop(animation))
+			for index in poses.get_frame_count(animation):
+				sprite.sprite_frames.add_frame(animation, poses.get_frame_texture(animation, index), poses.get_frame_duration(animation, index))
 
 func fire_gum() -> void:
 	sprite.stop()
@@ -81,6 +85,8 @@ func apply_external_force(force: Vector2, delta: float) -> void:
 	external_velocity += force / settings.player_mass * delta
 
 func reset_motion() -> void:
+	_leave_ladder()
+	jump_buffer_remaining = 0.0
 	velocity = Vector2.ZERO
 	control_velocity = Vector2.ZERO
 	external_velocity = Vector2.ZERO
@@ -96,8 +102,13 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 		_update_visual_deformation(delta)
 		afterimages.step(delta, sprite, 0.0, settings)
 		return
+	var ladder_jump := _update_ladder(jump_requested)
+	jump_buffer_remaining = maxf(minf(jump_buffer_remaining, settings.jump_buffer_time) - delta, 0.0)
+	if jump_requested:
+		jump_buffer_remaining = settings.jump_buffer_time
 	_update_drop_through(delta)
 	if jump_requested and Input.is_action_pressed("aim_down") and _can_drop_through():
+		jump_buffer_remaining = 0.0
 		drop_through_remaining = 0.5
 		# Restore collision after the whole 52px capsule clears the 5px shelf.
 		drop_through_clear_y = global_position.y + 58.0
@@ -130,20 +141,28 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 	var removed_control_y := control_velocity.y
 	control_velocity = Vector2(move_toward(control_velocity.x, direction * settings.run_speed, acceleration * delta), 0.0)
 	var gravity_velocity := Vector2(0.0, settings.gravity * delta)
-	external_velocity += gravity_velocity
+	if is_instance_valid(ladder):
+		control_velocity = Vector2(0.0, Input.get_axis("aim_up", "aim_down") * settings.ladder_speed)
+		control_velocity.y = clampf(control_velocity.y, (ladder.top_y() - global_position.y) / delta, (ladder.global_position.y - global_position.y) / delta)
+	else:
+		external_velocity += gravity_velocity
 	if coyote_remaining > 0.0:
 		coyote_gravity_velocity += gravity_velocity
+	# Stored input is floor-only; special air/contact actions require a fresh press.
+	var fresh_jump := jump_requested
+	jump_requested = jump_requested or (grounded and jump_buffer_remaining > 0.0)
 	var coyote_kick := not touching and coyote_remaining > 0.0
-	attached_jump = attached_jump and jump_requested
-	var food_jump := food_jump_available and jump_requested
-	var world_up_jump := attached_jump or food_jump
+	attached_jump = attached_jump and fresh_jump
+	var food_jump := food_jump_available and fresh_jump
+	var world_up_jump := attached_jump or food_jump or ladder_jump
 	var can_kick := world_up_jump or (kick_available and (touching or coyote_kick))
 	if jump_requested:
 		var result := "REJECTED_NO_CONTACT" if not touching else "REJECTED_NOT_REARMED"
 		if can_kick:
-			result = "ACCEPTED_FOOD" if food_jump else ("ACCEPTED_GUM" if attached_jump else ("ACCEPTED_COYOTE" if coyote_kick else "ACCEPTED"))
+			result = "ACCEPTED_LADDER" if ladder_jump else ("ACCEPTED_FOOD" if food_jump else ("ACCEPTED_GUM" if attached_jump else ("ACCEPTED_COYOTE" if coyote_kick else "ACCEPTED")))
 		_log_jump_state(result)
 	if jump_requested and can_kick:
+		jump_buffer_remaining = 0.0
 		var kick_direction := Vector2.UP
 		if touching and not grounded and not world_up_jump:
 			kick_direction = get_wall_normal() if is_on_wall() else Vector2.DOWN
@@ -163,7 +182,7 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 		if settings.jump_diagnostics:
 			print("[JumpDiagnostic] KICK_APPLIED tick=%d feet=%s source=%s normal=%s angle_from_up_deg=%.3f impulse=%s compensation=%s external_before=%s external_after=%s control=%s launch=%s delta=%.6f" % [
 				Engine.get_physics_frames(), global_position,
-				"food" if food_jump else ("gum" if attached_jump else ("coyote" if coyote_kick else ("floor" if grounded else ("wall" if is_on_wall() else "ceiling")))),
+				"ladder" if ladder_jump else ("food" if food_jump else ("gum" if attached_jump else ("coyote" if coyote_kick else ("floor" if grounded else ("wall" if is_on_wall() else "ceiling"))))),
 				kick_direction, rad_to_deg(Vector2.UP.angle_to(kick_direction)), impulse, compensation,
 				external_before, external_velocity, control_velocity, control_velocity + external_velocity, delta])
 		food_jump_available = false
@@ -206,6 +225,8 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 				removed_control_y = projected_control.y
 			# Input intent stays horizontal; collision momentum belongs to external_velocity.
 			control_velocity.x = projected_control.x
+			if is_instance_valid(ladder):
+				control_velocity.y = projected_control.y
 		var body = contact.get("body")
 		if body is RigidBody2D and not body.freeze and _is_support_normal(normal):
 			var impulse := (external_before_contact - external_velocity) * settings.player_mass
@@ -227,6 +248,48 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 	_log_landing_state(grounded, incoming_velocity, removed_control_y)
 	_log_pinning_state(delta, direction, jump_requested, before_position, before_control, before_external, incoming_velocity, slide_velocity)
 
+func _leave_ladder() -> void:
+	if ladder_ignoring_one_way:
+		external_velocity += control_velocity
+		control_velocity = Vector2.ZERO
+		if drop_through_remaining <= 0.0:
+			set_collision_mask_value(4, true)
+		ladder_wait_release = true
+	ladder_ignoring_one_way = false
+	ladder = null
+
+func _update_ladder(jump_requested: bool) -> bool:
+	var vertical := Input.get_axis("aim_up", "aim_down")
+	if is_zero_approx(vertical):
+		ladder_wait_release = false
+	var gum_active: bool = is_instance_valid(gum) and (gum.connected() or gum.state == gum.State.OUTBOUND)
+	var leaving := jump_requested or gum_active or not is_zero_approx(Input.get_axis("move_left", "move_right"))
+	var ladder_jump := false
+	if ladder_ignoring_one_way and not is_instance_valid(ladder):
+		_leave_ladder()
+	if is_instance_valid(ladder):
+		var at_exit: bool = (vertical < 0.0 and global_position.y <= ladder.top_y() + 0.01) or (vertical > 0.0 and global_position.y >= ladder.global_position.y - 0.01)
+		if leaving or not ladder.contains_feet(global_position) or settings.ladder_speed <= 0.0 or at_exit:
+			ladder_jump = jump_requested
+			_leave_ladder()
+	if not is_instance_valid(ladder) and not leaving and not ladder_wait_release and vertical != 0.0 and settings.ladder_speed > 0.0:
+		for candidate in get_tree().get_nodes_in_group("ladders"):
+			if candidate.contains_feet(global_position):
+				ladder = candidate
+				set_collision_mask_value(4, false)
+				ladder_ignoring_one_way = true
+				# Gripping static scenery absorbs momentum; release retains climb velocity.
+				external_velocity = Vector2.ZERO
+				control_velocity = Vector2.ZERO
+				break
+	if is_instance_valid(ladder):
+		jump_buffer_remaining = 0.0
+		coyote_remaining = 0.0
+		coyote_gravity_velocity = Vector2.ZERO
+		landing_air_time = 0.0
+		landing_air_distance = 0.0
+	return ladder_jump
+
 func _can_drop_through() -> bool:
 	if not is_on_floor() or drop_through_remaining > 0.0:
 		return false
@@ -246,7 +309,7 @@ func _update_drop_through(delta: float) -> void:
 	drop_through_remaining = maxf(drop_through_remaining - delta, 0.0)
 	if global_position.y >= drop_through_clear_y:
 		drop_through_remaining = 0.0
-	if drop_through_remaining <= 0.0:
+	if drop_through_remaining <= 0.0 and not ladder_ignoring_one_way:
 		set_collision_mask_value(4, true)
 
 func _update_landing_event(delta: float, was_grounded: bool, before_position: Vector2,
@@ -329,6 +392,12 @@ func _update_animation(direction: float) -> void:
 	# 外部速度で流されているときは、向きと実際の進行方向が逆になる。
 	if direction != 0.0:
 		sprite.flip_h = direction < 0.0
+	if is_instance_valid(ladder):
+		sprite.flip_h = false
+		sprite.play("climb")
+		if absf(velocity.y) < 1.0:
+			sprite.pause()
+		return
 	if is_instance_valid(gum) and (gum.connected() or gum.state == gum.State.OUTBOUND):
 		var aim: Vector2 = gum.support_point() - gum.origin()
 		sprite.flip_h = aim.x < 0.0

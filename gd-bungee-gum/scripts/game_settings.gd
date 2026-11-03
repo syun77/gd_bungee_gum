@@ -13,7 +13,13 @@ extends Resource
 @export_range(0.0, 2000.0) var kick_speed := 400.0
 ## Floor-departure kick grace (seconds); zero disables it.
 @export_range(0.0, 0.3, 0.01) var coyote_time := 0.2
+## Pre-landing jump input grace (seconds); zero disables it.
+@export_range(0.0, 0.3, 0.01) var jump_buffer_time := 0.12
 @export_range(0.01, 1000.0) var player_mass := 1.0
+
+@export_group("Ladder")
+## Vertical climbing speed (px/s); zero disables grabbing.
+@export_range(0.0, 600.0) var ladder_speed := 120.0
 
 @export_group("Food Collection")
 ## Food pull speed toward the frozen player's hand (px/s).
