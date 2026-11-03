@@ -55,6 +55,7 @@ func _physics_process(delta: float) -> void:
 			restart(true)
 		return
 	if player.position.y > settings.restart_y:
+		SoundEffects.play(&"dead")
 		restart(true)
 		return
 	var previous_shape_transform: Transform2D = player_shape.global_transform
@@ -97,12 +98,15 @@ func _setup_checkpoints() -> void:
 func _on_checkpoint_reached(checkpoint: Area2D) -> void:
 	if restarting or is_instance_valid(death_effect):
 		return
+	if not checkpoint.activated:
+		SoundEffects.play(&"checkpoint")
 	active_checkpoint = get_path_to(checkpoint)
 	checkpoint.activate()
 
 func _die_on_spikes(center: Vector2) -> void:
 	if restarting or is_instance_valid(death_effect):
 		return
+	SoundEffects.play(&"dead")
 	gum.detach("SPIKES")
 	gum.hide()
 	player.hide()

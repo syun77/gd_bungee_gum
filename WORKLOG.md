@@ -1,3 +1,12 @@
+## Sound effect assignment
+- Goal/status: Assign eight non-2 sounds to gameplay events; complete.
+- Decisions: Global capped one-shot audio survives reload; checkpoint first activation only, accepted kicks/qualified landings, successful hit/fire, actual first contraction tick including food reel; relaxed-to-contract repeats once. Manual restart silent.
+- Files: scripts/sound_effects.gd, game/player/gum_connection/food_collectible scripts, project.godot, assets/sounds, specs/sound-effects.md, AGENTS.md, WORKLOG.md.
+- Verification: WAV import and focused8clips/24voice cap/contraction/repeated input/checkpoint/death/scene-removal checks PASS. Gum, food reel, food collectibles, checkpoints and spikes PASS; controls and full player42-corner regression PASS. All8 source/runtime WAV byte parity PASS.
+- Limitations: Headless verification checks event/audio lifecycle, not perceived loudness. Known sandbox CA/editor warnings; some headless suites report exit resource warnings, final full player suite exits cleanly.
+- Refactoring: Reviewed all event gates; grouped gum audio state with variables and clear it on detach; shared contraction helper covers reel/spring.
+- Blockers: None. Next action: F5 auditory balance/timing review; native listening not performed. Focused SFX repeated PASS after refactor; diff check PASS.
+
 ## Direction-owned gum arm poses
 - Goal/status: Apply angle-driven upper arm selection to firing and attached gum; complete.
 - Decisions: Upper sector uses raised poses independent of speed/distance; lateral sector starts70deg from up (within20deg of horizontal). Outbound uses shot_direction immediately, including zero-length tip tick. Keep attached floor/slack and lower-direction behavior explicit/current; no physics edits.

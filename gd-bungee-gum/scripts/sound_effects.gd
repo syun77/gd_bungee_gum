@@ -1,0 +1,24 @@
+extends Node
+## Global one-shots survive stage reloads, including immediate pit respawns.
+const CLIPS := {
+	&"checkpoint": preload("res://assets/sounds/checkpoint.wav"),
+	&"dead": preload("res://assets/sounds/dead.wav"),
+	&"hit": preload("res://assets/sounds/hit.wav"),
+	&"item": preload("res://assets/sounds/item.wav"),
+	&"jump": preload("res://assets/sounds/jump.wav"),
+	&"landing": preload("res://assets/sounds/landing.wav"),
+	&"pull": preload("res://assets/sounds/pull.wav"),
+	&"shoot": preload("res://assets/sounds/shoot.wav"),
+}
+const MAX_VOICES := 24
+
+func play(cue: StringName) -> void:
+	if get_child_count() >= MAX_VOICES:
+		var oldest := get_child(0)
+		remove_child(oldest)
+		oldest.queue_free()
+	var voice := AudioStreamPlayer.new()
+	voice.stream = CLIPS[cue]
+	add_child(voice)
+	voice.finished.connect(voice.queue_free)
+	voice.play()

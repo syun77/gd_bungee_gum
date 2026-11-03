@@ -13,6 +13,7 @@ func collect() -> void:
 	if is_collected:
 		return
 	is_collected = true
+	SoundEffects.play(&"item")
 	var effect := CollectionEffect.new()
 	# Keep residue outside the scene tile so deleting the food does not delete it.
 	var host := get_parent()

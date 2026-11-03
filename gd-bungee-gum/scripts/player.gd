@@ -178,6 +178,7 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 			result = "ACCEPTED_LADDER" if ladder_jump else ("ACCEPTED_FOOD" if food_jump else ("ACCEPTED_GUM" if attached_jump else ("ACCEPTED_COYOTE" if coyote_kick else "ACCEPTED")))
 		_log_jump_state(result)
 	if jump_requested and can_kick:
+		SoundEffects.play(&"jump")
 		jump_buffer_remaining = 0.0
 		var kick_direction := Vector2.UP
 		if touching and not grounded and not world_up_jump:
@@ -360,6 +361,7 @@ func _update_landing_event(delta: float, was_grounded: bool, before_position: Ve
 				support = contact.merged({"face_normal": normal})
 		if not support.is_empty():
 			_start_visual_deformation(settings.landing_squash, settings.landing_squash_duration)
+			SoundEffects.play(&"landing")
 			landed.emit(support.point, support.face_normal, strongest, support.body as Node2D)
 	landing_floor_seen = true
 	landing_air_time = 0.0

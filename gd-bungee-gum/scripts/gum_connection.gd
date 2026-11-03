@@ -10,6 +10,7 @@ const Settings = preload("res://scripts/game_settings.gd")
 const RIGID_CONTACT_TOLERANCE := 2.0
 const AIM_TILE_BLINK_HZ := 3.0
 const GumPath = preload("res://scripts/gum_path.gd")
+var contraction_sound_pending := false
 var path = GumPath.new()
 var terrain_forces := PackedVector2Array()
 enum Mode { NONE, CONTRACT, LOOSEN }
@@ -141,6 +142,7 @@ func _attach_hit(hit: Dictionary) -> void:
 	player_force = Vector2.ZERO
 	target_force = Vector2.ZERO
 	mode = Mode.CONTRACT
+	contraction_sound_pending = true
 	release_reason = "ATTACHED"
 	last_display = PackedVector2Array([player.gum_visual_origin(), point])
 	var normal: Vector2 = hit.get("normal", Vector2.ZERO)
@@ -150,6 +152,7 @@ func _attach_hit(hit: Dictionary) -> void:
 		state = State.REELING
 		target.being_pulled = true
 		player.reset_motion()
+	SoundEffects.play(&"hit")
 	adhesion_started.emit(normal, target is TileMapLayer)
 
 func reeling_food() -> bool:
@@ -180,6 +183,7 @@ func fire(direction: Vector2) -> void:
 	shot_direction = direction.normalized()
 	shot_distance = 0.0
 	release_reason = "FLYING"
+	SoundEffects.play(&"shoot")
 	shot_started.emit()
 
 func cancel_return() -> void:
@@ -264,6 +268,7 @@ func detach(reason := "RELEASED") -> void:
 	player_force = Vector2.ZERO
 	target_force = Vector2.ZERO
 	mode = Mode.NONE
+	contraction_sound_pending = false
 	release_reason = reason
 	adhesion_ended.emit()
 
@@ -283,10 +288,17 @@ func validate_connection() -> void:
 func relax() -> void:
 	if connected():
 		mode = Mode.LOOSEN
+		contraction_sound_pending = false
 
 func contract() -> void:
-	if connected():
+	if connected() and mode != Mode.CONTRACT:
 		mode = Mode.CONTRACT
+		contraction_sound_pending = true
+
+func _play_contraction_sound() -> void:
+	if contraction_sound_pending:
+		contraction_sound_pending = false
+		SoundEffects.play(&"pull")
 
 func manual_length_limit() -> float:
 	return clampf(settings.maximum_length - settings.manual_length_margin, 0.0, settings.maximum_length)
@@ -338,6 +350,7 @@ func step(delta: float, length_input := 0.0) -> void:
 		_step_outbound(delta)
 		return
 	if reeling_food():
+		_play_contraction_sound()
 		_step_food_reel(delta)
 		return
 	if state == State.RETURNING:
@@ -358,6 +371,7 @@ func step(delta: float, length_input := 0.0) -> void:
 	last_display = _world_display_points()
 	var distance: float = path.length
 	if mode == Mode.CONTRACT:
+		_play_contraction_sound()
 		_shorten(settings.contraction_speed, delta)
 	elif length_input > 0.0:
 		# Above-cap attachments hold their length rather than snapping shorter.
