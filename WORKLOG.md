@@ -1,3 +1,13 @@
+## Item pickup PixelFX task
+- Goal/status: Create and integrate restaurant-colored pickup particles; complete.
+- Completed: PixelFX collect-burst wrapper with cream/coral/mint palette and2× timing; exported transparent22-frame sheet/runtime copy/JSON/contact preview. collect() spawns once for both contact and completed reel at actual collection position; frozen world-space residue survives food deletion, expires0.7s, stage deletion clears.
+- Decisions: Presentation only; no gameplay/tuning changes. Existing unrelated changes preserved. Nearest112×108 cells,5×5 atlas,30fps,Z7; image center56/54 is actual burst center, PixelFX anchor56/84.
+- Files: images/effects/food-collect.mjs,food_collect.png/json,food_collect_preview.png; runtime PNG; food_collect_effect.gd(+UID),food_collectible.gd; verify_food_collect_effect.gd(+UID),verify_food_collectibles.gd,verify_food_reel.gd; specs/food-collect-effect.md,food-item-assets.md; AGENTS.md,WORKLOG.md.
+- Tests: Four visual contact-sheet inspections including stock reference and final light/dark backgrounds. Godot effect/contact/reel suites PASS exit0 after final refactoring; image size/RGBA/identical copies/transparent terminal frame PASS. Godot import complete; known sandbox CA/Mono/editor-settings warnings only. git diff --check PASS.
+- Refactoring: Reviewed lifecycle and shared collection path; host skips TileMapLayer only, retaining ordinary scene ownership. Common successful collection owns emission, one-shot guard prevents duplicate particles.
+- Blockers: None; interactive in-game appearance remains unverified.
+- Next action: F5 inspect contact pickup and gum hand collection effects in gameplay.
+
 ## Food hit area task
 - Goal/status: Make food hit areas slightly larger than64px artwork; complete.
 - Completed: All11 centered circular Areas enlarged to radius36px/diameter72px, shared by contact pickup and gum rays; layout/artwork unchanged. Specs and AGENTS aligned.

@@ -63,6 +63,7 @@ func verify() -> void:
 		await ticks()
 		check(not is_instance_valid(food), "Player contact collects scene tile")
 		check(pickups == id + 1, "Each item signals exactly once")
+		check(not get_nodes_in_group("food_collect_effects").is_empty(), "Contact pickup spawns collection burst")
 		layer.erase_cell(cell)
 		player.position = Vector2(-1000, -1000)
 	stage.queue_free()

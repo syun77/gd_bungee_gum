@@ -1,0 +1,523 @@
+{
+  "frames": [
+    {
+      "filename": "food_collect 0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 1",
+      "frame": {
+        "x": 112,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 2",
+      "frame": {
+        "x": 224,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 3",
+      "frame": {
+        "x": 336,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 4",
+      "frame": {
+        "x": 448,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 5",
+      "frame": {
+        "x": 0,
+        "y": 108,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 6",
+      "frame": {
+        "x": 112,
+        "y": 108,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 7",
+      "frame": {
+        "x": 224,
+        "y": 108,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 8",
+      "frame": {
+        "x": 336,
+        "y": 108,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 9",
+      "frame": {
+        "x": 448,
+        "y": 108,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 10",
+      "frame": {
+        "x": 0,
+        "y": 216,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 11",
+      "frame": {
+        "x": 112,
+        "y": 216,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 12",
+      "frame": {
+        "x": 224,
+        "y": 216,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 13",
+      "frame": {
+        "x": 336,
+        "y": 216,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 14",
+      "frame": {
+        "x": 448,
+        "y": 216,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 15",
+      "frame": {
+        "x": 0,
+        "y": 324,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 16",
+      "frame": {
+        "x": 112,
+        "y": 324,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 17",
+      "frame": {
+        "x": 224,
+        "y": 324,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 18",
+      "frame": {
+        "x": 336,
+        "y": 324,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 19",
+      "frame": {
+        "x": 448,
+        "y": 324,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 20",
+      "frame": {
+        "x": 0,
+        "y": 432,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    },
+    {
+      "filename": "food_collect 21",
+      "frame": {
+        "x": 112,
+        "y": 432,
+        "w": 112,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 112,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 112,
+        "h": 108
+      },
+      "duration": 33
+    }
+  ],
+  "meta": {
+    "app": "https://github.com/patch-gg/pixelfx",
+    "version": "1",
+    "image": "food_collect.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 560,
+      "h": 540
+    },
+    "scale": "1",
+    "frameTags": [
+      {
+        "name": "food_collect",
+        "from": 0,
+        "to": 21,
+        "direction": "forward"
+      }
+    ],
+    "pixelfx": {
+      "id": "food-collect",
+      "name": "Food collection",
+      "fps": 30,
+      "loop": false,
+      "frames": 22,
+      "frameSize": [
+        112,
+        108
+      ],
+      "pivot": [
+        56,
+        84
+      ],
+      "columns": 5
+    }
+  }
+}
