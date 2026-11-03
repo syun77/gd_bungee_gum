@@ -15,6 +15,25 @@ extends Resource
 @export_range(0.0, 0.3, 0.01) var coyote_time := 0.2
 @export_range(0.01, 1000.0) var player_mass := 1.0
 
+@export_group("Player Squash and Stretch")
+## Visual-only horizontal (X) and vertical (Y) multipliers on upward launch.
+@export var jump_stretch := Vector2(0.84, 1.41)
+## Recovery time in seconds; zero disables jump deformation.
+@export_range(0.0, 1.0, 0.01) var jump_stretch_duration := 0.31
+## Visual-only horizontal (X) and vertical (Y) multipliers on landing.
+@export var landing_squash := Vector2(1.44, 0.82)
+## Recovery time in seconds; zero disables landing deformation.
+@export_range(0.0, 1.0, 0.01) var landing_squash_duration := 0.31
+
+@export_group("Player Afterimages")
+@export var afterimage_enabled := true
+## Actual world movement speed (px/s), including vertical motion.
+@export_range(0.0, 3000.0) var afterimage_minimum_speed := 350.0
+@export_range(0.01, 0.5, 0.01) var afterimage_interval := 0.04
+## Seconds until a frozen pose disappears; zero disables emission.
+@export_range(0.0, 1.0, 0.01) var afterimage_lifetime := 0.20
+@export var afterimage_color := Color(1.0, 0.72, 0.85, 0.32)
+
 @export_group("Landing Dust")
 ## Minimum floor-normal relative impact speed for visible dust (px/s).
 @export_range(0.0, 2000.0) var landing_dust_minimum_speed := 80.0
@@ -85,6 +104,24 @@ extends Resource
 ## White mixed into the narrow luminous core; zero keeps the base color.
 @export_range(0.0, 1.0) var gum_core_brightness := 0.12
 
+@export_group("Gum Shot Particles")
+@export var gum_shot_particles_enabled := true
+## Mean world-space distance between particles; randomized by +/-20 percent.
+@export_range(2.0, 32.0) var gum_particle_spacing := 10.0
+@export_range(0.02, 0.5) var gum_particle_lifetime := 0.5
+@export_range(0.0, 16.0) var gum_particle_spread := 16.0
+@export_range(0.0, 1.0) var gum_particle_opacity := 1.0
+
+@export_group("Gum Hit Particles")
+@export var gum_hit_particles_enabled := true
+@export_range(4, 16) var gum_hit_particle_count := 16
+## Outer radius of the expanding particle ring (world px).
+@export_range(6.0, 40.0) var gum_hit_particle_radius := 20.0
+@export_range(0.08, 0.5) var gum_hit_particle_lifetime := 0.5
+@export_range(0.0, 1.0) var gum_hit_particle_opacity := 1.0
+## Brief faint arcs supplement the particle ring when enabled.
+@export var gum_hit_arcs_enabled := false
+
 @export_group("Camera Zoom")
 ## Camera2D scale: larger values show a closer view.
 @export_range(0.1, 4.0) var camera_normal_zoom := 1.5
@@ -105,6 +142,6 @@ extends Resource
 ## Log gum releases with endpoint physics, obstruction details and eight preceding steps.
 @export var gum_diagnostics := false
 ## Log contact kick-off requests, rejection reasons and rearming.
-@export var jump_diagnostics := true
+@export var jump_diagnostics := false
 ## Log unexpected vertical control velocity and subsequent floor transitions.
-@export var landing_diagnostics := true
+@export var landing_diagnostics := false

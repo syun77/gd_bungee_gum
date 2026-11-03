@@ -94,11 +94,11 @@
 
 
 - Player input velocity stays horizontal, including after collision projection; external velocity retains physical sliding/momentum. verify_player.gd covers both high-speed corner directions on actual physics ticks and stable landing.
-- Landing Diagnostics defaults ON: [LandingDiagnostic] logs CONTROL_COLLISION_RESOLVED / HIGH_SPEED_LANDING (30-tick detail throttle), plus persistent unexpected control-Y diagnostics; includes incoming/control/external velocity, discarded Y, normals and gum state. See specs/game-settings.md.
+- Landing Diagnostics defaults OFF: [LandingDiagnostic] logs CONTROL_COLLISION_RESOLVED / HIGH_SPEED_LANDING (30-tick detail throttle), plus persistent unexpected control-Y diagnostics; includes incoming/control/external velocity, discarded Y, normals and gum state. See specs/game-settings.md.
 
 - Runtime camera zoom is owned by Game._update_camera after Player.simulate; Camera Zoom settings control normal/path-length scales, distance thresholds and exponential response. Uses wrapped total path length; X does not change zoom. Verify with tools/verify_camera.gd.
 
-- Jump Diagnostics defaults ON: `[JumpDiagnostic]` logs each Z request (ACCEPTED / REJECTED_NO_CONTACT / REJECTED_NOT_REARMED), AFTER_MOVE and pre-reset REARMED state. Contact eligibility resets on floor contact or a fully non-contact tick; request contact uses previous move_and_slide results. Toggle in shared Diagnostics settings; see specs/game-settings.md.
+- Jump Diagnostics defaults OFF: `[JumpDiagnostic]` logs each Z request (ACCEPTED / REJECTED_NO_CONTACT / REJECTED_NOT_REARMED), AFTER_MOVE and pre-reset REARMED state. Contact eligibility resets on floor contact or a fully non-contact tick; request contact uses previous move_and_slide results. Toggle in shared Diagnostics settings; see specs/game-settings.md.
 
 - Floor kick eligibility recovers on floor contact even with continuous wall contact; wall/ceiling-only contact does not rearm. verify_player.gd checks three consecutive jumps on saved-stage left wall without any fully non-contact tick.
 
@@ -183,4 +183,14 @@
 
 - READY aim tile blink lives in gum_connection.gd: merged Terrain hits map 0.1px inward to sibling TerrainTiles; ring hits use body RID cell. Draw-only 3Hz cell overlay; run tools/verify_aim_tile.gd.
 
-- Confirmed settings baseline: minimum_length4px, attachment_range160px, pinning_diagnostics/gum_diagnostics OFF; script defaults match saved Resource overrides. Jump/Landing diagnostics remain ON. See specs/game-settings.md.
+- Confirmed settings baseline: minimum_length4px, attachment_range160px, pinning_diagnostics/gum_diagnostics OFF; script defaults match saved Resource overrides. Jump/Landing diagnostics remain OFF. See specs/game-settings.md.
+
+- Shot trail is procedural `gum_shot_particles.gd`, bound by Game to Gum.shot_started/shot_advanced actual swept-tip segments; world-space residue survives detach/refire and expires, restart clears. Settings group Gum Shot Particles; draw z4 below gum5/adhesion6. No PNG assets. Run tools/verify_gum_shot_particles.gd with gum/controls/adhesion suites.
+
+- Hit particle rings use procedural `gum_hit_particles.gd` via adhesion_started: ring360deg/surface outward hemisphere, frozen world-space centers, residue survives release/target deletion. Game clears on restart; cap4bursts/64particles; z5 after gum/before patch6. Gum Hit Particles settings include optional arcs(defaultOFF). Run tools/verify_gum_hit_particles.gd with gum/controls/adhesion/shot suites.
+
+- Jump/landing squash-and-stretch is sprite-only in player.gd: accepted upward launches0.84×1.41/0.31s, qualified landed events1.44×0.82/0.31s, quadratic recovery. Scale sprite position with sprite scale around feet; never scale Player/capsule. Tune shared game_settings Player Squash and Stretch (jump_stretch/landing_squash Vector2 multipliers and corresponding duration seconds;0 disables). verify_player_deformation.gd checks actual jump/landing, custom settings and fixed collision geometry; specs/player-controller.md describes behavior.
+
+- Confirmed shared settings baseline: jump stretch(0.84,1.41)/0.31s; landing squash(1.44,0.82)/0.31s; shot particles lifetime0.5/spread16/opacity1; hit particles count16/lifetime0.5/opacity1. All diagnostics OFF; schema defaults match saved Resource.
+
+- Speed afterimages: Player calls player_afterimages.gd after animation/deformation, using actual fixed-step world displacement speed (default350px/s). Frozen nearest-filtered Sprite2D snapshots fade0.20s, interval0.04s, max8; shared Player Afterimages settings. Child lifecycle clears on restart; run tools/verify_player_afterimages.gd.

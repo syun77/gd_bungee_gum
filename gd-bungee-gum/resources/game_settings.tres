@@ -5,6 +5,15 @@
 [resource]
 resource_name = "Game Settings"
 script = ExtResource("1")
-gum_glow_radius = 18.0
-gum_glow_opacity = 0.18
-gum_core_brightness = 0.12
+jump_stretch = Vector2(0.84, 1.41)
+jump_stretch_duration = 0.31
+landing_squash = Vector2(1.44, 0.82)
+landing_squash_duration = 0.31
+gum_particle_lifetime = 0.5
+gum_particle_spread = 16.0
+gum_particle_opacity = 1.0
+gum_hit_particle_count = 16
+gum_hit_particle_lifetime = 0.5
+gum_hit_particle_opacity = 1.0
+jump_diagnostics = false
+landing_diagnostics = false

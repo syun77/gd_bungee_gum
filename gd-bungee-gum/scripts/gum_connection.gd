@@ -1,6 +1,8 @@
 extends Node2D
 ## Rules own the connection; physics resolves both endpoints' motion.
 signal adhesion_started(normal: Vector2, is_ring: bool)
+signal shot_started
+signal shot_advanced(start: Vector2, end: Vector2)
 signal adhesion_ended
 
 const Settings = preload("res://scripts/game_settings.gd")
@@ -153,6 +155,7 @@ func fire(direction: Vector2) -> void:
 	shot_direction = direction.normalized()
 	shot_distance = 0.0
 	release_reason = "FLYING"
+	shot_started.emit()
 
 func cancel_return() -> void:
 	if state == State.RETURNING:
@@ -162,9 +165,11 @@ func cancel_return() -> void:
 
 func _step_outbound(delta: float) -> void:
 	var travel := minf(settings.gum_shot_speed * delta, settings.attachment_range - shot_distance)
+	var previous_tip := tip
 	var next := tip + shot_direction * travel
 	var hit := _cast_segment(tip, next)
 	tip = hit.position if not hit.is_empty() else next
+	shot_advanced.emit(previous_tip, tip)
 	shot_distance += travel
 	if origin().distance_to(tip) > settings.maximum_length:
 		detach("TOO FAR")

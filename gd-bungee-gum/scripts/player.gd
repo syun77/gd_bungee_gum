@@ -15,6 +15,11 @@ const LANDING_MINIMUM_AIR_TIME := 0.05
 const LANDING_MINIMUM_AIR_DISTANCE := 2.0
 const Settings = preload("res://scripts/game_settings.gd")
 @export var settings: Settings
+var visual_deformation := Vector2.ONE
+var visual_deformation_time := 0.0
+var visual_deformation_duration := 0.0
+var sprite_rest_scale := Vector2.ONE
+var sprite_rest_position := Vector2.ZERO
 var external_velocity := Vector2.ZERO
 var control_velocity := Vector2.ZERO
 var kick_available := true
@@ -38,9 +43,14 @@ var landing_diagnostic_next_tick := 0
 var landing_diagnostic_transitions := 0
 var landing_diagnostic_details := 0
 var landing_diagnostic_next_impact_tick := 0
+var afterimages = preload("res://scripts/player_afterimages.gd").new()
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 func _ready() -> void:
+	add_child(afterimages)
+	afterimages.show_behind_parent = true
+	sprite_rest_scale = sprite.scale
+	sprite_rest_position = sprite.position
 	var poses: SpriteFrames = preload("res://assets/characters/teto/gum_animations.tres")
 	sprite.sprite_frames = sprite.sprite_frames.duplicate()
 	for animation in poses.get_animation_names():
@@ -116,6 +126,8 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 		external_velocity += compensation
 		var impulse := kick_direction * settings.kick_speed
 		external_velocity += impulse
+		if impulse.y < 0.0 and (control_velocity + external_velocity).y < 0.0:
+			_start_visual_deformation(settings.jump_stretch, settings.jump_stretch_duration)
 		if settings.jump_diagnostics:
 			print("[JumpDiagnostic] KICK_APPLIED tick=%d feet=%s source=%s normal=%s angle_from_up_deg=%.3f impulse=%s compensation=%s external_before=%s external_after=%s control=%s launch=%s delta=%.6f" % [
 				Engine.get_physics_frames(), global_position,
@@ -175,6 +187,8 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 		landing_time = 0.12
 	landing_time = maxf(landing_time - delta, 0.0)
 	_update_animation(direction)
+	_update_visual_deformation(delta)
+	afterimages.step(delta, sprite, global_position.distance_to(before_position) / maxf(delta, 0.000001), settings)
 	if jump_requested:
 		_log_jump_state("AFTER_MOVE", incoming_velocity)
 	_log_landing_state(grounded, incoming_velocity, removed_control_y)
@@ -210,10 +224,26 @@ func _update_landing_event(delta: float, was_grounded: bool, before_position: Ve
 				strongest = speed
 				support = contact.merged({"face_normal": normal})
 		if not support.is_empty():
+			_start_visual_deformation(settings.landing_squash, settings.landing_squash_duration)
 			landed.emit(support.point, support.face_normal, strongest, support.body as Node2D)
 	landing_floor_seen = true
 	landing_air_time = 0.0
 	landing_air_distance = 0.0
+
+func _start_visual_deformation(deformation: Vector2, duration: float) -> void:
+	visual_deformation = deformation
+	visual_deformation_duration = duration
+	visual_deformation_time = duration
+
+func _update_visual_deformation(delta: float) -> void:
+	# Scale only the artwork around the feet; body, capsule and physics origins stay fixed.
+	var weight := 0.0
+	if visual_deformation_time > 0.0:
+		weight = pow(visual_deformation_time / visual_deformation_duration, 2.0)
+	var deformation := Vector2.ONE.lerp(visual_deformation, weight)
+	sprite.scale = sprite_rest_scale * deformation
+	sprite.position = sprite_rest_position * deformation
+	visual_deformation_time = maxf(visual_deformation_time - delta, 0.0)
 
 func _log_jump_state(event: String, incoming := Vector2.ZERO) -> void:
 	if not settings.jump_diagnostics:

@@ -1,6 +1,6 @@
 # ゲームパラメータの編集
 
-GodotのFileSystemで `res://resources/game_settings.tres` を選択し、Inspectorで編集して保存する。F5を再実行すると反映される。現在の基準値は蹴り出し速度400 px/s、Coyote Time 0.20秒、ガム最大長400 px、射程160 px、発射速度1200 px/s。保存済み設定とスクリプトの初期値を揃えている。ガム最小自然長は4 px。Gum／Pinning診断はOFF、Jump／Landing診断はONを基準とする。定義・範囲・単位の説明は `scripts/game_settings.gd` にある。
+GodotのFileSystemで `res://resources/game_settings.tres` を選択し、Inspectorで編集して保存する。F5を再実行すると反映される。現在の基準値は蹴り出し速度400 px/s、Coyote Time 0.20秒、ガム最大長400 px、射程160 px、発射速度1200 px/s。保存済み設定とスクリプトの初期値を揃えている。ガム最小自然長は4 px。Gum／Pinning診断はOFF、Jump／Landing診断はOFFを基準とする。定義・範囲・単位の説明は `scripts/game_settings.gd` にある。
 
 | Inspectorのグループ | 主な項目 |
 | --- | --- |
@@ -11,7 +11,7 @@ GodotのFileSystemで `res://resources/game_settings.tres` を選択し、Inspec
 | Gum Wrapping | 支点のクリアランス、解除離隔・確認ティック、支点数・経路修正の上限 |
 | Aim Guide | 接着可／不可の色と透明度、補助線の太さ・破線長、照準円の半径・太さ |
 | Gum Appearance | 緩めモードの色（Gum Loosen Color、初期値 #B8A6AD）、収縮中の無張力／最大張力の色、線の太さと張力による追加幅 |
-| Diagnostics | Landing Diagnostics：着地不安定の調査ログ、Jump Diagnostics：接地キックの調査ログ（両方初期値ON） |
+| Diagnostics | Landing Diagnostics：着地不安定の調査ログ、Jump Diagnostics：接地キックの調査ログ（両方初期値OFF） |
 | Camera Zoom | 通常／長距離時の倍率、距離範囲、追従速度 |
 | Stage Rules | 落下時に再スタートするY座標 |
 
@@ -54,3 +54,24 @@ READY時に表示する命中予告の補助線（発射から回収完了まで
 `Player Contact`は壁・天井相当のブロック接触の反作用を調整する。床相当の支持接触は実カプセルの衝突に任せ、接触余白による分離や反発を加えない。本体カプセルのサイズを変更する設定ではない。`Pinning Diagnostics`の`CONTACT_IMPULSE`で接触点のインパルスと剛体速度の前後を確認できる。接触応答と検証条件は`player-controller.md`を参照。
 
 `Landing Dust`は着地土煙の表示しきい値。`landing_dust_minimum_speed`は80px/s未満を省略し、`landing_dust_heavy_speed`は450px/s以上で強着地画像を選ぶ。いずれも床法線方向の接触直前相対速度で、横移動速度を含めない。強着地しきい値を最小速度未満に設定した場合は最小速度を下限にする。物理への影響はない。
+
+`Gum Shot Particles`は発射軌跡の光粒子。`gum_shot_particles_enabled`はON、`gum_particle_spacing`は10px（±20%）、`gum_particle_lifetime`は0.5秒（0.7〜1.3倍）、`gum_particle_spread`は16px、`gum_particle_opacity`は1.0。放出は実際の先端移動距離で決まり、接着・回収中は追加しない。無効化すると残粒も消える。物理への影響はない。詳細は`gum-shot-particles.md`。
+
+`Gum Hit Particles`は接着成功時の光粒子リング。`gum_hit_particles_enabled`はON、`gum_hit_particle_count`は16（4〜16）、`gum_hit_particle_radius`は20px、`gum_hit_particle_lifetime`は0.5秒、`gum_hit_particle_opacity`は1.0、`gum_hit_arcs_enabled`はOFF。リングは全周、通常面は外側半円へ広がる。解除後も寿命まで残り、再開・無効化で全消去する。追加の物理力はない。詳細は`gum-hit-particles.md`。
+
+## Player Squash and Stretch
+
+`resources/game_settings.tres` のInspectorで見た目だけの伸縮を調整する。
+
+| 設定 | 初期値 | 意味 |
+| --- | --- | --- |
+| Jump Stretch | (0.84, 1.41) | 上向きジャンプ開始時の横／縦倍率 |
+| Jump Stretch Duration | 0.31秒 | ジャンプ伸縮の復元時間 |
+| Landing Squash | (1.44, 0.82) | 着地時の横／縦倍率 |
+| Landing Squash Duration | 0.31秒 | 着地伸縮の復元時間 |
+
+倍率1で通常サイズ。時間0で該当効果を無効化。足元基準・二次曲線で復元し、当たり判定や速度は変更しない。
+
+### 高速移動の残像
+
+高速移動時の残像は `Player Afterimages` 設定で調整する。実移動距離÷固定ステップ秒数が `afterimage_minimum_speed`（350px/s）以上なら、`afterimage_interval`（0.04秒）ごとに表示中のフレーム・向き・変形をワールド座標に固定して複製する。通常走行220px/sでは発生せず、落下・ジャンプ・ガム移動にも同じ速度条件を使う。薄いピンク `afterimage_color`（RGBA 1/0.72/0.85/0.32）が `afterimage_lifetime`（0.20秒）で二次減衰し、最大8枚。減速後も既存の残像は消えるまで残る。`afterimage_enabled=false` または寿命0で消去・停止する。Playerの子として再スタート時に破棄され、当たり判定や運動には影響しない。

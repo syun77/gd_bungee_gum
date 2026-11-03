@@ -1,3 +1,71 @@
+## Speed afterimage task
+- Goal/status: Speed-triggered character afterimages implemented; final player regression running.
+- Completed: Frozen world-space current-frame/flip/deformation snapshots, quadratic pink fade,8-image cap, fixed-step actual displacement gating and shared Player Afterimages tuning. Defaults350px/s,0.04s interval,0.20s lifetime,alpha0.32. Normal run remains220px/s.
+- Decisions: Child-owned lifecycle clears on restart; disable/lifetime0 clears; slowing stops emission while residue expires. No physics changes. Existing uncommitted work preserved.
+- Files: scripts/player_afterimages.gd(+UID), player.gd, game_settings.gd; tools/verify_player_afterimages.gd(+UID); specs/player-controller.md,game-settings.md; AGENTS.md; WORKLOG.md.
+- Verification: Focused afterimage PASS including real vertical Player motion, speed/custom threshold, frozen pose/world transform, fade/expiry/cap/disable; deformation suite PASS. Editor import succeeds with known sandbox CA/Mono/settings warnings. Full player suite running.
+- Refactoring: Reviewed ownership/render order/settings; reused movement's existing before_position snapshot, isolated bounded snapshot lifecycle. Focused suite rerun PASS after review.
+- Blockers: None; interactive appearance unverified.
+- Next action: Await full player regression, then F5 inspect and tune shared settings as desired.
+
+## Completed squash/stretch settings
+- Goal/status: Expose visual deformation in shared game_settings; complete.
+- Completed: Player Squash and Stretch group with jump/landing Vector2 multipliers and duration; removed Player constants, updated callers/specs/AGENTS/custom-value fixture. Existing tuning preserved.
+- Decisions: Same defaults; duration0 disables effect safely; saved Resource inherits schema defaults.
+- Files: game_settings.gd, player.gd, verify_player_deformation.gd, player-controller.md, game-settings.md, AGENTS.md, WORKLOG.md.
+- Tests: verify_player_deformation.gd PASS with custom multipliers/durations, actual jump/landing, zero-duration disable and unchanged collision geometry; verify_landing_dust.gd PASS exit0; git diff --check PASS. Known sandbox CA warning only.
+- Refactoring: Reviewed all deformation callers and schema; removed superseded constants/references, retained shared recovery path and inherited Resource defaults.
+- Blockers: None.
+- Next action: Adjust resources/game_settings.tres → Player Squash and Stretch in Inspector as desired.
+
+## Completed jump/landing squash and stretch
+- Goal/status: Add visual-only upward jump stretch and landing squash; complete.
+- Completed: Sprite-only feet-pivot deformation; accepted upward launches0.88/1.16 for0.18s, qualified landing1.18/0.84 for0.16s; quadratic recovery. Physics/body/capsule unchanged; rejected kicks/spawn/contact flicker do not trigger.
+- Decisions: Reuse qualified landing event and fixed-step animation owner. New events replace active deformation. Existing uncommitted particle/tuning work preserved.
+- Files changed: scripts/player.gd; tools/verify_player_deformation.gd; specs/player-controller.md; AGENTS.md; WORKLOG.md.
+- Verification: Focused actual jump/landing fixture PASS, including rejected input, feet pivot, collision invariance and exact recovery; repeated after final refactoring review PASS. Full verify_player.gd and verify_landing_dust.gd PASS exit0; git diff --check PASS. Known sandbox CA warning only. Interactive appearance unverified.
+- Refactoring: Reviewed touched jump/landing/animation flow; one shared deformation/recovery path, constants for tuning, no signal duplication or physics coupling.
+- Blockers: None.
+- Next action: F5 inspect squash/stretch strength at gameplay scale; tune constants if desired.
+
+## Completed gum hit particle implementation
+- Goal/status: Implement approved expanding hit particle ring; complete.
+- Completed: GumHitParticles draw-only Node2D via adhesion_started,12 pale-pink particles/outward surface hemispheres/full ring circles, eased expansion to~20px,0.26s lifetime, frozen world-space residue,4burst/64particle cap; optional short arcs defaultOFF. Shared settings, Game binding/restart cleanup, specs and AGENTS aligned.
+- Files: scripts/gum_hit_particles.gd (+UID), scripts/game.gd, scripts/game_settings.gd, scenes/game.tscn, tools/verify_gum_hit_particles.gd (+UID), tools/verify_gum_shot_particles.gd, specs/gum-hit-particles.md, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Decisions: Existing patch remains on top; no physics/timing changes. Existing saved tuning and untracked pixelfx preserved. Shot fixture expiry now follows configured lifetime; prior0.5s hardcoded expectation failed with saved lifetime0.5 (up to0.65s randomized).
+- Verification: Focused hit PASS actual adhesion/force-free arrival/no repeated emission, all surface directions, real centered ring/full circle, expansion/expiry, movement independence/detach/deletion residue, caps/disable/cleanup, draw order and miss. Existing gum/controls/adhesion/shot suites PASS exit0. Final hit/shot reruns PASS. Editor import succeeds with known sandbox CA/Mono/settings warnings. git diff --check PASS. Interactive rendered appearance unverified.
+- Refactoring: Reviewed full touched effect/settings/lifecycle; shared particle rendering for core/halo, isolated arc drawing, explicit max-per-burst constant and idle redraw guards. No new generic particle framework needed for distinct burst/trail timing.
+- Blockers: None.
+- Next action: F5 inspect default particle-only hit ring; tune Gum Hit Particles or enable short arcs if desired.
+
+## Completed gum hit particle proposal
+- Goal/status: Consider hit particles and expanding-circle direction; proposal complete, runtime unchanged.
+- Completed: specs/gum-hit-particles.md compares burst/solid ring/particle ring; recommends sparse expanding particle ring with optional faint short arcs. Includes timing, surface hemisphere vs ring360, residual lifecycle and acceptance criteria.
+- Decisions: Proposal only:10–14particles, radius3–5 to16–22px,0.26s expiry; existing adhesion patch remains central. World-space residue, no force/damage/hit-stop. No new verified implementation conventions for AGENTS.
+- Files changed: specs/gum-hit-particles.md; WORKLOG.md.
+- Verification: Reviewed against existing adhesion signal,0.30s following patch and shot residue lifecycle. Documentation-only; git diff --check PASS.
+- Blockers: None.
+- Next action: If requested, implement particle ring first and compare optional short arcs at actual gameplay scale.
+
+## Completed gum shot particle implementation
+- Goal/status: Implement approved luminous shot trail; complete.
+- Completed: Actual swept-tip segment signals, world-space distance-sampled pale-pink dots/rose accents/additive halos, damped drift and shrink/fade; residual lifetime after attach/miss/detach/refire, immediate restart cleanup,64-particle cap and shared Inspector settings.
+- Decisions: Procedural Node2D drawing; no raster assets. Physics and adhesion timing unchanged. Existing untracked pixelfx directory preserved.
+- Files: gum_shot_particles.gd (+UID), gum_connection.gd, game.gd, game_settings.gd, game.tscn, verify_gum_shot_particles.gd, specs/gum-shot-particles.md, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Verification: Focused particle fixture PASS real arrival/miss/cancel, force-free arrival, residue/world coordinates, all8directions and partition-independent spacing, expiry/cap/disable/cleanup. Existing gum/controls/adhesion suites PASS exit0. Editor import succeeds with known sandbox CA/Mono/settings warnings. git diff --check PASS. Interactive rendered appearance not verified.
+- Refactoring: Reviewed full signal/effect/settings ownership; reused appearance calculation for dots/halos and exact exponential drag integration; avoided idle disabled redraws. Focused verification rerun after final review.
+- Blockers: None.
+- Next action: F5 inspect shot trail; tune Gum Shot Particles spacing/lifetime/spread/opacity if desired.
+
+## Completed gum shot particle proposal
+- Goal/status: Consider appearance and behavior of small luminous particles around fired gum; proposal complete, runtime unchanged.
+- Completed: Added specs/gum-shot-particles.md with pale pink microdots, distance-based actual-tip trail, damped outward drift, short lifetime, state lifecycle and verification criteria.
+- Decisions: Preserve uniform luminous gum and existing adhesion VFX; initial proposal8–12px spacing,0.12–0.22s lifetime,64-particle cap. Current effective shot baseline verified1200px/s and160px range (~0.13s).
+- Files changed: specs/gum-shot-particles.md; WORKLOG.md.
+- Verification: Reviewed proposal against outbound sweep, state transitions and existing adhesion effect; documentation-only, no runtime tests. No new durable implementation fact requiring AGENTS update.
+- Blockers: None.
+- Next action: Implement and visually tune the proposal when requested.
+
 ## Completed emission settings confirmation
 - Goal/status: Confirm saved game_settings tuning; complete.
 - Completed: Preserved saved Resource values glow radius18, opacity0.18, core brightness0.12; matched script defaults/specs/AGENTS. Other settings untouched.
