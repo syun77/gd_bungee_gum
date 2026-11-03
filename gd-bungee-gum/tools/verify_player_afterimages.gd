@@ -10,6 +10,10 @@ func verify() -> void:
 	var player = load("res://scenes/characters/player.tscn").instantiate()
 	root.add_child(player)
 	player.settings = player.settings.duplicate()
+	player.settings.afterimage_enabled = true
+	player.settings.afterimage_minimum_speed = 350.0
+	player.settings.afterimage_lifetime = 0.20
+	player.settings.afterimage_interval = 0.04
 	player.settings.gravity = 0.0
 	player.settings.jump_diagnostics = false
 	player.settings.landing_diagnostics = false
@@ -22,6 +26,10 @@ func verify() -> void:
 	player.simulate(1.0 / 60)
 	check(player.afterimages.images.size() == 1, "Actual fast vertical movement emits")
 	var ghost: Sprite2D = player.afterimages.images[0].sprite
+	check(not ghost.z_as_relative and ghost.z_index < player.afterimages._world_z_index(player.sprite), "Top-level snapshot renders behind player artwork")
+	check(ghost.material == player.afterimages.silhouette_material and ghost.material.shader != null, "Snapshots use shared silhouette shader")
+	check(ghost.modulate == player.settings.afterimage_color, "Silhouette uses configured color and opacity")
+	check(player.sprite.material == null, "Player artwork retains original colors")
 	var frozen := ghost.global_transform
 	var texture := ghost.texture
 	var opacity := ghost.modulate.a

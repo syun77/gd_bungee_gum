@@ -62,3 +62,20 @@ const LIFTS := [
 	{"start": Vector2(4608, 704), "landing_y": 576.0, "kick_y": 512.0},
 	{"start": Vector2(4736, 512), "landing_y": 384.0},
 ]
+
+# Six pickups per section: lower route, step/lift landings and optional high shelf.
+# Vector3i stores cell x/y and food scene ID from food_tileset.tres.
+const FOODS := [
+	Vector3i(7, 19, 5), Vector3i(9, 17, 8), Vector3i(16, 15, 9),
+	Vector3i(18, 19, 6), Vector3i(23, 15, 4), Vector3i(16, 10, 3),
+	Vector3i(29, 21, 7), Vector3i(33, 15, 6), Vector3i(38, 17, 8),
+	Vector3i(45, 17, 9), Vector3i(51, 15, 0), Vector3i(33, 9, 3),
+	Vector3i(57, 19, 1), Vector3i(63, 19, 5), Vector3i(68, 15, 10),
+	Vector3i(70, 13, 8), Vector3i(75, 13, 2), Vector3i(68, 10, 4),
+	Vector3i(82, 21, 6), Vector3i(86, 13, 1), Vector3i(90, 15, 7),
+	Vector3i(96, 17, 9), Vector3i(103, 15, 2), Vector3i(85, 7, 3),
+	Vector3i(108, 19, 8), Vector3i(110, 17, 9), Vector3i(114, 17, 0),
+	Vector3i(120, 15, 10), Vector3i(127, 15, 4), Vector3i(120, 10, 1),
+	Vector3i(135, 21, 7), Vector3i(140, 21, 5), Vector3i(144, 17, 10),
+	Vector3i(147, 15, 0), Vector3i(148, 11, 2), Vector3i(154, 11, 3),
+]

@@ -1,0 +1,31 @@
+[gd_resource type="TileSet" format=3 uid="uid://bdsbmytxvc077"]
+
+[ext_resource type="PackedScene" path="res://scenes/items/foods/chicken_diavola.tscn" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/items/foods/escargot_oven_baked.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/items/foods/hamburger_steak.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/items/foods/italian_pudding.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/items/foods/margherita_pizza.tscn" id="5"]
+[ext_resource type="PackedScene" path="res://scenes/items/foods/milano_doria.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://scenes/items/foods/peperoncino.tscn" id="7"]
+[ext_resource type="PackedScene" path="res://scenes/items/foods/sauteed_spinach.tscn" id="8"]
+[ext_resource type="PackedScene" path="res://scenes/items/foods/shrimp_salad.tscn" id="9"]
+[ext_resource type="PackedScene" path="res://scenes/items/foods/spicy_chicken.tscn" id="10"]
+[ext_resource type="PackedScene" path="res://scenes/items/foods/tarako_pasta.tscn" id="11"]
+
+[sub_resource type="TileSetScenesCollectionSource" id="Foods"]
+resource_name = "Foods"
+scenes/0/scene = ExtResource("1")
+scenes/1/scene = ExtResource("2")
+scenes/2/scene = ExtResource("3")
+scenes/3/scene = ExtResource("4")
+scenes/4/scene = ExtResource("5")
+scenes/5/scene = ExtResource("6")
+scenes/6/scene = ExtResource("7")
+scenes/7/scene = ExtResource("8")
+scenes/8/scene = ExtResource("9")
+scenes/9/scene = ExtResource("10")
+scenes/10/scene = ExtResource("11")
+
+[resource]
+tile_size = Vector2i(32, 32)
+sources/0 = SubResource("Foods")

@@ -23,6 +23,7 @@ func _ready() -> void:
 	$GumAttachmentEffect.bind(gum)
 	$GumShotParticles.bind(gum, settings)
 	$GumHitParticles.bind(gum, settings)
+	$GumHitShockwave.bind(gum, settings)
 	$LandingDustEffect.bind(player)
 	aim_direction = Vector2.LEFT if player.sprite.flip_h else Vector2.RIGHT
 	camera.position = player.position
@@ -37,15 +38,18 @@ func _physics_process(delta: float) -> void:
 		$LandingDustEffect.stop()
 		$GumShotParticles.stop()
 		$GumHitParticles.stop()
+		$GumHitShockwave.stop()
 		get_tree().call_deferred("reload_current_scene")
 		return
 	gum.validate_connection()
-	var jump_requested := Input.is_action_just_pressed("jump")
-	var attached_jump: bool = jump_requested and gum.connected()
+	var was_reeling: bool = gum.reeling_food()
+	var jump_requested := Input.is_action_just_pressed("jump") and not was_reeling
+	var attached_jump: bool = jump_requested and gum.connected() and not was_reeling
 	_update_direction()
 	var length_input := _read_length_input(jump_requested)
 	_handle_actions(jump_requested)
 	gum.step(delta, length_input)
+	player.food_reel_locked = was_reeling or gum.reeling_food()
 	player.simulate(delta, jump_requested, attached_jump)
 	_update_camera(delta)
 	gum.update_aim(_aim_target())
@@ -90,6 +94,8 @@ func _update_direction() -> void:
 		aim_direction = direction.sign().normalized()
 
 func _handle_actions(jump_requested: bool) -> void:
+	if gum.reeling_food():
+		return
 	if jump_requested:
 		gum.detach()
 		return

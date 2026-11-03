@@ -15,6 +15,10 @@ extends Resource
 @export_range(0.0, 0.3, 0.01) var coyote_time := 0.2
 @export_range(0.01, 1000.0) var player_mass := 1.0
 
+@export_group("Food Collection")
+## Food pull speed toward the frozen player's hand (px/s).
+@export_range(1.0, 4000.0) var food_reel_speed := 600.0
+
 @export_group("Player Squash and Stretch")
 ## Visual-only horizontal (X) and vertical (Y) multipliers on upward launch.
 @export var jump_stretch := Vector2(0.84, 1.41)
@@ -32,6 +36,7 @@ extends Resource
 @export_range(0.01, 0.5, 0.01) var afterimage_interval := 0.04
 ## Seconds until a frozen pose disappears; zero disables emission.
 @export_range(0.0, 1.0, 0.01) var afterimage_lifetime := 0.20
+## Solid silhouette RGB and initial opacity; original texture contributes alpha only.
 @export var afterimage_color := Color(1.0, 0.72, 0.85, 0.32)
 
 @export_group("Landing Dust")
@@ -121,6 +126,14 @@ extends Resource
 @export_range(0.0, 1.0) var gum_hit_particle_opacity := 1.0
 ## Brief faint arcs supplement the particle ring when enabled.
 @export var gum_hit_arcs_enabled := false
+
+@export_group("Gum Hit Shockwave")
+@export var gum_hit_shockwave_enabled := true
+## World-space outer radius; refraction strength is measured in screen pixels.
+@export_range(8.0, 160.0) var gum_hit_shockwave_radius := 56.0
+@export_range(0.0, 1.0) var gum_hit_shockwave_duration := 0.32
+@export_range(0.0, 16.0) var gum_hit_shockwave_strength := 4.0
+@export_range(0.0, 1.0) var gum_hit_shockwave_opacity := 0.3
 
 @export_group("Camera Zoom")
 ## Camera2D scale: larger values show a closer view.

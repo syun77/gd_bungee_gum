@@ -67,6 +67,11 @@ func _initialize() -> void:
 	anchors.collision_enabled = true
 	for cell in Layout.GUM_ANCHORS:
 		anchors.set_cell(cell, 2, Vector2i.ZERO)
+	var foods := layer("Foods")
+	foods.tile_set = load("res://assets/foods/food_tileset.tres")
+	foods.z_index = 3
+	for food in Layout.FOODS:
+		foods.set_cell(Vector2i(food.x, food.y), 0, Vector2i.ZERO, food.z)
 	var signs := layer("Signs")
 	for section in Layout.SECTION_NAMES.size():
 		var x := 4 + section * 26

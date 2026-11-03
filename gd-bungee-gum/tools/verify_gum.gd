@@ -381,7 +381,8 @@ func verify() -> void:
 	check(game_player.get_node("AnimatedSprite2D").animation == &"jump", "Detach returns to airborne animation")
 	Input.action_release("jump")
 	game.set_physics_process(false)
-	# Isolate terrain wrapping: pass-through anchors can intercept ceiling rays.
+	# Isolate terrain wrapping from pass-through anchors and collectible targets.
+	game.get_node("TheaterStage/Foods").clear()
 	game.get_node("TheaterStage/GumAnchors").collision_enabled = false
 	await ticks(2)
 	game_player.position = Vector2(750,450)

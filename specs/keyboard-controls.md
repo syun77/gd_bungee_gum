@@ -1,5 +1,7 @@
 # Z/X・上下キー操作仕様
 
+食べ物への命中は専用の引き寄せ状態REELINGへ移行する。引き寄せ中は速度・重力・移動とZ/Xを停止し、手元回収後はZで一度だけ空中ジャンプできる。詳細は [food-gum-reel.md](food-gum-reel.md)。
+
 静的地形の巻き付きは [gum-wrapping.md](gum-wrapping.md) を参照。自然長と距離は総経路長について扱う。実装と操作テストの基準仕様とする。
 
 先端の飛行・接着・中断可能な回収は [gum-flight-return.md](gum-flight-return.md) を参照。

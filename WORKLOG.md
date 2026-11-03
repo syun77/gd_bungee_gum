@@ -1,12 +1,81 @@
+## Food hit area task
+- Goal/status: Make food hit areas slightly larger than64px artwork; complete.
+- Completed: All11 centered circular Areas enlarged to radius36px/diameter72px, shared by contact pickup and gum rays; layout/artwork unchanged. Specs and AGENTS aligned.
+- Decisions: Reuse existing CircleShape2D, no runtime scaling or changes to physics layers.
+- Files: scenes/items/foods/*.tscn, specs/food-item-assets.md, AGENTS.md, WORKLOG.md.
+- Tests: verify_food_collectibles.gd and verify_food_reel.gd PASS exit0 after final review; all11 radius36 scenes confirmed; git diff --check PASS. Known sandbox CA warning only.
+- Refactoring: Reviewed all scene shapes and shared consumers; no duplicated runtime logic required.
+- Blockers: None.
+- Next action: F5 playtest pickup/gum targeting feel around enlarged food edges.
+
+## Food display size task
+- Goal/status: Double all food visuals around placement center; complete.
+- Completed: All11 Sprite2D scenes use native64px size centered on unchanged32px cell; pickup radius14px and layout unchanged. Specification and durable guidance aligned.
+- Decisions: Scale artwork only; preserve ongoing food reel work and other unrelated changes.
+- Files: scenes/items/foods/*.tscn, specs/food-item-assets.md, AGENTS.md, WORKLOG.md.
+- Tests: Existing verify_food_collectibles.gd PASS (all11 pickups, saved36 placements, reload); all11 scene transforms/14px radii checked; git diff --check PASS. Known sandbox CA warning only.
+- Refactoring: Reviewed all11 scenes; default Sprite2D scale/centering avoids redundant overrides or runtime scaling logic.
+- Blockers: None.
+- Next action: F5 inspect enlarged food artwork in stage.
+
+## Food gum reel task
+- Goal/status: Gum-hit food reels to hand, player motion/gravity lock, then one available air jump; complete.
+- Completed: Food Area bit32/ray mask53 with area hits; REELING lifecycle, hand-directed pull600px/s Inspector setting, velocity reset/position lock through arrival/completion ticks, single consumed world-up Z kick after successful collection. Existing contact pickup preserved.
+- Decisions: Z/X ignored during reel, no autojump/buffering/stacking; target loss grants no reward; restart reconstructs state. Terrain/rigid spring unchanged. Preserved concurrent food artwork enlargement and other unrelated work.
+- Files: food scenes, food_collectible.gd, gum_connection.gd, player.gd, game.gd, game_settings.gd; verify_food_reel.gd(+UID), verify_gum.gd; food-gum-reel.md, food-item-assets.md, game-settings.md, keyboard-controls.md, player-controller.md, gum-flight-return.md; AGENTS.md, WORKLOG.md.
+- Tests: Focused live Game PASS actual swept Area hit/wall occlusion, zero momentum/input/gravity/motion, hand collection, ground+air jump/no-repeat, deletion/restart cleanup. Controls, full Player, contact-food suites PASS. Gum suite PASS after isolating new Foods targets from terrain-only shelf fixture. git diff --check PASS. Known sandbox CA/Mono/editor settings warnings.
+- Refactoring: Reviewed complete target/state/input/player integration, shared collect/reset_motion paths and explicit REELING state; separated food jump from attached jump for correct diagnostics, retained common world-up kick/consumption rules. Final focused suite PASS after review with grounded case added.
+- Blockers: None; interactive appearance/feel unverified.
+- Next action: F5 aim X at food, confirm freeze/pull then fresh Z jump; tune Food Collection/food_reel_speed if desired.
+
+## Gum hit shockwave task
+- Goal/status: Add an expanding shader shockwave at gum impact; complete.
+- Completed: Local screen-refraction shader with soft pink annulus, eased56px expansion/0.32s duration, actual adhesion signal, frozen world-space centers, four-burst cap, independent materials, disable/zero-duration/restart cleanup and shared Inspector tuning.
+- Decisions: Full circle for both terrain and rings, Z4 below gum/hit particles/patch; no physics/timing changes. Existing unrelated edits preserved. Shared screen snapshot means overlapping waves do not recursively refract each other.
+- Files: scripts/gum_hit_shockwave.gd(+UID), shaders/gum_hit_shockwave.gdshader, scripts/game.gd, scripts/game_settings.gd, scenes/game.tscn, tools/verify_gum_hit_shockwave.gd(+UID), specs/gum-hit-shockwave.md, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Tests: Focused real-arrival/force-free/center/frozen residue/material progress/expiry/cap/disable/cleanup PASS, repeated after final review. verify_gum.gd and verify_controls.gd PASS exit0. git diff --check PASS. Known sandbox CA warning only.
+- Refactoring: Reviewed complete effect lifecycle/shader/settings integration; shared removal path handles expiry/cap/stop, bounded independent quads and no physics coupling.
+- Blockers: None; rendered refraction appearance not visually verified in headless tests.
+- Next action: F5 inspect hit wave against frames/terrain; tune Gum Hit Shockwave in resources/game_settings.tres as desired.
+
+## Food layout task
+- Goal/status: Place foods meaningfully across all six map sections; complete.
+- Completed: Authored36 cells (six per section), lower-route guidance, lift/step landings and optional high-shelf rewards; all11 dishes used. Saved only Foods tile data; generator reproduces layout.
+- Decisions: Terrain/tuning unchanged; stage_layout.FOODS owns placement. Preserved unrelated afterimage/settings work.
+- Files: stage_layout.gd, build_theater_stage.gd, theater_stage.tscn, verify_food_collectibles.gd, food-item-assets.md, AGENTS.md, WORKLOG.md.
+- Tests: Focused collectible PASS36 saved instances/layout parity/all11 dishes/six per section/no terrain overlap/support below, all11 actual contact pickup/props excluded/single notification/reload36. Saved map collision PASS1212cells/27shapes/76one-way/59corners; git diff --check PASS. Known sandbox CA warning only.
+- Refactoring: Reviewed placement ownership, removed stale empty-layer docs, kept shared existing scene-tile pickup implementation and generator source. No physics or gameplay changes needed. Final focused suite rerun PASS.
+- Blockers: None; interactive visual/route feel remains unverified.
+- Next action: F5 playtest food guidance and optional upper-shelf pickups; edit FOODS and saved layer together for future changes.
+
+## Afterimage draw priority
+- Goal/status: Ensure snapshots render behind Player; complete.
+- Completed: Replaced tree-only show_behind_parent flags with explicit absolute Z one below source effective Z; top-level frozen transforms retained. Added draw-order regression assertion.
+- Files: player_afterimages.gd, player.gd, verify_player_afterimages.gd, docs and AGENTS.
+- Decisions: Top-level CanvasItems require explicit Z ordering; preserve existing effects and unrelated work.
+- Tests: Focused afterimage suite PASS after final review; diff check PASS. Fixture now sets threshold/lifetime/interval explicitly to isolate saved user tuning; saved Resource untouched. Known sandbox CA warning only.
+- Blockers: None.
+- Next action: F5 inspect behind-player afterimages.
+
+## Food collectible task
+- Goal/status: All11 food sprites paintable as collectible scene tiles; complete.
+- Completed: Dedicated Food TileSet/scenes, nearest32px display/14px trigger, player-only Area2D with one-shot collected(food_id), empty Foods layer in saved map and generator. Editor workflow documented.
+- Decisions: No default placements, score/healing or physics changes. Existing WORKLOG edits and pixelfx preserved; saved map not regenerated.
+- Files: assets/foods, scenes/items/foods, food_collectible.gd(+UID), verify_food_collectibles.gd(+UID), player.tscn, theater_stage.tscn, build_theater_stage.gd, food-item-assets.md, AGENTS.md, WORKLOG.md.
+- Verification: Godot import succeeds (known sandbox CA/Mono/editor-settings warnings). Focused test PASS all11 actual scene tile instantiation/contact pickup/box exclusion/single signal/reload. Saved map check PASS1212cells/27shapes/76one-way/59corners. git diff --check PASS.
+- Refactoring: Reviewed shared script ownership, one-shot guard, independent Food TileSet and generator integration; all scenes share one pickup implementation. Focused suite rerun after review.
+- Blockers: None; interactive editor appearance not verified.
+- Next action: Open theater_stage.tscn, select Foods, paint desired food scene tiles and F5 playtest.
+
 ## Speed afterimage task
-- Goal/status: Speed-triggered character afterimages implemented; final player regression running.
+- Goal/status: Speed-triggered character afterimages complete.
 - Completed: Frozen world-space current-frame/flip/deformation snapshots, quadratic pink fade,8-image cap, fixed-step actual displacement gating and shared Player Afterimages tuning. Defaults350px/s,0.04s interval,0.20s lifetime,alpha0.32. Normal run remains220px/s.
 - Decisions: Child-owned lifecycle clears on restart; disable/lifetime0 clears; slowing stops emission while residue expires. No physics changes. Existing uncommitted work preserved.
 - Files: scripts/player_afterimages.gd(+UID), player.gd, game_settings.gd; tools/verify_player_afterimages.gd(+UID); specs/player-controller.md,game-settings.md; AGENTS.md; WORKLOG.md.
-- Verification: Focused afterimage PASS including real vertical Player motion, speed/custom threshold, frozen pose/world transform, fade/expiry/cap/disable; deformation suite PASS. Editor import succeeds with known sandbox CA/Mono/settings warnings. Full player suite running.
+- Verification: Focused afterimage PASS including real vertical Player motion, speed/custom threshold, frozen pose/world transform, fade/expiry/cap/disable; deformation suite PASS. Editor import succeeds with known sandbox CA/Mono/settings warnings. Full verify_player.gd PASS exit0 (corner/support, movement, jumps, friction/momentum); git diff --check PASS.
 - Refactoring: Reviewed ownership/render order/settings; reused movement's existing before_position snapshot, isolated bounded snapshot lifecycle. Focused suite rerun PASS after review.
 - Blockers: None; interactive appearance unverified.
-- Next action: Await full player regression, then F5 inspect and tune shared settings as desired.
+- Next action: F5 inspect and tune shared Player Afterimages settings as desired.
 
 ## Completed squash/stretch settings
 - Goal/status: Expose visual deformation in shared game_settings; complete.

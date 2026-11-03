@@ -194,3 +194,13 @@
 - Confirmed shared settings baseline: jump stretch(0.84,1.41)/0.31s; landing squash(1.44,0.82)/0.31s; shot particles lifetime0.5/spread16/opacity1; hit particles count16/lifetime0.5/opacity1. All diagnostics OFF; schema defaults match saved Resource.
 
 - Speed afterimages: Player calls player_afterimages.gd after animation/deformation, using actual fixed-step world displacement speed (default350px/s). Frozen nearest-filtered Sprite2D snapshots fade0.20s, interval0.04s, max8; shared Player Afterimages settings. Child lifecycle clears on restart; run tools/verify_player_afterimages.gd.
+
+- Food collectibles use scene tiles in dedicated `assets/foods/food_tileset.tres` on stage `Foods` TileMapLayer;11 scenes under `scenes/items/foods/`,64px centered display on32px cells/36px pickup and gum-hit radius. Player group `player` plus physics bit2 owns contact pickup; Food Area bit32 is gum-ray target, no terrain collision. Default36 placements (six per section/all11 dishes) live in stage_layout.gd FOODS; keep saved Foods cells and generator aligned. Generator overwrites manual edits. See specs/food-item-assets.md and tools/verify_food_collectibles.gd.
+
+- Top-level afterimage sprites use absolute Z one below the source artwork's accumulated CanvasItem Z; show_behind_parent alone does not establish their order behind Player.
+
+- Afterimages share an unshaded afterimage_silhouette.gdshader material: texture alpha preserves silhouette, vertex COLOR carries afterimage_color RGB/opacity and per-snapshot fade. Capture COLOR in vertex before fragment texture multiplication; player material stays unchanged.
+
+- Hit shockwave uses gum_hit_shockwave.gd and shaders/gum_hit_shockwave.gdshader via adhesion_started; frozen world center, max4 local screen-refraction quads at Z4, no physics effects. Shared Gum Hit Shockwave settings; restart clears. See specs/gum-hit-shockwave.md and tools/verify_gum_hit_shockwave.gd.
+
+- Food gum hits enter REELING: Game locks Player across arrival/completion ticks, resets all velocities and skips movement/gravity; Gum moves food to visual hand at Food Collection/food_reel_speed600. Z/X ignored while pulling; success grants one consumed world-up Z jump (no autojump/stacking); target loss grants none. Normal terrain/rigid spring unchanged. Gum ray mask53 includes areas; terrain-only wrapping fixtures clear Foods. See specs/food-gum-reel.md and tools/verify_food_reel.gd.

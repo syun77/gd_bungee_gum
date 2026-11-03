@@ -3,6 +3,10 @@ extends Node2D
 const MAX_IMAGES := 8
 var images: Array[Dictionary] = []
 var cooldown := 0.0
+var silhouette_material := ShaderMaterial.new()
+
+func _init() -> void:
+	silhouette_material.shader = preload("res://shaders/afterimage_silhouette.gdshader")
 
 func step(delta: float, source: AnimatedSprite2D, speed: float, settings) -> void:
 	for index in range(images.size() - 1, -1, -1):
@@ -26,13 +30,16 @@ func step(delta: float, source: AnimatedSprite2D, speed: float, settings) -> voi
 	if images.size() == MAX_IMAGES:
 		images.pop_front().sprite.free()
 	var ghost := Sprite2D.new()
+	ghost.material = silhouette_material
 	ghost.texture = source.sprite_frames.get_frame_texture(source.animation, source.frame)
 	ghost.flip_h = source.flip_h
 	ghost.flip_v = source.flip_v
 	ghost.centered = source.centered
 	ghost.offset = source.offset
 	ghost.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	ghost.show_behind_parent = true
+	# Top-level snapshots need an explicit Z order, independent of tree order.
+	ghost.z_as_relative = false
+	ghost.z_index = _world_z_index(source) - 1
 	ghost.top_level = true
 	add_child(ghost)
 	ghost.global_transform = source.global_transform
@@ -45,3 +52,12 @@ func clear() -> void:
 		image.sprite.free()
 	images.clear()
 	cooldown = 0.0
+
+func _world_z_index(item: CanvasItem) -> int:
+	var result := item.z_index
+	while item.z_as_relative:
+		item = item.get_parent() as CanvasItem
+		if item == null:
+			break
+		result += item.z_index
+	return result

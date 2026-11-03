@@ -5,6 +5,7 @@ signal shot_started
 signal shot_advanced(start: Vector2, end: Vector2)
 signal adhesion_ended
 
+const Food = preload("res://scripts/food_collectible.gd")
 const Settings = preload("res://scripts/game_settings.gd")
 const RIGID_CONTACT_TOLERANCE := 2.0
 const AIM_TILE_BLINK_HZ := 3.0
@@ -12,7 +13,7 @@ const GumPath = preload("res://scripts/gum_path.gd")
 var path = GumPath.new()
 var terrain_forces := PackedVector2Array()
 enum Mode { NONE, CONTRACT, LOOSEN }
-enum State { READY, OUTBOUND, ATTACHED, RETURNING }
+enum State { READY, OUTBOUND, ATTACHED, RETURNING, REELING }
 var state := State.READY
 var tip := Vector2.ZERO
 var shot_direction := Vector2.RIGHT
@@ -91,7 +92,8 @@ func cast_to(point: Vector2) -> Dictionary:
 	return _cast_segment(origin(), end)
 
 func _cast_segment(start: Vector2, end: Vector2) -> Dictionary:
-	var query := PhysicsRayQueryParameters2D.create(start, end, 1 | 4 | 16, [player.get_rid()])
+	var query := PhysicsRayQueryParameters2D.create(start, end, 1 | 4 | 16 | 32, [player.get_rid()])
+	query.collide_with_areas = true
 	query.hit_from_inside = true
 	return get_world_2d().direct_space_state.intersect_ray(query)
 
@@ -99,13 +101,15 @@ func attachable(hit: Dictionary) -> bool:
 	if hit.is_empty():
 		return false
 	var body = hit.collider
-	var supported := body is StaticBody2D or body is RigidBody2D
+	var supported: bool = body is StaticBody2D or body is RigidBody2D or (body is Food and not body.is_collected)
 	if body is TileMapLayer:
 		supported = body.has_body_rid(hit.rid) and (PhysicsServer2D.body_get_collision_layer(hit.rid) & 16) != 0
 	return supported and not body.is_in_group("gum_blocked") and origin().distance_to(_attachment_point(hit)) <= settings.maximum_length
 
 func _attachment_point(hit: Dictionary) -> Vector2:
 	var body = hit.collider
+	if body is Food:
+		return body.global_position
 	if body is TileMapLayer:
 		# The generous hit area extends outside the cell; the RID owns its identity.
 		return body.to_global(body.map_to_local(body.get_coords_for_body_rid(hit.rid)))
@@ -142,7 +146,28 @@ func _attach_hit(hit: Dictionary) -> void:
 	var normal: Vector2 = hit.get("normal", Vector2.ZERO)
 	if normal.is_zero_approx():
 		normal = (origin() - point).normalized()
+	if target is Food:
+		state = State.REELING
+		target.being_pulled = true
+		player.reset_motion()
 	adhesion_started.emit(normal, target is TileMapLayer)
+
+func reeling_food() -> bool:
+	return state == State.REELING and connected()
+
+func _step_food_reel(delta: float) -> void:
+	var food: Food = target
+	var hand: Vector2 = player.gum_visual_origin()
+	food.global_position = food.global_position.move_toward(hand, settings.food_reel_speed * delta)
+	target_local_point = Vector2.ZERO
+	path.reset(origin(), food.global_position)
+	rest_length = path.length
+	last_display = PackedVector2Array([hand, food.global_position])
+	if food.global_position.distance_to(hand) <= 0.01:
+		food.collect()
+		player.food_jump_available = true
+		detach("FOOD COLLECTED")
+		cancel_return()
 
 func fire(direction: Vector2) -> void:
 	if connected() or state == State.OUTBOUND or direction.is_zero_approx():
@@ -214,7 +239,7 @@ func detach(reason := "RELEASED") -> void:
 	if reason == "RESTART":
 		cancel_return()
 		state = State.READY
-	elif state == State.ATTACHED or state == State.OUTBOUND:
+	elif state in [State.ATTACHED, State.OUTBOUND, State.REELING]:
 		if connected() and reason == "RELEASED":
 			return_points = _world_display_points()
 		elif state == State.OUTBOUND:
@@ -225,6 +250,8 @@ func detach(reason := "RELEASED") -> void:
 		return_time = 0.0
 		if return_points.size() > 0:
 			tip = return_points[-1]
+	if is_instance_valid(target) and target is Food:
+		target.being_pulled = false
 	# Never alter either endpoint's velocity on release.
 	target = null
 	target_rid = RID()
@@ -309,6 +336,9 @@ func step(delta: float, length_input := 0.0) -> void:
 	validate_connection()
 	if state == State.OUTBOUND:
 		_step_outbound(delta)
+		return
+	if reeling_food():
+		_step_food_reel(delta)
 		return
 	if state == State.RETURNING:
 		_step_return(delta)

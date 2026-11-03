@@ -75,3 +75,15 @@ READY時に表示する命中予告の補助線（発射から回収完了まで
 ### 高速移動の残像
 
 高速移動時の残像は `Player Afterimages` 設定で調整する。実移動距離÷固定ステップ秒数が `afterimage_minimum_speed`（350px/s）以上なら、`afterimage_interval`（0.04秒）ごとに表示中のフレーム・向き・変形をワールド座標に固定して複製する。通常走行220px/sでは発生せず、落下・ジャンプ・ガム移動にも同じ速度条件を使う。薄いピンク `afterimage_color`（RGBA 1/0.72/0.85/0.32）が `afterimage_lifetime`（0.20秒）で二次減衰し、最大8枚。減速後も既存の残像は消えるまで残る。`afterimage_enabled=false` または寿命0で消去・停止する。Playerの子として再スタート時に破棄され、当たり判定や運動には影響しない。
+
+残像は元のプレイヤー画像の実効Zより1低い絶対Zで描画し、常にプレイヤーの背面に置く。
+
+残像は `shaders/afterimage_silhouette.gdshader` の単色シルエットで描画する。元画像からはアルファだけを使い、RGBは `afterimage_color`、不透明度は同色のアルファとフェードから決める。共有マテリアルを使い、プレイヤー本体の色は変更しない。
+
+### Gum Hit Shockwave
+
+Shader hit wave: enabled by default, radius56px, duration0.32s, refraction strength4 screen pixels, pink rim opacity0.3. Duration0 disables emission. See [gum-hit-shockwave.md](gum-hit-shockwave.md).
+
+### Food Collection
+
+`food_reel_speed`: 手元への引き寄せ速度、既定600px/s（Inspector範囲1〜4000）。速度・重力停止と回収後ジャンプの詳細は [food-gum-reel.md](food-gum-reel.md)。

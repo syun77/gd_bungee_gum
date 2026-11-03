@@ -23,6 +23,8 @@ var sprite_rest_position := Vector2.ZERO
 var external_velocity := Vector2.ZERO
 var control_velocity := Vector2.ZERO
 var kick_available := true
+var food_reel_locked := false
+var food_jump_available := false
 var coyote_remaining := 0.0
 var coyote_gravity_velocity := Vector2.ZERO
 var landing_time := 0.0
@@ -48,7 +50,6 @@ var afterimages = preload("res://scripts/player_afterimages.gd").new()
 
 func _ready() -> void:
 	add_child(afterimages)
-	afterimages.show_behind_parent = true
 	sprite_rest_scale = sprite.scale
 	sprite_rest_position = sprite.position
 	var poses: SpriteFrames = preload("res://assets/characters/teto/gum_animations.tres")
@@ -77,7 +78,22 @@ func gum_visual_origin() -> Vector2:
 func apply_external_force(force: Vector2, delta: float) -> void:
 	external_velocity += force / settings.player_mass * delta
 
+func reset_motion() -> void:
+	velocity = Vector2.ZERO
+	control_velocity = Vector2.ZERO
+	external_velocity = Vector2.ZERO
+	coyote_remaining = 0.0
+	coyote_gravity_velocity = Vector2.ZERO
+
 func simulate(delta: float, jump_requested := false, attached_jump := false) -> void:
+	if food_reel_locked:
+		reset_motion()
+		landing_air_time = 0.0
+		landing_air_distance = 0.0
+		_update_animation(0.0)
+		_update_visual_deformation(delta)
+		afterimages.step(delta, sprite, 0.0, settings)
+		return
 	# 接触判定は直前の move_and_slide() の結果。今回の移動後に更新される。
 	var grounded := is_on_floor()
 	var touching := grounded or is_on_wall() or is_on_ceiling()
@@ -105,19 +121,21 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 		coyote_gravity_velocity += gravity_velocity
 	var coyote_kick := not touching and coyote_remaining > 0.0
 	attached_jump = attached_jump and jump_requested
-	var can_kick := attached_jump or (kick_available and (touching or coyote_kick))
+	var food_jump := food_jump_available and jump_requested
+	var world_up_jump := attached_jump or food_jump
+	var can_kick := world_up_jump or (kick_available and (touching or coyote_kick))
 	if jump_requested:
 		var result := "REJECTED_NO_CONTACT" if not touching else "REJECTED_NOT_REARMED"
 		if can_kick:
-			result = "ACCEPTED_GUM" if attached_jump else ("ACCEPTED_COYOTE" if coyote_kick else "ACCEPTED")
+			result = "ACCEPTED_FOOD" if food_jump else ("ACCEPTED_GUM" if attached_jump else ("ACCEPTED_COYOTE" if coyote_kick else "ACCEPTED"))
 		_log_jump_state(result)
 	if jump_requested and can_kick:
 		var kick_direction := Vector2.UP
-		if touching and not grounded and not attached_jump:
+		if touching and not grounded and not world_up_jump:
 			kick_direction = get_wall_normal() if is_on_wall() else Vector2.DOWN
 		var external_before := external_velocity
 		var compensation := Vector2.ZERO
-		if attached_jump:
+		if world_up_jump:
 			compensation = Vector2.UP * maxf(external_velocity.y, 0.0)
 		elif coyote_kick:
 			var falling_speed := maxf(external_velocity.y, 0.0)
@@ -131,9 +149,10 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 		if settings.jump_diagnostics:
 			print("[JumpDiagnostic] KICK_APPLIED tick=%d feet=%s source=%s normal=%s angle_from_up_deg=%.3f impulse=%s compensation=%s external_before=%s external_after=%s control=%s launch=%s delta=%.6f" % [
 				Engine.get_physics_frames(), global_position,
-				"gum" if attached_jump else ("coyote" if coyote_kick else ("floor" if grounded else ("wall" if is_on_wall() else "ceiling"))),
+				"food" if food_jump else ("gum" if attached_jump else ("coyote" if coyote_kick else ("floor" if grounded else ("wall" if is_on_wall() else "ceiling")))),
 				kick_direction, rad_to_deg(Vector2.UP.angle_to(kick_direction)), impulse, compensation,
 				external_before, external_velocity, control_velocity, control_velocity + external_velocity, delta])
+		food_jump_available = false
 		kick_available = false
 		coyote_remaining = 0.0
 		coyote_gravity_velocity = Vector2.ZERO
