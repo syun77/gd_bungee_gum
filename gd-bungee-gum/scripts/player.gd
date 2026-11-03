@@ -2,6 +2,7 @@ extends CharacterBody2D
 ## Feet-origin controller. Game calls simulate() once after gum forces each physics tick.
 signal landed(point: Vector2, normal: Vector2, impact_speed: float, surface: Node2D)
 
+const GUM_LATERAL_ANGLE := 70.0 # From world up:20deg above horizontal.
 const HANG_ANGLES := [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0]
 const GUM_HANDS := {
 	&"gum_hang_angles": [Vector2(168, 48), Vector2(177, 51), Vector2(184, 57), Vector2(198, 63), Vector2(202, 73), Vector2(209, 83), Vector2(215, 94), Vector2(220, 108)],
@@ -39,6 +40,9 @@ var landing_time := 0.0
 var landing_floor_seen := false
 var landing_air_time := 0.0
 var landing_air_distance := 0.0
+var hanging_diagnostic_key := ""
+var hanging_diagnostic_next_tick := 0
+var gum_hand_offset := Vector2.ZERO
 var gum: Node2D
 var contact_diagnostic_next_tick := 0
 var compression_diagnostic_next_tick := 0
@@ -69,11 +73,20 @@ func _ready() -> void:
 			for index in poses.get_frame_count(animation):
 				sprite.sprite_frames.add_frame(animation, poses.get_frame_texture(animation, index), poses.get_frame_duration(animation, index))
 
+	gum_hand_offset = to_local(gum_visual_target())
+
 func fire_gum() -> void:
 	sprite.stop()
-	sprite.play("gum_fire")
+	_update_animation(0.0)
 
 func gum_visual_origin() -> Vector2:
+	return to_global(gum_hand_offset)
+
+func _update_gum_hand_origin(delta: float) -> void:
+	# Smooth pose changes locally so translation never drags the ribbon behind the player.
+	gum_hand_offset = gum_hand_offset.move_toward(to_local(gum_visual_target()), settings.gum_hand_follow_speed * delta)
+
+func gum_visual_target() -> Vector2:
 	# Drawing-only hand samples in the 256px cells; physical attachment stays at chest.
 	var hands: Array = GUM_HANDS.get(sprite.animation, [])
 	if hands.is_empty():
@@ -102,6 +115,7 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 		landing_air_distance = 0.0
 		_update_animation(0.0)
 		_update_visual_deformation(delta)
+		_update_gum_hand_origin(delta)
 		afterimages.step(delta, sprite, 0.0, settings)
 		return
 	var ladder_jump := _update_ladder(jump_requested)
@@ -244,6 +258,7 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 	landing_time = maxf(landing_time - delta, 0.0)
 	_update_animation(direction)
 	_update_visual_deformation(delta)
+	_update_gum_hand_origin(delta)
 	afterimages.step(delta, sprite, global_position.distance_to(before_position) / maxf(delta, 0.000001), settings)
 	if jump_requested:
 		_log_jump_state("AFTER_MOVE", incoming_velocity)
@@ -390,6 +405,10 @@ func _apply_ground_friction(delta: float, normal: Vector2) -> void:
 	external_velocity += tangent * (move_toward(speed, 0.0, settings.ground_friction * delta) - speed)
 
 func _update_animation(direction: float) -> void:
+	_select_animation(direction)
+	_log_hanging_pose()
+
+func _select_animation(direction: float) -> void:
 	# 絵の左右向きは実速度ではなく入力に即追従する。方向転換の減速中や
 	# 外部速度で流されているときは、向きと実際の進行方向が逆になる。
 	if direction != 0.0:
@@ -401,17 +420,13 @@ func _update_animation(direction: float) -> void:
 			sprite.pause()
 		return
 	if is_instance_valid(gum) and (gum.connected() or gum.state == gum.State.OUTBOUND):
-		var aim: Vector2 = gum.support_point() - gum.origin()
+		var aim := _gum_pose_direction()
 		sprite.flip_h = aim.x < 0.0
 		if gum.state == gum.State.OUTBOUND:
-			sprite.play("gum_fire")
+			_select_gum_pose(aim, &"gum_fire")
 			return
 		if not is_on_floor() and gum.tension > 10.0:
-			var above: bool = gum.support_point().y < gum.origin().y - 40.0
-			if above and velocity.length() < 130.0:
-				_update_hanging_pose(aim)
-			else:
-				sprite.play("gum_pull")
+			_select_gum_pose(aim, &"gum_pull")
 			return
 	if not is_on_floor():
 		sprite.play("jump")
@@ -424,19 +439,73 @@ func _update_animation(direction: float) -> void:
 	else:
 		sprite.play("run" if direction != 0.0 or absf(velocity.x) > 12.0 else "idle")
 
-func _update_hanging_pose(aim: Vector2) -> void:
-	# These frames are direction samples, never a time-driven loop.
+func _gum_pose_direction() -> Vector2:
+	# The tip starts at the chest; the shot direction is valid even on that first tick.
+	return gum.shot_direction if gum.state == gum.State.OUTBOUND else gum.support_point() - gum.origin()
+
+func _select_gum_pose(aim: Vector2, lateral_animation: StringName) -> void:
 	var angle := rad_to_deg(atan2(absf(aim.x), -aim.y))
-	if angle < HANG_ANGLES[0] * 0.5:
+	if aim.y < 0.0 and angle < GUM_LATERAL_ANGLE - 0.0001:
+		_update_hanging_pose(angle)
+	else:
+		# Lower directions retain the existing poses; upper samples do not depict reaching down.
+		sprite.play(lateral_animation)
+
+func _update_hanging_pose(angle: float) -> void:
+	# These frames are direction samples, never a time-driven loop.
+	if angle < HANG_ANGLES[0] * 0.5 - 0.0001:
 		sprite.play("gum_hang")
 		return
 	var nearest := 0
 	for index in range(1, HANG_ANGLES.size()):
-		if absf(angle - HANG_ANGLES[index]) < absf(angle - HANG_ANGLES[nearest]):
+		if absf(angle - HANG_ANGLES[index]) < absf(angle - HANG_ANGLES[nearest]) - 0.0001:
 			nearest = index
 	sprite.play("gum_hang_angles")
 	sprite.pause()
 	sprite.frame = nearest
+
+func _hanging_pose_snapshot() -> Dictionary:
+	var attached: bool = is_instance_valid(gum) and gum.connected()
+	var outbound: bool = is_instance_valid(gum) and gum.state == gum.State.OUTBOUND
+	var aim := _gum_pose_direction() if attached or outbound else Vector2.ZERO
+	var angle := rad_to_deg(atan2(aim.x, -aim.y)) if not aim.is_zero_approx() else 0.0
+	var directional := sprite.animation == &"gum_hang_angles"
+	var vertical := sprite.animation == &"gum_hang"
+	var nominal: float = HANG_ANGLES[sprite.frame] if directional else 0.0
+	return {
+		"tick": Engine.get_physics_frames(), "active": attached or outbound,
+		"signed_angle_deg": angle, "angle_deg": absf(angle),
+		"animation": sprite.animation, "frame": sprite.frame, "flip_h": sprite.flip_h,
+		"nominal_angle_deg": nominal if directional or vertical else -1.0,
+		"selection_error_deg": absf(angle) - nominal if directional or vertical else 0.0,
+		"attached": attached, "outbound": outbound, "floor": is_on_floor(),
+		"speed": velocity.length(), "tension": gum.tension if attached else 0.0,
+		"above": aim.y < 0.0,
+		"angle_source": "shot" if outbound else ("support" if attached else "none"),
+		"upper_sector": aim.y < 0.0 and absf(angle) < GUM_LATERAL_ANGLE - 0.0001,
+		"support_offset": gum.support_point() - gum.origin() if attached or outbound else Vector2.ZERO,
+		"endpoint": gum.endpoint() if attached else Vector2.ZERO,
+		"hand_origin": gum_visual_origin(), "hand_target": gum_visual_target(),
+		"hand_gap_px": gum_visual_origin().distance_to(gum_visual_target()),
+	}
+
+func _log_hanging_pose() -> void:
+	if not settings.hanging_pose_diagnostics:
+		hanging_diagnostic_key = ""
+		return
+	var snapshot := _hanging_pose_snapshot()
+	if not snapshot.active:
+		if not hanging_diagnostic_key.is_empty():
+			print("[HangingPoseDiagnostic] EXIT %s" % snapshot)
+		hanging_diagnostic_key = ""
+		return
+	# Temporal loop frame changes are not directional selection changes.
+	var key := "%s/%d/%s" % [snapshot.animation, snapshot.frame if snapshot.animation == &"gum_hang_angles" else -1, snapshot.flip_h]
+	var changed := key != hanging_diagnostic_key
+	if changed or Engine.get_physics_frames() >= hanging_diagnostic_next_tick:
+		print("[HangingPoseDiagnostic] %s %s" % ["SELECTED" if changed else "SAMPLE", snapshot])
+		hanging_diagnostic_next_tick = Engine.get_physics_frames() + 30
+		hanging_diagnostic_key = key
 
 func _log_landing_state(was_grounded: bool, incoming_velocity: Vector2, removed_control_y: float) -> void:
 	if not settings.landing_diagnostics:

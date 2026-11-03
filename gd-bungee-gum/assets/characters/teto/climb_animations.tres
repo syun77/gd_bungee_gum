@@ -1,6 +1,6 @@
-[gd_resource type="SpriteFrames" load_steps=4 format=3]
+[gd_resource type="SpriteFrames" format=3 uid="uid://dkkn766c3meie"]
 
-[ext_resource type="Texture2D" path="res://assets/characters/teto/teto_climb.png" id="1"]
+[ext_resource type="Texture2D" uid="uid://by6t8b4iu7758" path="res://assets/characters/teto/teto_climb.png" id="1"]
 
 [sub_resource type="AtlasTexture" id="left"]
 atlas = ExtResource("1")
@@ -12,8 +12,14 @@ region = Rect2(256, 0, 256, 256)
 
 [resource]
 animations = [{
-"frames": [{"duration": 1.0, "texture": SubResource("left")}, {"duration": 1.0, "texture": SubResource("right")}],
-"loop": true,
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("left")
+}, {
+"duration": 1.0,
+"texture": SubResource("right")
+}],
+"loop": 1,
 "name": &"climb",
 "speed": 6.0
 }]

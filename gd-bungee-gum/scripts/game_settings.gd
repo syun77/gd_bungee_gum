@@ -101,6 +101,8 @@ extends Resource
 @export_range(1.0, 10.0) var aim_reticle_width := 1.5
 
 @export_group("Gum Appearance")
+## Drawing-only hand-origin tracking speed in player-local px/s.
+@export_range(1.0, 2000.0) var gum_hand_follow_speed := 360.0
 ## Relaxed manual-length mode, independent of tension.
 @export var gum_loosen_color := Color("#B8A6AD")
 @export var gum_slack_color := Color("#FF8DD6")
@@ -156,6 +158,8 @@ extends Resource
 @export var restart_y := 900.0
 
 @export_group("Diagnostics")
+## Log gum direction, selected hanging frame and pose eligibility.
+@export var hanging_pose_diagnostics := false
 ## Log rigid contacts or stalled penetration, movement, nearby bodies and gum force.
 @export var pinning_diagnostics := false
 ## Log gum releases with endpoint physics, obstruction details and eight preceding steps.

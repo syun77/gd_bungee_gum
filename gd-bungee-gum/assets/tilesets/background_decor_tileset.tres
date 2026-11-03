@@ -1,6 +1,6 @@
-[gd_resource type="TileSet" load_steps=3 format=3]
+[gd_resource type="TileSet" format=3 uid="uid://j7li7vq0p8es"]
 
-[ext_resource type="Texture2D" path="res://assets/tilesets/restaurant_background_decor.png" id="1"]
+[ext_resource type="Texture2D" uid="uid://dy0f8xcvwyuat" path="res://assets/tilesets/restaurant_background_decor.png" id="1"]
 
 [sub_resource type="TileSetAtlasSource" id="DecorAtlas"]
 resource_name = "Restaurant Background Decorations"

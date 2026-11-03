@@ -2,41 +2,8 @@
 
 [ext_resource type="Texture2D" uid="uid://b2c7guxtonwnc" path="res://assets/characters/teto/teto_gum_fire.png" id="fire"]
 [ext_resource type="Texture2D" uid="uid://b2i5ilgayckis" path="res://assets/characters/teto/teto_gum_hang.png" id="hang"]
+[ext_resource type="Texture2D" uid="uid://bppsw8fne3ray" path="res://assets/characters/teto/teto_gum_hang_angles.png" id="hang_angles"]
 [ext_resource type="Texture2D" uid="uid://cksybomax7ymj" path="res://assets/characters/teto/teto_gum_pull.png" id="pull"]
-
-[ext_resource type="Texture2D" path="res://assets/characters/teto/teto_gum_hang_angles.png" id="hang_angles"]
-
-[sub_resource type="AtlasTexture" id="hang_angle_0"]
-atlas = ExtResource("hang_angles")
-region = Rect2(0, 0, 256, 256)
-
-[sub_resource type="AtlasTexture" id="hang_angle_1"]
-atlas = ExtResource("hang_angles")
-region = Rect2(256, 0, 256, 256)
-
-[sub_resource type="AtlasTexture" id="hang_angle_2"]
-atlas = ExtResource("hang_angles")
-region = Rect2(512, 0, 256, 256)
-
-[sub_resource type="AtlasTexture" id="hang_angle_3"]
-atlas = ExtResource("hang_angles")
-region = Rect2(768, 0, 256, 256)
-
-[sub_resource type="AtlasTexture" id="hang_angle_4"]
-atlas = ExtResource("hang_angles")
-region = Rect2(0, 256, 256, 256)
-
-[sub_resource type="AtlasTexture" id="hang_angle_5"]
-atlas = ExtResource("hang_angles")
-region = Rect2(256, 256, 256, 256)
-
-[sub_resource type="AtlasTexture" id="hang_angle_6"]
-atlas = ExtResource("hang_angles")
-region = Rect2(512, 256, 256, 256)
-
-[sub_resource type="AtlasTexture" id="hang_angle_7"]
-atlas = ExtResource("hang_angles")
-region = Rect2(768, 256, 256, 256)
 
 [sub_resource type="AtlasTexture" id="fire_0"]
 atlas = ExtResource("fire")
@@ -102,6 +69,38 @@ region = Rect2(512, 256, 256, 256)
 atlas = ExtResource("hang")
 region = Rect2(768, 256, 256, 256)
 
+[sub_resource type="AtlasTexture" id="hang_angle_0"]
+atlas = ExtResource("hang_angles")
+region = Rect2(0, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="hang_angle_1"]
+atlas = ExtResource("hang_angles")
+region = Rect2(256, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="hang_angle_2"]
+atlas = ExtResource("hang_angles")
+region = Rect2(512, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="hang_angle_3"]
+atlas = ExtResource("hang_angles")
+region = Rect2(768, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="hang_angle_4"]
+atlas = ExtResource("hang_angles")
+region = Rect2(0, 256, 256, 256)
+
+[sub_resource type="AtlasTexture" id="hang_angle_5"]
+atlas = ExtResource("hang_angles")
+region = Rect2(256, 256, 256, 256)
+
+[sub_resource type="AtlasTexture" id="hang_angle_6"]
+atlas = ExtResource("hang_angles")
+region = Rect2(512, 256, 256, 256)
+
+[sub_resource type="AtlasTexture" id="hang_angle_7"]
+atlas = ExtResource("hang_angles")
+region = Rect2(768, 256, 256, 256)
+
 [sub_resource type="AtlasTexture" id="pull_0"]
 atlas = ExtResource("pull")
 region = Rect2(0, 0, 256, 256)
@@ -136,35 +135,6 @@ region = Rect2(768, 256, 256, 256)
 
 [resource]
 animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("hang_angle_0")
-}, {
-"duration": 1.0,
-"texture": SubResource("hang_angle_1")
-}, {
-"duration": 1.0,
-"texture": SubResource("hang_angle_2")
-}, {
-"duration": 1.0,
-"texture": SubResource("hang_angle_3")
-}, {
-"duration": 1.0,
-"texture": SubResource("hang_angle_4")
-}, {
-"duration": 1.0,
-"texture": SubResource("hang_angle_5")
-}, {
-"duration": 1.0,
-"texture": SubResource("hang_angle_6")
-}, {
-"duration": 1.0,
-"texture": SubResource("hang_angle_7")
-}],
-"loop": false,
-"name": &"gum_hang_angles",
-"speed": 1.0
-}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("fire_0")
@@ -222,6 +192,35 @@ animations = [{
 "loop": 1,
 "name": &"gum_hang",
 "speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("hang_angle_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("hang_angle_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("hang_angle_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("hang_angle_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("hang_angle_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("hang_angle_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("hang_angle_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("hang_angle_7")
+}],
+"loop": 0,
+"name": &"gum_hang_angles",
+"speed": 1.0
 }, {
 "frames": [{
 "duration": 1.0,

@@ -1,3 +1,44 @@
+## Direction-owned gum arm poses
+- Goal/status: Apply angle-driven upper arm selection to firing and attached gum; complete.
+- Decisions: Upper sector uses raised poses independent of speed/distance; lateral sector starts70deg from up (within20deg of horizontal). Outbound uses shot_direction immediately, including zero-length tip tick. Keep attached floor/slack and lower-direction behavior explicit/current; no physics edits.
+- Completed: Shared sector selector for firing/attachment; initial fire_gum uses current shot direction; diagnostics expose shot/support source and upper sector; removed speed/40px arm gates. Updated tests/specs/durable guidance.
+- Files: player.gd, verify_hanging_poses.gd, specs/character-gum-animations.md, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Verification: Dense17304-case suite PASS including short/fast vertical and zero-length flight; hand-origin suite PASS. Initial sweep found5deg float boundary ambiguity; applied same0.0001deg tolerance as70deg boundary.
+- Refactoring: Shared shot/support direction source and sector selector remove separate speed/distance policy; pass computed angle to frame selector instead of recomputing. Diagnostics use same direction source. Reviewed all touched callers/specs.
+- Final verification: Focused suite rerun PASS17304 cases plus real grounded upward fire/momentum invariant; hand-origin, gum/live Game, controls and food suites PASS; git diff --check PASS. Known sandbox CA warning only.
+- Blockers: None. Next action: F5 appearance review of vertical/diagonal shots and fast upper swings; native visual playback not performed.
+
+## Arm direction policy analysis
+- Goal/status: Analyze upper gum connections showing lateral arm and proposed20deg-from-horizontal threshold; complete, analysis only.
+- Findings: _select_animation chooses gum_pull when speed>=130 or support vertical offset>=-40 despite near-vertical support; supplied log tick847 has0deg/130.07px/s and tick921 has0deg/3.16px/s/offset-34.65, both pull. OUTBOUND always gum_fire regardless angle. Hand-origin smoothing changes only ribbon transition, not wrong pose selection.
+- Recommendation: For attached upward loaded gum, choose arm direction from first support vector; remove speed and absolute40px distance as arm-orientation gates. Lateral regime only within20deg of horizontal (up-reference70–90deg); upper regime0–70deg uses hang/directional samples independent of speed. Body motion may reflect speed separately. Treat below-horizontal/grounded/slack/outbound explicitly; do not map lower angles to upper sprites indiscriminately. Boundary hysteresis may stabilize selection.
+- Files: WORKLOG.md only. Verification: Reviewed current player selector and prior gameplay log; no runtime edits/tests for analysis. Blockers: None. Next action: Implement direction-owned arm selection when requested; verify vertical fast/short connections and horizontal20deg boundaries.
+
+## Continuous gum visual hand origin
+- Goal/status: Fix ribbon origin jumping when arm poses switch; complete.
+- Findings: Physics origin already stays at chest, but rendering reads per-frame hand samples directly, jumping between front/raised poses and mirroring.
+- Decisions: Smooth drawing-only hand offset in player-local space at fixed-step bounded speed; world player motion follows instantly. Keep raw pose target separate, initialize at ready, update once after deformation; no physics changes.
+- Files: player.gd, game_settings.gd, verify_hanging_poses.gd, new verify_gum_hand_origin.gd, specs/character-gum-animations.md, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Completed: Added raw hand target/stored continuous origin, shared tuning360px/s (6px per60Hz tick), initialization and both simulation branches; diagnostic hand origin/target/gap. Updated angular hand test to check target.
+- Verification: Hand suite PASS30/60/120Hz mirrored pose transitions/bounded movement/settling/player translation/deformation/physics/normal+food-lock actual simulate; angular674-case suite PASS. Gum/controls/food regressions PASS including live gameplay integration. Known sandbox CA warning only.
+- Refactoring: Reviewed all origin consumers and both simulation branches; shared getter keeps ready/flight/attached/return/reel consistent, raw target separated from fixed-step state, no draw-time mutation or physics edits. Final hand suite repeated PASS; diff check PASS.
+- Blockers: None. Next action: F5 visual review of front-to-up pose switching; artwork itself remains discrete and line briefly tracks toward its new hand target.
+
+## Hanging diagnostic gameplay log review
+- Goal/status: Review supplied gameplay angle logs; complete, no runtime changes requested.
+- Findings: Logged10/20/30deg directional frames0/1/2 agree with nearest-angle selection; mirrored left30deg also correct. Logged angle range only0–29.863deg, so frames3–7 unobserved in this capture. Speed crossing130px/s repeatedly replaces angular hang with gum_pull; <40px vertical separation also replaces vertical hang despite low speed. Missing intermediate poses during fast swing reflect current eligibility, not incorrect quantization.
+- Files: WORKLOG.md only. Verification: Parsed all33 diagnostic rows, checked angular selection error <=5deg; no wrong angular selections. No tests needed for read-only analysis. Blockers: None.
+- Next action: If requested, broaden angular pose eligibility during fast swings; keep current physics unchanged. Otherwise gather larger-angle slow hanging capture to observe40–80deg.
+
+## Hanging angle diagnostics
+- Goal/status: Add gameplay logs to verify fine angle selection; complete.
+- Decisions: Dedicated toggle, selection-change and30-tick samples with actual angle/frame/nominal/error/mirror/support/eligibility context; enable saved gameplay setting for immediate reproduction. Test dense sweep and transition boundaries.
+- Completed: Added wrapper after animation selection, reusable snapshot, change/30-tick/exit logs, Inspector toggle (schemaOFF/savedON); dense sweep plus throttle/disable/exit checks. Added0.0001deg nearest-angle tie tolerance.
+- Files: player.gd, game_settings.gd, game_settings.tres, verify_hanging_poses.gd, specs/game-settings.md, specs/character-gum-animations.md, AGENTS.md, WORKLOG.md.
+- Verification: Focused suite PASS674 mirrored quarter-degree cases and all existing pose/hand/wrapping/physics invariants; SELECTED/SAMPLE/EXIT observed.
+- Refactoring: Reviewed full pose selection/logging path; animation wrapper covers every early return, shared snapshot keeps diagnostics/tests consistent, loop frames excluded from direction-change key. Final focused suite and diff check PASS. Gum/controls regressions PASS including live Game. Known sandbox CA warning only.
+- Blockers: None. Next action: F5 reproduce and inspect [HangingPoseDiagnostic] in Godot Output; disable shared toggle after investigation if desired.
+
 ## Hanging arm directional integration
 - Goal/status: Integrate8 angular poses into hanging animation; complete.
 - Completed: Reviewed player pose priority, hand origins and source sheet.

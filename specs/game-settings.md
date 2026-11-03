@@ -91,3 +91,15 @@ Shader hit wave: enabled by default, radius56px, duration0.32s, refraction stren
 - `Player Movement/jump_buffer_time`: 着地前ジャンプの入力保存秒数。既定0.12秒、0で無効。床接触後の最初の物理ティックで一度だけ通常キックを実行し、成功・降下・移動リセット・フード回収ロックで消費／消去する。
 
 ハシゴ範囲内では上下で昇降（Ladder / ladder_speed既定120px/s）。左右・Z・ガム発射で離れる。詳細は [ladders.md](ladders.md)。
+
+`Hanging Pose Diagnostics` は `[HangingPoseDiagnostic]` でガム方向と姿勢選択を調査する。スクリプト初期値OFF、現在の共有Resourceは調査用にON。`resources/game_settings.tres` の Inspector → Diagnostics → Hanging Pose Diagnostics で切り替える。F5実行時のGodot Outputで確認できる。
+
+- `SELECTED`：ガム接続／飛行中のアニメーション・方向コマ・左右反転が変化したとき。真上ループ内の時間コマ進行では繰り返さない。
+- `SAMPLE`：選択が同じでも30物理ティックごとに現在値を出力。`EXIT`：接続／飛行状態を離れたときに1回。
+- `signed_angle_deg`：真上0度、右正／左負の実際のガム支持方向。`angle_deg`：その絶対値。巻き付き時は最初のピボット方向を使う。
+- `animation` / `frame`：選択結果。`gum_hang_angles` のframe0〜7は公称10/20/30/40/50/60/70/80度。`nominal_angle_deg` が公称角度、`selection_error_deg` は実角度絶対値−公称角度。真上の `gum_hang` は公称0度、他のアニメーションは公称−1（対象外）。画像そのものの腕の実測角度ではない。
+- `flip_h` / `floor` / `speed` / `tension` / `above` / `upper_sector` / `attached` / `outbound` で方向中割りが使われなかった条件を確認する。`above` は方向が上半分（Y<0）、`upper_sector` は真上基準70度未満を示す。速度は腕向きの条件ではない。`support_offset` は胸から最初の支持点へのベクトル、`endpoint` は最終接着点。
+
+例：`angle_deg=32.4 animation=gum_hang_angles frame=2 nominal_angle_deg=30 selection_error_deg=2.4` なら30度のコマが選択されている。上方セクター内で5度未満は真上ループ、コマ切り替え境界は15/25/35/45/55/65度。真上基準70度以上（上半分では水平から20度以内）は横寄りの発射／牽引姿勢を使用し、80度コマは現在使わない。同距離は小さい角度側、5度・70度境界と最寄り判定には浮動小数誤差0.0001度の許容を適用。発射中は地上／空中を問わず方向選択を優先し、接続中は空中・張力10超で方向選択する。速度・支持点までの高さは選択条件ではない。接続中の接地／弛緩時は通常姿勢、下方接続／発射は既存fire/pull素材を使う。
+
+`Gum Appearance / Gum Hand Follow Speed` は線の手元側の描画起点の追従速度（初期値360px/s）。ポーズ・左右反転・描画変形による手先座標の差を固定ステップで連続的に追い、Player自体の移動には即追従する。物理の接続点や張力には影響しない。`HangingPoseDiagnostic` の `hand_origin`（現在の線起点）、`hand_target`（姿勢の手先目標）、`hand_gap_px`（追従中の差）で確認する。ログは姿勢選択直後・同ステップの追従更新前の値。
