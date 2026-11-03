@@ -1,7 +1,20 @@
 extends RefCounted
 ## Authored 32px geometry and placements for the current saved-tuning prototype.
-const SPIKES: Array[Vector2i] = []
+# Two-cell floor strips leave room for a contact kick; upper strips guard optional shortcuts.
+const SPIKES: Array[Vector2i] = [
+	Vector2i(10, 19), Vector2i(11, 19),
+	Vector2i(34, 21), Vector2i(35, 21),
+	Vector2i(64, 19), Vector2i(65, 19),
+	Vector2i(87, 21), Vector2i(88, 21),
+	Vector2i(119, 19), Vector2i(120, 19),
+	Vector2i(137, 21), Vector2i(138, 21),
+	Vector2i(28, 9), Vector2i(29, 9),
+	Vector2i(64, 10), Vector2i(65, 10),
+	Vector2i(80, 7), Vector2i(81, 7),
+	Vector2i(116, 10), Vector2i(117, 10),
+]
 const LADDERS := [Vector3(464, 640, 128)] # Bottom x/y, height; optional first shelf.
+const CHECKPOINTS := [Vector2(896, 704), Vector2(1824, 640), Vector2(2656, 704), Vector2(3488, 640), Vector2(4320, 704)]
 const TILE := 32
 const SIZE := Vector2i(160, 24)
 const TERRAIN := [
@@ -80,4 +93,21 @@ const FOODS := [
 	Vector3i(120, 15, 10), Vector3i(127, 15, 4), Vector3i(120, 10, 1),
 	Vector3i(135, 21, 7), Vector3i(140, 21, 5), Vector3i(144, 17, 10),
 	Vector3i(147, 15, 0), Vector3i(148, 11, 2), Vector3i(154, 11, 3),
+]
+
+# Decoration center cell x/y and row-major ID in the dedicated 4x4 atlas.
+# Each stamp draws 96x96px on the 32px placement grid; no physics.
+const BACKGROUND_DECOR := [
+	Vector3i(4, 18, 0), Vector3i(18, 18, 1), Vector3i(16, 5, 4),
+	Vector3i(22, 5, 5), Vector3i(7, 13, 8), Vector3i(15, 14, 12), Vector3i(23, 13, 6),
+	Vector3i(29, 20, 2), Vector3i(44, 20, 7), Vector3i(42, 5, 5),
+	Vector3i(46, 5, 4), Vector3i(32, 13, 9), Vector3i(42, 9, 13), Vector3i(39, 7, 3),
+	Vector3i(56, 18, 1), Vector3i(70, 18, 0), Vector3i(68, 5, 4),
+	Vector3i(74, 5, 5), Vector3i(59, 11, 10), Vector3i(67, 8, 14), Vector3i(75, 11, 6),
+	Vector3i(82, 20, 2), Vector3i(98, 20, 7), Vector3i(94, 5, 5),
+	Vector3i(102, 5, 4), Vector3i(89, 17, 11), Vector3i(95, 9, 15), Vector3i(92, 6, 3),
+	Vector3i(108, 18, 0), Vector3i(121, 18, 1), Vector3i(120, 5, 4),
+	Vector3i(126, 5, 5), Vector3i(111, 12, 8), Vector3i(119, 8, 13), Vector3i(128, 13, 6),
+	Vector3i(134, 20, 2), Vector3i(148, 20, 7), Vector3i(146, 5, 5),
+	Vector3i(154, 5, 4), Vector3i(136, 13, 9), Vector3i(143, 9, 12), Vector3i(153, 9, 15),
 ]

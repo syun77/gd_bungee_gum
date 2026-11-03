@@ -2,6 +2,8 @@ extends Node2D
 ## Fixed-step owner: validate -> direction / actions -> gum -> player -> presentation.
 const Settings = preload("res://scripts/game_settings.gd")
 const SPIKE_LAYER := 64
+const RESPAWN_META := &"checkpoint_respawn"
+var active_checkpoint: NodePath
 @export var settings: Settings
 @onready var player: CharacterBody2D = $Player
 @onready var player_shape: CollisionShape2D = $Player/CollisionShape2D
@@ -10,6 +12,7 @@ const SPIKE_LAYER := 64
 @onready var status: Label = $HUD/Status
 var spike_sweep: ShapeCast2D
 var restarting := false
+var death_effect: Sprite2D
 var aim_direction := Vector2.RIGHT
 var up_wait_release := false
 var down_wait_release := false
@@ -27,6 +30,7 @@ func _ready() -> void:
 	player.settings = settings
 	gum.settings = settings
 	player.global_position = $TheaterStage/PlacementMarkers/PlayerSpawn.global_position
+	_setup_checkpoints()
 	$PuzzleLightBox.global_position = $TheaterStage/PlacementMarkers/LightBoxSpawn.global_position
 	$PuzzleHeavyBox.global_position = $TheaterStage/PlacementMarkers/HeavyBoxSpawn.global_position
 	gum.player = player
@@ -43,12 +47,19 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if restarting:
 		return
-	if Input.is_action_just_pressed("restart") or player.position.y > settings.restart_y:
+	if Input.is_action_just_pressed("restart"):
 		restart()
+		return
+	if is_instance_valid(death_effect):
+		if death_effect.step(delta):
+			restart(true)
+		return
+	if player.position.y > settings.restart_y:
+		restart(true)
 		return
 	var previous_shape_transform: Transform2D = player_shape.global_transform
 	if _touches_spikes(previous_shape_transform, Vector2.ZERO):
-		restart()
+		_die_on_spikes(previous_shape_transform.origin)
 		return
 	gum.validate_connection()
 	var was_reeling: bool = gum.reeling_food()
@@ -62,16 +73,54 @@ func _physics_process(delta: float) -> void:
 	player.simulate(delta, jump_requested, attached_jump)
 	var movement: Vector2 = player_shape.global_position - previous_shape_transform.origin
 	if _touches_spikes(previous_shape_transform, movement):
-		restart()
+		_die_on_spikes(previous_shape_transform.origin + movement * spike_sweep.get_closest_collision_safe_fraction())
 		return
 	_update_camera(delta)
 	gum.update_aim(_aim_target())
 	_update_status()
 
-func restart() -> void:
+func _setup_checkpoints() -> void:
+	for checkpoint in $TheaterStage/Checkpoints.get_children():
+		checkpoint.reached.connect(_on_checkpoint_reached)
+	if not get_tree().has_meta(RESPAWN_META):
+		return
+	var saved: Dictionary = get_tree().get_meta(RESPAWN_META)
+	get_tree().remove_meta(RESPAWN_META)
+	if saved.get("scene") != scene_file_path:
+		return
+	var checkpoint = get_node_or_null(saved.get("checkpoint", NodePath()))
+	if checkpoint != null and checkpoint.get_parent() == $TheaterStage/Checkpoints:
+		active_checkpoint = get_path_to(checkpoint)
+		checkpoint.activate(false)
+		player.global_position = checkpoint.respawn_position()
+
+func _on_checkpoint_reached(checkpoint: Area2D) -> void:
+	if restarting or is_instance_valid(death_effect):
+		return
+	active_checkpoint = get_path_to(checkpoint)
+	checkpoint.activate()
+
+func _die_on_spikes(center: Vector2) -> void:
+	if restarting or is_instance_valid(death_effect):
+		return
+	gum.detach("SPIKES")
+	gum.hide()
+	player.hide()
+	player.afterimages.clear()
+	$LandingDustEffect.stop()
+	death_effect = preload("res://scripts/player_disappear_effect.gd").new()
+	add_child(death_effect)
+	death_effect.global_position = center
+	camera.global_position = center - player_shape.position
+
+func restart(from_checkpoint := false) -> void:
 	if restarting:
 		return
 	restarting = true
+	if from_checkpoint and not active_checkpoint.is_empty() and has_node(active_checkpoint):
+		get_tree().set_meta(RESPAWN_META, {"scene": scene_file_path, "checkpoint": active_checkpoint})
+	elif get_tree().has_meta(RESPAWN_META):
+		get_tree().remove_meta(RESPAWN_META)
 	gum.detach("RESTART")
 	$LandingDustEffect.stop()
 	$GumShotParticles.stop()

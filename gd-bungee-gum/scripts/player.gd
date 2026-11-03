@@ -2,7 +2,9 @@ extends CharacterBody2D
 ## Feet-origin controller. Game calls simulate() once after gum forces each physics tick.
 signal landed(point: Vector2, normal: Vector2, impact_speed: float, surface: Node2D)
 
+const HANG_ANGLES := [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0]
 const GUM_HANDS := {
+	&"gum_hang_angles": [Vector2(168, 48), Vector2(177, 51), Vector2(184, 57), Vector2(198, 63), Vector2(202, 73), Vector2(209, 83), Vector2(215, 94), Vector2(220, 108)],
 	&"gum_fire": [Vector2(180, 143), Vector2(176, 142), Vector2(185, 140), Vector2(196, 135), Vector2(207, 122), Vector2(216, 123), Vector2(214, 123), Vector2(211, 123)],
 	&"gum_pull": [Vector2(220, 109), Vector2(216, 109), Vector2(217, 109), Vector2(218, 110), Vector2(220, 106), Vector2(217, 106), Vector2(217, 104), Vector2(219, 102)],
 	&"gum_hang": [Vector2(171, 40), Vector2(171, 40), Vector2(171, 40), Vector2(173, 40), Vector2(171, 40), Vector2(171, 40), Vector2(171, 40), Vector2(172, 40)],
@@ -406,7 +408,10 @@ func _update_animation(direction: float) -> void:
 			return
 		if not is_on_floor() and gum.tension > 10.0:
 			var above: bool = gum.support_point().y < gum.origin().y - 40.0
-			sprite.play("gum_hang" if above and velocity.length() < 130.0 else "gum_pull")
+			if above and velocity.length() < 130.0:
+				_update_hanging_pose(aim)
+			else:
+				sprite.play("gum_pull")
 			return
 	if not is_on_floor():
 		sprite.play("jump")
@@ -418,6 +423,20 @@ func _update_animation(direction: float) -> void:
 		sprite.frame = 6
 	else:
 		sprite.play("run" if direction != 0.0 or absf(velocity.x) > 12.0 else "idle")
+
+func _update_hanging_pose(aim: Vector2) -> void:
+	# These frames are direction samples, never a time-driven loop.
+	var angle := rad_to_deg(atan2(absf(aim.x), -aim.y))
+	if angle < HANG_ANGLES[0] * 0.5:
+		sprite.play("gum_hang")
+		return
+	var nearest := 0
+	for index in range(1, HANG_ANGLES.size()):
+		if absf(angle - HANG_ANGLES[index]) < absf(angle - HANG_ANGLES[nearest]):
+			nearest = index
+	sprite.play("gum_hang_angles")
+	sprite.pause()
+	sprite.frame = nearest
 
 func _log_landing_state(was_grounded: bool, incoming_velocity: Vector2, removed_control_y: float) -> void:
 	if not settings.landing_diagnostics:

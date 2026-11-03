@@ -34,6 +34,7 @@ func _initialize() -> void:
 	var iron := layer("BackgroundIron", Color(0.8, 0.9, 0.82, 0.6))
 	for x in range(2, Layout.SIZE.x - 2):
 		put(iron, x, 5, 66)
+	add(stage, preload("res://scripts/background_decor.gd").create_layer())
 	var terrain := layer("TerrainTiles")
 	var body := StaticBody2D.new()
 	body.name = "Terrain"
@@ -82,6 +83,14 @@ func _initialize() -> void:
 		ladder.position = Vector2(placement.x, placement.y)
 		ladder.height = placement.z
 		add(stage, ladder)
+	var checkpoints := Node2D.new()
+	checkpoints.name = "Checkpoints"
+	add(stage, checkpoints)
+	for i in Layout.CHECKPOINTS.size():
+		var checkpoint = load("res://scenes/props/checkpoint.tscn").instantiate()
+		checkpoint.name = "Checkpoint%02d" % (i + 1)
+		checkpoint.position = Layout.CHECKPOINTS[i]
+		add(checkpoints, checkpoint)
 	var signs := layer("Signs")
 	for section in Layout.SECTION_NAMES.size():
 		var x := 4 + section * 26

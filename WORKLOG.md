@@ -1,3 +1,144 @@
+## Hanging arm directional integration
+- Goal/status: Integrate8 angular poses into hanging animation; complete.
+- Completed: Reviewed player pose priority, hand origins and source sheet.
+- Decisions: Normalize common body registration; choose static angular frame only in existing hanging state, preserve vertical hang loop and pull priority; use first wrapped support direction and mirror left.
+- Files: WORKLOG.md, AGENTS.md, specs/character-gum-animations.md, player.gd, gum_animations.tres, normalized/runtime teto_gum_hang_angles.png(+import), verify_hanging_poses.gd, verify_gum.gd.
+- Completed additionally: Normalized1024x512 atlas/runtime copy,8 hand samples, stopped nearest-direction selector and focused integration suite; specs updated.
+- Verification: Focused hanging suite PASS all16 mirrored angles/hand positions/wrapped support/pose priorities/unchanged collision. Gum and controls regressions PASS. Normalized atlas dimensions/alpha/8 occupied cells/runtime byte parity and git diff --check PASS. Player full regression PASS including42 corner landings, movement, contact/coyote kicks, friction and animations. Known sandbox CA warning only.
+- Refactoring: Reviewed pose-priority branch, isolated direction selector, kept shared GUM_HANDS transform/mirroring, formatted resource consistently; final focused suite repeated PASS.
+- Blockers: None. Next action: F5 visual playtest of angular hanging poses; native interactive appearance remains unverified.
+
+## Gum hanging arm in-between artwork
+- Goal/status: Create additional angular in-between poses; complete as source artwork.
+- Completed: Generated8 poses from existing hang/pull references; second imagegen edit removed background/haze. Saved transparent original and documented ordering/prompt/integration limits.
+- Decisions:4x2 right-facing sheet, intended10–80deg from up; angles illustrative, not measured. Original/runtime sheets preserved; no gameplay edits.
+- Files: images/gum-source/teto_gum_hang_inbetweens.png, specs/character-gum-animations.md, AGENTS.md, WORKLOG.md.
+- Verification: Visual review confirms progressive arm directions and complete silhouettes; Pillow confirms1774x887 RGBA, alpha0–255, transparent corner and8 occupied cells. Documentation/scope reviewed; no runtime tests needed for source-only artwork.
+- Blockers: None. Next action: Normalize/register256px cells and measure shoulder/hand positions when runtime integration is requested.
+
+## Authored spike placements
+- Goal/status: Place readable, avoidable spike strips across the map; complete.
+- Completed:20 cells: six64px floor strips across6sections and four64px optional upper strips. Kept spawn/checkpoints/box workspaces/lift start positions clear. Selective Spikes installer preserves other authored map content; generator shares Layout.SPIKES.
+- Decisions: Third floor strip moved to64–65 to avoid LightBox spawn. Each floor strip verified with one physical contact kick and swept hazard checks; no movement/physics tuning changes.
+- Files: stage_layout.gd, theater_stage.tscn, install_spikes.gd, verify_spike_placements.gd, verify_spikes.gd, specs/spike-tile-assets.md, AGENTS.md, WORKLOG.md.
+- Verification: Placement suite PASS20 supported cells/spawn clearance/6actual jump crossings; spike death suite and saved-map suite PASS. Existing full-route suite fails first lift with unchanged original test too: current attachment_range160 differs from240px route design. No full-stage completion claim. Known sandbox CA warning only.
+- Refactoring: Reviewed selective authoring and scene-tile fixtures; reset_motion resets controller state between local approaches, avoiding leaked control velocity from previous fixture. Removed temporary probes, retained original full-route test. Final placement/spike/map/checkpoint suites all PASS after refactor; git diff --check PASS.
+- Blockers: None for spike placements; existing full-route/tuning mismatch remains separate. Next action: F5 visual/difficulty playtest; native appearance and overall difficulty not verified.
+
+## Checkpoint floor alignment
+- Goal/status: Fix checkpoint artwork floating above ground; complete.
+- Findings: Atlas opaque base ends at396px in top row,389.5/390.5px in bottom-row local cells; centered sprite at-28 left approx5–6px gap.
+- Completed: Align sprite offset per frame to opaque base bottom; fixed default editor offset, tests measure all8 alpha bottoms, specs/durable guidance aligned. No stage/trigger/respawn changes.
+- Files: checkpoint.gd/.tscn, verify_checkpoints.gd, specs/checkpoints.md, AGENTS.md, WORKLOG.md.
+- Verification: Checkpoint suite PASS: all8 independently measured alpha bottoms within0.15px of floor origin, activation/animation/death respawns/manual reset intact; git diff --check PASS. Known sandbox CA warning only.
+- Refactoring: Reviewed sprite-only alignment, centralized frame_changed hook covers activation/playback/restoration/editor; no duplicate offset handling or physics changes.
+- Blockers: None. Next action: F5 visual review of grounded sign; native capture not performed.
+
+## Background decoration tile integration
+- Goal/status: Integrate16 decorations as paintable background tiles and dress saved stage; complete.
+- Completed: Normalized source into384×384 RGBA atlas (16 padded96px stamps), identical runtime copy and dedicated TileSet; BackgroundDecor layer with42 placements across6 sections; shared authoring helper/generator parity and decor-only update tool. Adjusted pendant positions after real render to keep section titles legible.
+- Decisions:32px placement grid/3×3-cell stamp artwork, nearest filtering and subdued tint; no TileSet physics layers and disabled layer collision. Existing terrain/checkpoints/food/props preserved; full map generator intentionally not run.
+- Files: Atlas pair, background_decor_tileset.tres, background_decor.gd, stage_layout.gd, build_theater_stage.gd, install_background_decor.gd, verify_background_decor.gd, saved stage, specs/restaurant-background-decor.md, AGENTS.md, WORKLOG.md.
+- Verification: Final focused suite PASS42 placements/all16 sprites/physics isolation/generator parity; saved-map PASS1212 solid cells/27shapes/76 one-way/59corners. Native Apple M1 OpenGL rendered verification PASS and entrance screenshot visually reviewed after placement refinement. PNG dimensions/alpha/source-runtime byte parity and git diff --check PASS. Known sandbox CA warning; sandbox native renderer aborted, approved native run succeeded.
+- Refactoring: Reviewed full touched authoring path; shared creation and atlas-coordinate mapping remove duplication between generator and decor-only update; gameplay code untouched. Relevant verification repeated after final edits.
+- Blockers: None. Next action: F5 to play; edit TheaterStage/BackgroundDecor in Godot. Keep Layout.BACKGROUND_DECOR aligned with desired durable placements before regeneration.
+
+## Spike death playback confirmation
+- Goal/status: Ensure created effect plays on lethal spike contact; complete.
+- Completed: Confirmed both initial overlap and swept movement call Game._die_on_spikes; fixed-step playback finishes before checkpoint restart. Existing implementation already fulfills request, no runtime edits needed.
+- Files changed: WORKLOG.md only. Decisions: Retain existing single death owner and0.6s playback.
+- Verification: Godot verify_spikes.gd PASS exit0, including real high-speed death, hidden player/gum, single effect, halfway playback, frozen movement, reload and stationary overlap. Known sandbox CA warning only. Reviewed relevant lifecycle and effect implementation; no refactor needed.
+- Blockers: None. Next action: F5 playtest spike contact for appearance; native visual QA remains unverified.
+
+## Checkpoint no-rebound integration
+- Goal/status: Replace checkpoint playback with original non-bounce8-frame version; complete.
+- Completed: Runtime PNG replaced with original4x2 source, sprite scale0.13 preserves approx58px size, final frame derived from sheet dimensions; tests/spec/durable guidance aligned. Respawn/death systems unchanged.
+- Files: checkpoint.gd/.tscn, runtime PNG, verify_checkpoints.gd, specs/checkpoints.md, AGENTS.md, WORKLOG.md.
+- Decisions: Keep0.055s frame duration, hold frame7 permanently; preserve source artwork variants.
+- Verification: Import complete with known sandbox CA/Mono/settings warnings; checkpoint and spike suites PASS, including8-frame progression/permanent final check and both death respawns. Runtime/source PNG byte parity and git diff --check PASS.
+- Refactoring: Reviewed touched playback; cached typed sprite and derive final index from actual sheet grid rather than duplicated frame constants. Verification ran after refactor.
+- Blockers: None. Next action: F5 interactive appearance review if desired; native visual playback not checked.
+
+## Restaurant background decoration artwork
+- Goal/status: Create transparent tile-placement decoration sheet; complete as source artwork.
+- Completed: Generated and visually reviewed16 front-view decorations in4x4 layout: plants/lights/windows/paintings,4 each; saved project source and usage specification.
+- Decisions: Cream/coral/mint palette, transparent background, separate source atlas; no TileSet/stage/physics edits.32px normalization and engine integration remain outside this image task.
+- Files: images/tilesets/restaurant_background_decor_source.png, specs/restaurant-background-decor.md, AGENTS.md, WORKLOG.md.
+- Verification: Visual review confirms16 distinct objects and clear separation; Pillow confirms RGBA/transparent corner. No runtime tests apply. Final scope/document review complete.
+- Blockers: None. Next action: Normalize/slice and register background decoration tiles if integration is requested.
+
+## Spike disappearance effect
+- Goal/status: Create PixelFX disappearance and integrate spike death; complete.
+- Completed: Editable original PixelFX effect, transparent atlas/JSON/contact sheet/GIF and runtime copy; fixed-step one-shot death at swept contact center, hidden player/gum, cleared afterimages,0.6s checkpoint respawn. Preserved ongoing checkpoint/background work.
+- Decisions: Pink/cream gum-like pop and shrinking radial fragments,128px cells/5x4/19frames/30fps. R remains immediate even during death; falling remains immediate. Death blocks checkpoint activation and player simulation.
+- Files: images/effects/player-disappear.mjs, player_disappear PNG/JSON/contact/GIF, runtime PNG, player_disappear_effect.gd, game.gd, verify_spikes.gd, verify_checkpoints.gd, specs/player-disappear-effect.md, spike spec, AGENTS.md, WORKLOG.md.
+- Verification: Three visual reviews (dark initial/refined, light final); PixelFX render deterministic/transparent endpoint/unclipped padded bounds PASS; RGBA640x512/runtime byte parity PASS. Final Godot spike/checkpoint suites PASS after refactor; controls PASS; known sandbox CA warning only. Shell node unavailable; exported through connected Node runtime with local PixelFX library.
+- Refactoring: Reviewed Game lifecycle, kept restart/checkpoint handoff shared and effect playback small; R input precedes death timer. Updated checkpoint regression for delayed death. git diff --check PASS.
+- Blockers: None. Next action: F5 visual playtest on painted spikes; native gameplay appearance not yet checked.
+
+## Checkpoint gameplay integration
+- Goal/status: Integrate sign animation and death respawns; complete.
+- Completed: Reusable checkpoint scene,12-frame playback,5 safe floor placements and generator parity; Game binds activation and one-shot scene-scoped reload handoff. Death uses last checkpoint; manual restart resets entrance.
+- Decisions: Scene reload resets props/food/gum/velocities; active checkpoint restored at final check frame, no repeated animation. No save across app launches. Source sheet retained, runtime copy uses4x3 Sprite2D.
+- Files: checkpoint.gd/.tscn, runtime PNG/import, game.gd, stage_layout.gd, saved stage, generator, verify_checkpoints.gd, specs/checkpoints.md, keyboard-controls.md, stage-action-concept.md, AGENTS.md, WORKLOG.md.
+- Verification: Import complete (known sandbox CA/Mono/editor-settings warnings). Checkpoint suite PASS including5 floor supports, actual contact,12 frames,pit/spike reloads,latest selection,manual reset,entrance fallback and cleared motion/gum; spikes/controls/map suites PASS. Runtime/source PNG identical; git diff --check PASS.
+- Refactoring: Reviewed full restart/ready flow, single idempotent deferred reload, one-shot metadata consumption, fixed-step ownership and scene/generator parity; no duplicate death handler or player-controller changes. Final enhanced checkpoint suite rerun PASS.
+- Blockers: None. Next action: F5 interactive review of checkpoint appearance/playback; native visual QA not performed.
+
+## Checkpoint reverse-trapezoid revision
+- Goal/status: Apply user perspective correction to bounce sheet; complete as source artwork.
+- Completed: Built-in imagegen edited user reference into clean transparent4x3 sheet. Visual review confirms9/11 bottom-wide panels,10 top-wide,12 upright; removed rough white pasted patches and skewed stands.
+- Decisions: Preserve original assets; new v2 source only, no runtime integration. Fine frame registration and damping amplitude still need animation-stage tuning.
+- Files changed: images/props/restaurant_checkpoint_flip_bounce_v2_source.png, WORKLOG.md.
+- Prompt: Preserve first8 poses/design;9 bottom-wide overshoot,10 opposite top-wide rebound,11 smaller bottom-wide correction,12 upright; fixed horizontal axle/support, clean transparent pixel art.
+- Verification: Visual review of all12 poses complete; no runtime tests applicable. Blockers: None. Next action: Normalize/playback tune when integration requested.
+
+## Checkpoint rebound perspective analysis
+- Goal/status: Analyze user's edited frames9/11; complete, no artwork edits requested.
+- Findings: User reference reverses panel trapezoid in9/11 (bottom wider/top narrower), opposite approach-side frames and frame10; alternating perspective communicates crossing the upright rest angle. Uniform vertical compression cannot distinguish tilt sign.
+- Decisions: For subsequent art use sequence8 upright,9 forward overshoot,10 opposite rebound,11 smaller forward correction,12 rest. Fix axle/stand registration; transform card/rim/symbol coherently and diminish tilt amplitude. Perspective style is intentional (strict orthographic projection alone has no trapezoid).
+- Files changed: WORKLOG.md only. Verification: Visual analysis of attached4x3 sheet; no runtime tests. Blockers: None. Next action: Apply this geometry when artwork revision is requested.
+
+## Checkpoint sign bounce artwork
+- Goal/status: Add rotational overshoot and damped return to checkmark flip; complete as source artwork.
+- Completed: Built-in imagegen reference edit generated12-frame4x3 transparent source sheet; reviewed front flip and final reverse-face tilt/settling poses.
+- Decisions: Horizontal-axis panel flip with forward overshoot, reverse correction and smaller settling motion. Stand stays fixed conceptually; generated source still needs registration/normalization before runtime animation. Original8-frame source preserved.
+- Files changed: images/props/restaurant_checkpoint_flip_bounce_source.png, WORKLOG.md.
+- Prompt: Preserve original sign;12 chronological poses, horizontal flip followed by205deg overshoot/168deg rebound/185deg correction/180deg rest; stationary support, transparent4x3 grid.
+- Verification: Visual review complete; no runtime code/tests applicable. Blockers: None. Next action: Normalize frame registration and tune playback if integration requested.
+
+## Checkpoint sign flip in-betweens
+- Goal/status: Create ring-to-check rotation in-betweens; complete as source artwork.
+- Completed: Built-in imagegen reference edit produced eight frames in4x2 grid; visually reviewed front compression/edge transition/reverse expansion and stationary stand concept.
+- Decisions: Horizontal axle;6 in-betweens plus starting/ending poses. Generated sheet is source art; exact registration/pixel sizing requires normalization before runtime use. No integration requested.
+- Files changed: images/props/restaurant_checkpoint_flip_source.png, WORKLOG.md.
+- Prompt: Preserve original mint/cream/coral sign, eight horizontal-axis flip angles0/25/50/75/100/125/155/180, ring front/check reverse, transparent4x2 sheet, fixed base, no text.
+- Verification: Visual review of all8 poses complete; no code/tests applicable. Blockers: None. Next action: Normalize and preview animation if user requests game integration.
+
+## Checkpoint tabletop sign image trial
+- Goal/status: Generate alternative reserved-table sign checkpoint; complete, preview only.
+- Completed: Built-in imagegen produced transparent paired inactive gum-ring / active large-checkmark signs. Visual review confirms rounded mint frame, cream card, coral pivot stand, distinct symbols.
+- Decisions: User found bell unclear; this alternative prioritizes large readable symbols and a horizontally flipping card. No gameplay integration or animation requested.
+- Prompt: matching pixel-art tabletop signs with cream/mint/coral palette, pink gum ring versus bold green check, visible pivot knobs, transparent background, no text/scenery.
+- Files changed: WORKLOG.md only. Output: Codex generated_images for this chat, exec-b88f94e8-a832-42a7-80b4-0956fbf1c495.png.
+- Verification: Visual review complete; runtime tests not applicable. Blockers: None. Next action: Await design feedback before sprite preparation/integration.
+
+## Checkpoint bell image trial
+- Goal/status: Generate selected restaurant bell checkpoint concept; complete, preview only.
+- Completed: Built-in imagegen produced transparent side-by-side inactive/activated pixel-art bells; visually checked cream base, mint dome, coral button, pink gum and raised activation flag.
+- Decisions: Concept preview only; no runtime integration or final sprite sizing. Prompt: two matching pixel-art tabletop bells, inactive raised button / active depressed button and flag, cream/mint/coral/pink, dark teal outlines, transparent background, no text/scenery.
+- Files changed: WORKLOG.md. Preview remains in Codex generated_images for this chat (exec-bc355caa-3aef-4b96-8550-6ad9d670a901.png).
+- Verification: Visual concept review complete; no runtime tests applicable. Blockers: None.
+- Next action: Refine selected appearance or prepare properly sized game sprites when requested.
+
+## Checkpoint visual concept task
+- Goal/status: Suggest checkpoint artwork fitting the restaurant/gum setting; complete (concept only).
+- Completed: Reviewed current project context and asset inventory; proposed a mint/coral table-order bell as the leading option, plus reserved-seat sign, cream-soda lamp and receipt stand alternatives.
+- Decisions: Concepts are proposals, not an approved design; distinguish inactive/active by silhouette and motion as well as color. No image generation or gameplay changes requested.
+- Files changed: WORKLOG.md only.
+- Verification: Checked thematic fit against current cream/coral/mint restaurant direction; no runtime tests applicable.
+- Blockers: None. Next action: User selects a concept before artwork production/integration.
+
 ## Two-frame ladder sprite task
 - Goal/status: Create rear-facing alternating climb pixel sprites and integrate; complete.
 - Integration confirmation: User requested installation again; verified active Player loads runtime climb SpriteFrames and plays it while gripping. Re-ran verify_ladder.gd: PASS exit0 (both frames/play/pause/no flip plus physical ladder behavior). No further implementation changes needed.

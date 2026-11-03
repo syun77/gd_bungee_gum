@@ -374,7 +374,7 @@ func verify() -> void:
 	check(game_player.get_node("AnimatedSprite2D").animation != &"gum_fire", "Attachment ends fire pose immediately")
 	await ticks(90)
 	check(game_player.position.y < 600.0, "Game coordinator contracts and lifts player")
-	check(game_player.get_node("AnimatedSprite2D").animation in [&"gum_pull", &"gum_hang"], "Taut airborne connection uses gum pose")
+	check(game_player.get_node("AnimatedSprite2D").animation in [&"gum_pull", &"gum_hang", &"gum_hang_angles"], "Taut airborne connection uses gum pose")
 	Input.action_press("jump")
 	await ticks(2)
 	check(not game_gum.connected(), "Detach input handled by coordinator")

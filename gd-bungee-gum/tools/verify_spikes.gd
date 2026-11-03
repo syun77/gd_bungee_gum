@@ -19,8 +19,11 @@ func verify() -> void:
 	check(layer.get_used_cells().size() == Layout.SPIKES.size(), "Saved spikes match layout")
 	layer.set_cell(Vector2i(10, 10), 0, Vector2i.ZERO, 0)
 	await ticks()
-	check(layer.get_child_count() == 1, "Painted spike instantiates")
-	var hazard: Area2D = layer.get_child(0)
+	check(layer.get_child_count() == Layout.SPIKES.size() + 1, "Painted spike instantiates")
+	var hazard: Area2D
+	for child in layer.get_children():
+		if child.global_position.distance_to(Vector2(336, 336)) < 1:
+			hazard = child
 	check(hazard.collision_layer == 64 and hazard.collision_mask == 0, "Hazards are non-solid isolated areas")
 	check(hazard.get_node("Sprite2D").texture.get_size() == Vector2(32, 32), "32px sprite")
 	var center := hazard.global_position
@@ -42,8 +45,17 @@ func verify() -> void:
 	game.player.global_position = center + Vector2(-100, 26)
 	game.player.external_velocity = Vector2(18000, 0)
 	game._physics_process(1.0 / 60.0)
-	check(game.restarting, "Live Game movement requests lethal restart")
-	game.restart()
+	check(is_instance_valid(game.death_effect), "Live sweep begins disappearance")
+	check(not game.player.visible and not game.gum.visible, "Player and gum disappear immediately")
+	check(game.death_effect.global_position.distance_to(center) < 80, "Sweep effect remains at contact, not overshot destination")
+	var effect = game.death_effect
+	game._die_on_spikes(center)
+	check(game.death_effect == effect, "Repeated hazard does not duplicate effect")
+	var frozen_position: Vector2 = game.player.position
+	game._physics_process(0.3)
+	check(not game.restarting and game.death_effect.frame == 9, "Death plays halfway before reload")
+	check(game.player.position == frozen_position, "Dead player cannot simulate movement")
+	game._physics_process(0.31)
 	await scene_changed
 	check(is_instance_valid(current_scene) and current_scene != game, "Deferred restart creates new Game once")
 	if is_instance_valid(current_scene):
@@ -58,7 +70,8 @@ func verify() -> void:
 		fresh.add_child(spike)
 		await ticks()
 		fresh._physics_process(1.0 / 60.0)
-		check(fresh.restarting, "Stationary overlapping player restarts")
+		check(is_instance_valid(fresh.death_effect), "Stationary overlap starts disappearance")
+		fresh._physics_process(0.61)
 		await ticks()
 	print("Spike verification: ", "PASS" if failures == 0 else "FAIL %d" % failures)
 	quit(0 if failures == 0 else 1)
