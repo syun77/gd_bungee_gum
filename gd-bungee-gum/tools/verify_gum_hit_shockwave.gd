@@ -12,6 +12,7 @@ func verify() -> void:
 	game.set_physics_process(false)
 	var effect = game.get_node("GumHitShockwave")
 	effect.settings = game.settings.duplicate()
+	effect.settings.gum_hit_shockwave_duration = 0.32
 	effect.set_process(false)
 	var box = game.get_node("LightBox")
 	box.freeze = true
@@ -30,6 +31,7 @@ func verify() -> void:
 	check(game.gum.player_force.is_zero_approx(), "Arrival remains force free")
 	if not effect.bursts.is_empty():
 		var quad = effect.bursts[0].quad
+		check(is_equal_approx(quad.material.get_shader_parameter("quad_radius"), effect.settings.gum_hit_shockwave_radius), "Shader radial coordinates match quad geometry")
 		var center: Vector2 = quad.global_position
 		check(center.is_equal_approx(game.gum.endpoint()), "Wave centered at adhesion")
 		box.position += Vector2(30, 20)

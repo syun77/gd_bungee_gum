@@ -82,7 +82,7 @@ READY時に表示する命中予告の補助線（発射から回収完了まで
 
 ### Gum Hit Shockwave
 
-Shader hit wave: enabled by default, radius56px, duration0.32s, refraction strength4 screen pixels, pink rim opacity0.3. Duration0 disables emission. See [gum-hit-shockwave.md](gum-hit-shockwave.md).
+Shader hit wave: enabled by default, radius56px, duration0.32s, refraction strength4 screen pixels, pink/near-white rim opacity0.3 (script defaults). Saved gameplay tuning: radius160px, duration1s, strength16px, opacity1. Duration0 disables emission. See [gum-hit-shockwave.md](gum-hit-shockwave.md).
 
 ### Food Collection
 

@@ -20,9 +20,9 @@ func _start(_normal: Vector2, _is_ring: bool) -> void:
 	var quad := Polygon2D.new()
 	var radius := maxf(1.0, settings.gum_hit_shockwave_radius)
 	quad.polygon = PackedVector2Array([Vector2(-radius, -radius), Vector2(radius, -radius), Vector2(radius, radius), Vector2(-radius, radius)])
-	quad.uv = PackedVector2Array([Vector2.ZERO, Vector2.RIGHT, Vector2.ONE, Vector2.DOWN])
 	var material_instance := ShaderMaterial.new()
 	material_instance.shader = SHADER
+	material_instance.set_shader_parameter("quad_radius", radius)
 	material_instance.set_shader_parameter("strength", settings.gum_hit_shockwave_strength)
 	material_instance.set_shader_parameter("opacity", settings.gum_hit_shockwave_opacity)
 	quad.material = material_instance

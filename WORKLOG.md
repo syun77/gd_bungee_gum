@@ -1,3 +1,33 @@
+## Shockwave rendering correction
+- Goal/status: Compare linked Qiita implementation and fix missing rendered wave; complete.
+- Findings: Godot4.5 Polygon2D emits UVs only with a valid texture; textureless quad UV assignment was ignored. Previous headless lifecycle tests missed this.
+- Completed: Vertex-position radial coordinates with explicit quad radius; annular mask applies to screen displacement as in reference; retained bright rim. Added geometry/uniform regression.
+- Files: gum_hit_shockwave.gdshader, gum_hit_shockwave.gd, verify_gum_hit_shockwave.gd; specs/gum-hit-shockwave.md, AGENTS.md and rendered regression tool.
+- Tests: Lifecycle suite PASS. Native OpenGL Compatibility renderer on Apple M1: rendered regression PASS7956 changed pixels; captured checkerboard visually inspected, expanding refracted pink/white ring confirmed. git diff --check PASS.
+- Refactoring: Removed ineffective UV array; one radius uniform derives coordinates from actual quad geometry, retaining bounded effect lifecycle. Added standalone real-render regression because headless uses dummy rendering.
+- Blockers: None.
+- Next action: F5 inspect effect in stage; GPU fixture confirmed rendering, full interactive gameplay appearance remains separate.
+
+## Shockwave visibility task
+- Goal/status: Make gum hit shockwave easier to see; complete.
+- Completed: Wider refraction band, bright pink/white core, sustained envelope and single alpha mask; retained saved160px/1s/16px/opacity1 tuning. Fixed lifecycle fixture to explicitly set its0.32s duration; docs aligned.
+- Files: gum_hit_shockwave.gdshader, verify_gum_hit_shockwave.gd, specs/gum-hit-shockwave.md, specs/game-settings.md, AGENTS.md, WORKLOG.md.
+- Decisions: Visual only, keep frozen centers/lifecycle/physics intact; preserve unrelated one-way task edits.
+- Tests: Focused Godot lifecycle/arrival suite PASS twice, including after final shader/settings review; git diff --check PASS. Known sandbox CA warning only. Rendered appearance remains unverified.
+- Refactoring: Reviewed complete shader masking/envelope and effect lifecycle; retained existing bounded burst ownership and removed duplicate attenuation without extra settings or nodes.
+- Blockers: None.
+- Next action: F5 inspect the brighter ring against restaurant terrain at gameplay zoom.
+
+## One-way drop-through task
+- Goal/status: Down+jump to descend through one-way floors; complete.
+- Completed: Player detects one-way-only floor support, suppresses jump, ignores bit8 until capsule clearance58px or0.5s; downward minimum60px/s, coyote consumed, other momentum/food reward preserved. Existing Game jump action detaches gum.
+- Files: player.gd, verify_one_way.gd, specs/one-way-platforms.md, specs/keyboard-controls.md, AGENTS.md, WORKLOG.md.
+- Decisions: Solid floor retains ordinary kick; no teleport or world/rigid collision changes.
+- Tests: Final one-way suite PASS (Down alone, drop, solid floor, restored shelf collision plus existing full suite); controls suite PASS; git diff --check PASS. Full player regression PASS exit0 (jump/coyote/pinning/corners/friction/momentum). Known sandbox CA warning only.
+- Blockers: None.
+- Refactoring: Shared existing geometric support-face classifier for edge support; reviewed collision-mask lifecycle and no unrelated edits.
+- Next action: F5 playtest Down+Z on a one-way shelf (pad Down+Cross).
+
 ## Item pickup PixelFX task
 - Goal/status: Create and integrate restaurant-colored pickup particles; complete.
 - Completed: PixelFX collect-burst wrapper with cream/coral/mint palette and2× timing; exported transparent22-frame sheet/runtime copy/JSON/contact preview. collect() spawns once for both contact and completed reel at actual collection position; frozen world-space residue survives food deletion, expires0.7s, stage deletion clears.

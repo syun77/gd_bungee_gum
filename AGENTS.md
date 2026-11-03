@@ -206,3 +206,9 @@
 - Food gum hits enter REELING: Game locks Player across arrival/completion ticks, resets all velocities and skips movement/gravity; Gum moves food to visual hand at Food Collection/food_reel_speed600. Z/X ignored while pulling; success grants one consumed world-up Z jump (no autojump/stacking); target loss grants none. Normal terrain/rigid spring unchanged. Gum ray mask53 includes areas; terrain-only wrapping fixtures clear Foods. See specs/food-gum-reel.md and tools/verify_food_reel.gd.
 
 - Food collection PixelFX burst: `images/effects/food-collect.mjs` wraps collect-burst (2× speed, restaurant palette); matching food_collect.png runtime copy,112×108 cells/5×5/22frames/30fps. food_collectible.collect spawns stage-owned world-frozen food_collect_effect.gd at collection center for0.7s (both contact/reel, once); no effect on initial gum hit. See specs/food-collect-effect.md and tools/verify_food_collect_effect.gd.
+
+- One-way drop: grounded Down+fresh Z (pad Down+Cross) suppresses kick and temporarily clears player mask bit8; restores after feet descend58px or0.5s. Minimum descent60px/s, horizontal momentum retained, coyote consumed; solid floors retain normal kicks. See specs/one-way-platforms.md; verify_one_way.gd covers drop/restoration/solid floor.
+
+- Hit shockwave shader uses a broad refraction band and narrow pink/white core, holds brightness through45% then fades; mask screen sample only once to avoid double attenuation. Saved tuning160px/1s/16px/opacity1 differs from schema defaults; verification sets duration explicitly.
+
+- Textureless Polygon2D ignores its UV array in Godot4.5; shockwave radial coordinates must use vertex position/quad_radius varying. Run verify_gum_hit_shockwave_render.gd without --headless for GPU pixel regression; before/after captures live in /tmp.

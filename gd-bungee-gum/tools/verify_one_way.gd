@@ -52,6 +52,23 @@ func verify() -> void:
 	check(player.is_on_floor() and absf(player.position.y - 544) < 1, "Player must settle on platform top")
 	await ticks(1, true)
 	check(player.external_velocity.y < -300 and not player.is_on_floor(), "Platform must allow contact kick")
+	# Down + fresh jump drops without an upward kick, then restores collision.
+	player.position = Vector2(400, 500)
+	player.external_velocity = Vector2.ZERO
+	await ticks(40)
+	Input.action_press("aim_down")
+	await ticks(2)
+	check(player.is_on_floor(), "Down alone must not drop through a floor")
+	await ticks(1, true)
+	check(player.external_velocity.y > 0 and not player.get_collision_mask_value(4), "Down+jump must start descent and ignore shelves")
+	await ticks(40)
+	Input.action_release("aim_down")
+	check(player.is_on_floor() and absf(player.position.y - 640) < 1, "Drop must land on solid floor")
+	check(player.get_collision_mask_value(4), "Drop must restore shelf collisions")
+	Input.action_press("aim_down")
+	await ticks(1, true)
+	Input.action_release("aim_down")
+	check(player.external_velocity.y < 0 and player.get_collision_mask_value(4), "Solid floor Down+jump must remain a normal kick")
 	# Fast descent and adjacent tile seams must remain supported.
 	for x in [336, 352, 368, 384, 400, 416, 432, 448, 464, 480, 496]:
 		player.position = Vector2(x, 460)

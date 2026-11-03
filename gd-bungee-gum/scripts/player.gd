@@ -23,6 +23,8 @@ var sprite_rest_position := Vector2.ZERO
 var external_velocity := Vector2.ZERO
 var control_velocity := Vector2.ZERO
 var kick_available := true
+var drop_through_remaining := 0.0
+var drop_through_clear_y := 0.0
 var food_reel_locked := false
 var food_jump_available := false
 var coyote_remaining := 0.0
@@ -94,8 +96,20 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 		_update_visual_deformation(delta)
 		afterimages.step(delta, sprite, 0.0, settings)
 		return
+	_update_drop_through(delta)
+	if jump_requested and Input.is_action_pressed("aim_down") and _can_drop_through():
+		drop_through_remaining = 0.5
+		# Restore collision after the whole 52px capsule clears the 5px shelf.
+		drop_through_clear_y = global_position.y + 58.0
+		set_collision_mask_value(4, false)
+		external_velocity.y = maxf(external_velocity.y, 60.0)
+		coyote_remaining = 0.0
+		coyote_gravity_velocity = Vector2.ZERO
+		kick_available = false
+		jump_requested = false
+		attached_jump = false
 	# 接触判定は直前の move_and_slide() の結果。今回の移動後に更新される。
-	var grounded := is_on_floor()
+	var grounded := is_on_floor() and drop_through_remaining <= 0.0
 	var touching := grounded or is_on_wall() or is_on_ceiling()
 	if grounded:
 		coyote_remaining = settings.coyote_time
@@ -212,6 +226,28 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 		_log_jump_state("AFTER_MOVE", incoming_velocity)
 	_log_landing_state(grounded, incoming_velocity, removed_control_y)
 	_log_pinning_state(delta, direction, jump_requested, before_position, before_control, before_external, incoming_velocity, slide_velocity)
+
+func _can_drop_through() -> bool:
+	if not is_on_floor() or drop_through_remaining > 0.0:
+		return false
+	var found_one_way := false
+	for contact in _slide_contacts():
+		if not _is_support_normal(_support_face_normal(contact)):
+			continue
+		var layers := PhysicsServer2D.body_get_collision_layer(contact.rid)
+		if (layers & 8) == 0:
+			return false
+		found_one_way = true
+	return found_one_way
+
+func _update_drop_through(delta: float) -> void:
+	if drop_through_remaining <= 0.0:
+		return
+	drop_through_remaining = maxf(drop_through_remaining - delta, 0.0)
+	if global_position.y >= drop_through_clear_y:
+		drop_through_remaining = 0.0
+	if drop_through_remaining <= 0.0:
+		set_collision_mask_value(4, true)
 
 func _update_landing_event(delta: float, was_grounded: bool, before_position: Vector2,
 		incoming: Vector2, compression_recovered: bool) -> void:
