@@ -9,6 +9,7 @@ func check(value: bool, message: String) -> void:
 func verify() -> void:
 	var game = load("res://scenes/game.tscn").instantiate()
 	root.add_child(game)
+	game._physics_process(game.entrance.TOTAL_TIME)
 	game.set_physics_process(false)
 	var effect = game.get_node("GumHitShockwave")
 	effect.settings = game.settings.duplicate()

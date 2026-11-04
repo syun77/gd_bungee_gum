@@ -40,6 +40,8 @@ func fixture() -> void:
 	game.settings.jump_diagnostics = false
 	player.settings = game.settings
 	gum.settings = game.settings
+	while game.entrance.active:
+		await ticks(1)
 	await ticks(40)
 
 func pad_button(button: JoyButton, pressed: bool) -> void:
@@ -102,7 +104,9 @@ func verify_pad() -> void:
 	for button in [JOY_BUTTON_A, JOY_BUTTON_X]:
 		pad_button(button, false)
 	pad_button(JOY_BUTTON_START, true)
-	check(Input.is_action_just_pressed("restart"), "OPTIONS maps to restart")
+	check(Input.is_action_just_pressed("pause_menu") and not Input.is_action_just_pressed("restart"), "OPTIONS maps only to pause menu")
+	check(game.pause_menu.is_open, "OPTIONS opens menu")
+	game.pause_menu.close()
 	pad_button(JOY_BUTTON_START, false)
 	game.set_physics_process(false)
 	await ticks(1)

@@ -27,6 +27,7 @@ func drop(player: CharacterBody2D, speed: Vector2, x := 10000.0) -> void:
 func verify() -> void:
 	var game = load("res://scenes/game.tscn").instantiate()
 	root.add_child(game)
+	game._physics_process(game.entrance.TOTAL_TIME)
 	game.set_physics_process(false)
 	var player = game.player
 	player.settings = player.settings.duplicate()

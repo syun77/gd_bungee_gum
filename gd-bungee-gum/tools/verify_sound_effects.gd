@@ -21,6 +21,7 @@ func verify() -> void:
 		voice.queue_free()
 	var game = load("res://scenes/game.tscn").instantiate()
 	root.add_child(game)
+	game._physics_process(game.entrance.TOTAL_TIME)
 	current_scene = game
 	game.set_physics_process(false)
 	await physics_frame

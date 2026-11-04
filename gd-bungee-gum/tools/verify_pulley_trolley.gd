@@ -124,6 +124,7 @@ func verify() -> void:
 	# Real saved Game flight triggers movement only on arrival, with normal bindings.
 	var game: Node2D = load("res://scenes/game.tscn").instantiate()
 	root.add_child(game)
+	game._physics_process(game.entrance.TOTAL_TIME)
 	await ticks(3)
 	game.set_physics_process(false)
 	player = game.player

@@ -112,8 +112,6 @@ func _initialize() -> void:
 		marker(markers, marker_name, Layout.MARKERS[marker_name])
 	for section in Layout.SECTION_NAMES.size():
 		marker(markers, "Section%02d" % (section + 1), Layout.SECTION_STARTS[section])
-	label("ENTRANCE", Vector2(96, 552), Color("fff0cc"))
-	label("EXIT", Vector2(4896, 292), Color("fff0cc"))
 	var scene := PackedScene.new()
 	assert(scene.pack(stage) == OK)
 	assert(ResourceSaver.save(scene, STAGE_PATH) == OK)

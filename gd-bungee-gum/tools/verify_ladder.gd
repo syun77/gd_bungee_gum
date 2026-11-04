@@ -101,6 +101,7 @@ func verify() -> void:
 	await process_frame
 	var game = load("res://scenes/game.tscn").instantiate()
 	root.add_child(game)
+	game._physics_process(game.entrance.TOTAL_TIME)
 	game.set_physics_process(false)
 	game.player.position = Vector2(464, 600)
 	Input.action_press("aim_up")

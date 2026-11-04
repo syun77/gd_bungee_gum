@@ -76,17 +76,17 @@ limit_bottom = 768
 
 [node name="HUD" type="CanvasLayer" parent="."]
 
-[node name="Help" type="Label" parent="HUD"]
-offset_left = 24.0
-offset_top = 12.0
-theme_override_colors/font_shadow_color = Color(0.1, 0.1, 0.1, 1)
-theme_override_constants/shadow_offset_x = 2
-theme_override_constants/shadow_offset_y = 2
-text = "BUNGEE GUM\nArrows / A,D: run   Z: jump + detach   Arrows: aim   Press X: fire\nAttached Down: relax + extend   Up: shorten relaxed   X: contract   R: restart\nPad: D-pad / Left stick: move + aim   Cross: jump + detach\nSquare: fire / contract   OPTIONS: restart"
-
 [node name="Status" type="Label" parent="HUD"]
 offset_left = 24.0
 offset_top = 168.0
 theme_override_colors/font_shadow_color = Color(0.1, 0.1, 0.1, 1)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
+
+[node name="Menu" type="Button" parent="HUD"]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 230.0
+offset_bottom = 68.0
+focus_mode = 0
+text = "メニュー"

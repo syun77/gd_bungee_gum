@@ -1,3 +1,98 @@
+## Exit sequence integration
+- Goal/status: Contact-triggered opening → darken/hide player → closing → clear; complete.
+- Completed: Normalized six EXIT frames/shared header, runtime/source parity and reproducible builder. Dedicated player-only Area + fixed-step timeline; Game lock and deferred result, fade RGB preserving alpha, hide body/art + masks0. All3stages floor-aligned, old label/generator output removed. Updated specs/tests/AGENTS.
+- Decisions:0.4s open→0.5s darken→hide→0.4s close; no player teleport. Gum detached/hidden, motion reset. Pause/retry/menu retained. Result after closing only.
+- Files: stage_exit.gd/game.gd; source/runtime PNGs; build_stage_exit_art.py; saved stage/generator label removal; verify_stage_exit/stage_select; specs/stage-exit-art.md/stage-selection.md; AGENTS/WORKLOG.
+- Refactoring: Shared floor-alignment helper across entrance/exit, independent presentation timeline, no async callbacks/duplicated proximity clear.
+- Verification: Final exit suite PASS across3stages for actual contact, all phases, physics/input lock, actor collision removal, one-time result and live pause/resume; stage-select/entrance/pause/map suites PASS. OpenGL opening/fade/closing/result screenshots reviewed; fixed result panel clipping via CenterContainer. Asset dimensions/parity and diff check PASS. Known sandbox CA/editor/exit-resource warnings remain.
+- Blockers: None. Next action: F5 playtest any stage, touch the EXIT doorway to view sequence.
+
+## Exit opening animation artwork
+- Goal/status: Create six opening patterns for EXIT doorway; complete as source artwork, not integrated.
+- Completed: Built-in imagegen produced3×2 closed→fully open states matching approved EXIT source. Reviewed all six EXIT signs, symmetric progressive door opening, palette and transparent exterior. Saved images/tilesets/restaurant_stage_exit_animation_source.png.
+- Final prompt: Exact EXIT reference as six aligned3×2 frames, symmetric hinged leaves0/15/35/55/75/90degrees into dark teal interior; stationary cream/mint/coral architecture/EXIT lettering, transparent exterior, no character/arrows/grid.
+- Files: New PNG; specs/stage-exit-art.md; AGENTS.md; WORKLOG.md.
+- Verification: Visual/text review PASS; PNG dimensions/RGBA/alpha checked. Generated source still requires cell normalization before runtime. No gameplay changes/tests or implementation refactor needed.
+- Blockers: None. Next action: Normalize and integrate opening sequence at Exit markers if requested.
+
+## Exit tile artwork
+- Goal/status: Generate a restaurant exit tile image; complete as source art, not integrated.
+- Completed: Built-in imagegen generated one closed EXIT doorway matching entrance; reviewed exact EXIT lettering, no arrow, cream/mint/coral/teal palette and transparent exterior. Saved images/tilesets/restaurant_stage_exit_source.png.
+- Final prompt: Single closed restaurant exit doorway matching entrance reference, cream ceramic/mint frame/coral striped canopy/teal glass/gold handles, bold brown EXIT sign, orthographic chunky pixel art, transparent exterior, no arrows/characters/scenery; readable at logical96×128.
+- Files: New PNG; AGENTS.md; WORKLOG.md.
+- Verification: Visual review PASS; PNG dimensions/RGBA/alpha checked. Source art only; no gameplay tests or implementation refactor needed.
+- Blockers: None. Next action: Normalize and integrate at Exit markers if requested.
+
+## OPTIONS pause menu
+- Goal/status: OPTIONS opens retry/stage-selection/cancel menu; complete.
+- Completed: Dedicated ALWAYS CanvasLayer/menu, entire SceneTree pause, focus navigation, same-button/Esc cancel, HUD menu, retry/selection unpause. Dedicated OPTIONS action replaces restart binding; R remains direct. Added explicit any-device UI Cross accept while preserving Enter/KpEnter/Space (built-in ui_accept lacked joypad). Updated affected specs/tests/AGENTS.
+- Decisions: Cancel retains position/momentum/gum/entrance progress; Game consumes closing tick so Cross cannot trigger jump. Works during entrance/death/clear. Menu _exit_tree releases owned pause.
+- Files: scripts/pause_menu.gd, game.gd; project.godot; game.tscn; verify_pause_menu/controls/stage_select; pause-menu/control/stage/checkpoint/architecture specs; AGENTS/WORKLOG.
+- Refactoring: Menu owns pause/focus/UI, Game owns scene changes and resume-input suppression; removed superseded direct Esc/HUD return path. Reviewed pause lifecycle and scene teardown.
+- Verification: Final focused menu PASS with actual OPTIONS/D-pad/Cross, pause/rigid/entrance freeze, retained momentum, resume-input suppression, retry and selection. Stage-selection/entrance suites PASS; controls PASS. OpenGL screenshot reviewed; git diff --check PASS. Known sandbox CA/exit-resource warnings only.
+- Blockers: None. Next action: F5, choose a stage and press OPTIONS to use the menu; physical hardware QA remains separate.
+
+## Stage entrance sequence integration
+- Goal/status: Integrate door opening, black-to-normal character emergence simultaneous with closing, locked controls; complete.
+- Completed: Shared Game lock and dedicated stage_entrance.gd timeline; six96×128 nearest cells/shared header and reproducible slicer; floor alignment; checkpoint skip; removed duplicate stage label/generator output. Source/runtime PNG parity. Updated runtime docs/AGENTS and fixtures to complete entrance before unrelated gameplay assertions.
+- Decisions:0.20s closed,0.40s opening,0.50s simultaneous emergence/closing; self_modulate RGB black→original, alpha retained. No player simulation/gum input during sequence; R/menu remain usable. Same-Z placement after stage/before player fixes decor overlap.
+- Files: stage_entrance.gd, game.gd; assets/stage PNG, source normalized PNG; tools/build_stage_entrance_art.py; stage label/generator; affected verification fixtures; stage-entrance/player/controls/stage-selection specs; AGENTS/WORKLOG.
+- Refactoring: Reviewed timeline lifecycle (no asynchronous callbacks), render ordering, reset ownership and input gates. Reproducible crop/header builder replaces ad hoc processing.
+- Verification: Final focused entrance suite PASS across3stages/lock/held-input-no-queue/color/closing/floor/resume/checkpoint; stage-select/controls/map/gum/player/food-reel/ladder PASS after final refactor; asset parity/dimensions and git diff --check PASS. OpenGL screenshot reviewed; corrected background overlap and duplicate label then reviewed again. Known sandbox CA/editor/exit-resource warnings only.
+- Blockers: None. Next action: F5 select any stage to review/play the entrance sequence.
+
+## ENTRANCE sign edit
+- Goal/status: Replace arrows on six entrance animation frames with ENTRANCE; complete.
+- Completed: Built-in imagegen changed all six signs to correctly spelled dark-brown ENTRANCE; visually reviewed door states, palette and exterior transparency. Saved images/tilesets/restaurant_stage_entrance_animation_entrance.png; original retained.
+- Final prompt: Change only six sign interiors, remove arrows, exact uppercase ENTRANCE in centered bold brown pixel lettering; preserve3×2 layout, door states, architecture, palette and transparent exterior.
+- Files: New PNG; specs/stage-entrance-art.md; AGENTS.md; WORKLOG.md.
+- Verification: Six text labels visually checked; RGBA/alpha/dimensions checked. Source remains unnormalized with fringe/alignment differences; no runtime changes/tests needed. Reviewed documentation references for consistency.
+- Blockers: None. Next action: Normalize artwork before runtime integration when requested.
+
+## Entrance door animation artwork
+- Goal/status: Create entrance opening/closing patterns; complete as generated source artwork, not integrated.
+- Completed: Built-in imagegen edited the entrance into six opening states,3columns×2rows; reviewed closed→progressively open→fully open, retained cream/mint/coral architecture, arrow and transparent exterior. Saved images/tilesets/restaurant_stage_entrance_animation_source.png.
+- Decisions: Read left-to-right/top-to-bottom; reverse closes. Hold full-open for separate character emergence. No character baked in. Generated sheet has small architecture/alignment differences and requires normalization before runtime use.
+- Final prompt: Reference doorway, six equal3×2 frames, identical stationary architecture, symmetrical hinged double doors at0/15/35/55/75/90degrees into dark teal interior, transparent exterior, no character/text/grid; reverse playback closes.
+- Files: New source PNG; specs/stage-entrance-art.md; AGENTS.md; WORKLOG.md.
+- Verification: Visual sequence/palette/transparent exterior reviewed; RGBA/alpha/dimensions checked. Art only, no gameplay tests or code refactor needed.
+- Blockers: None for requested patterns. Next action: Normalize frames and implement character emergence separately if requested.
+
+## Stage entrance tile artwork
+- Goal/status: Generate a restaurant-themed stage-start entrance image; complete as artwork, not integrated.
+- Completed: Built-in imagegen produced one transparent cream/mint double doorway, coral striped canopy, teal glass/gold handles and right-arrow sign; visually reviewed silhouette/palette/no lettering. Saved images/tilesets/restaurant_stage_entrance_source.png.
+- Decisions: Source artwork only; logical96×128 usage was requested in prompt but generated resolution is not a production tile grid. No map/physics/runtime changes.
+- Final prompt: Isolated flat front-elevation restaurant entrance, chunky pixel art, cream ceramic surround/mint frame/coral-cream canopy/teal double doors/gold handles/right-arrow sign only, transparent exterior, no scenery/characters/lettering/glow; readable at96×128 logical pixels.
+- Files: New source PNG; WORKLOG.md; AGENTS.md asset-location note.
+- Verification: Visual review PASS; PNG dimensions/RGBA/alpha checked. No gameplay tests needed. No implementation refactor required.
+- Blockers: None. Next action: If approved for integration, normalize to chosen tile dimensions and define placement separately.
+
+## Three provisional stages
+- Goal/status: Add playable stages1/2/3; complete.
+- Completed: Three selectable cards backed by stage_catalog.gd; existing restaurant1; saved2048×768 ring terrace2 and cargo/pulley kitchen3. New courses each have9 physical rings,8 food placements, checkpoint, recovery floor and distinct stepped terrain. Shared Game stage_scene/stage_width exports and optional prop markers configure inherited game scenes. Exit40px goal displays result/selection return on all courses.
+- Decisions: Preserve current gameplay settings and reciprocal physics. New maps intentionally provisional; stage1 authored source and shared TileSet untouched. No progression locks/save system.
+- Files: scripts/stage_catalog.gd, stage_select.gd, game.gd; scenes/game_stage_2/3.tscn, stages/stage_2/3.tscn; tools/build_provisional_stages.gd, verify_stage_select.gd; specs/stage-selection.md; AGENTS.md/WORKLOG.md. Earlier stage-selection/help-removal uncommitted changes retained.
+- Refactoring: Extracted Game._setup_stage; menu cards share one construction method and catalog; inherited scenes share Game/physics rather than copying implementation. Regenerated maps after correcting kitchen pulley placement above clear floor.
+- Verification: Map generator PASS; final verify_stage_select PASS for all cards, actual scene identity, floor settling, real ring shot, camera, checkpoint death reload, R reset, physical goal and return. verify_controls and verify_gum PASS; git diff --check PASS. Known sandbox CA/exit resource warnings remain. Rendered/hardware QA and complete end-to-end route playthrough not performed.
+- Blockers: None. Next action: F5 playtest3 provisional courses, then tune route difficulty/layout.
+
+## Stage selection screen
+- Goal/status: Implement stage selection and gameplay return; complete.
+- Completed: Cream/mint/coral restaurant card with existing food artwork, focused start button, F5 menu startup, actual Game transition, Esc/ui_cancel and HUD return. Fresh entry clears checkpoint metadata; Game R/death behavior retained. Preserved prior uncommitted help-removal edits.
+- Decisions: Existing six-section map is one restaurant stage; no fabricated stages or progression. Direct Game F6 remains supported.
+- Files: project.godot; scenes/stage_select.tscn, game.tscn; scripts/stage_select.gd(+uid), game.gd; tools/verify_stage_select.gd; specs/stage-selection.md, player-controller.md, keyboard-controls.md, godot-implementation-plan.md; AGENTS.md/WORKLOG.md.
+- Refactoring: Reviewed menu construction, focus, reentry guards and scene-owned lifecycle; kept menu isolated from physics and shared settings. No obsolete startup path or extra global state.
+- Verification: Headless import PASS; final stage-selection suite PASS (focused accept, fresh entrance/checkpoint clearing, R, actual Esc, HUD round trip); existing verify_controls.gd PASS; git diff --check PASS. Known sandbox CA warning only. Rendered visual and physical gamepad QA not performed.
+- Blockers: None. Next action: F5 visual/playtest review of stage selection.
+
+## Remove on-screen control help
+- Goal/status: Remove gameplay control instructions; complete.
+- Completed: Deleted HUD/Help Label; preserved runtime status display. Updated control/architecture specs and durable HUD guidance.
+- Files: scenes/game.tscn, specs/keyboard-controls.md, specs/godot-implementation-plan.md, AGENTS.md, WORKLOG.md.
+- Decisions/refactor: Remove unused Label rather than hiding it; no script references exist. Reviewed HUD ownership; no further restructuring needed.
+- Verification: Headless gameplay startup (Godot --quit-after 3) and git diff --check PASS after final refactor review; known sandbox CA certificate warning only.
+- Blockers: None. Next action: Optional F5 visual review.
+
 ## Hit-driven waypoint pulley
 - Goal/status: Implement per-hit waypoint travel with LOOP/PING_PONG; complete.
 - Completed: Pulley script/scene and Game adhesion binding; exported local2D points/mode/speed/force, generated rail segments including loop closure, force motor and per-segment native guide. Specs/AGENTS aligned.

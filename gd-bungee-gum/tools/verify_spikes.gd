@@ -13,6 +13,7 @@ func ticks(count := 4) -> void:
 func verify() -> void:
 	var game = load("res://scenes/game.tscn").instantiate()
 	root.add_child(game)
+	game._physics_process(game.entrance.TOTAL_TIME)
 	current_scene = game
 	game.set_physics_process(false)
 	var layer: TileMapLayer = game.get_node("TheaterStage/Spikes")

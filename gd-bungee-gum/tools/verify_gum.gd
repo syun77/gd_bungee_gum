@@ -359,6 +359,7 @@ func verify() -> void:
 	world.free()
 	var game: Node2D = load("res://scenes/game.tscn").instantiate()
 	root.add_child(game)
+	game._physics_process(game.entrance.TOTAL_TIME)
 	# Saved-map ceiling/wrapping fixture intentionally uses a 900px range.
 	game.settings = game.settings.duplicate()
 	game.settings.maximum_length = 900.0

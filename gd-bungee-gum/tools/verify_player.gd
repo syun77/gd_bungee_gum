@@ -30,6 +30,7 @@ func verify() -> void:
 	verify_movement_keys()
 	var game: Node2D = load("res://scenes/game.tscn").instantiate()
 	root.add_child(game)
+	game._physics_process(game.entrance.TOTAL_TIME)
 	var player = game.get_node("Player")
 	assert(player.settings == game.settings and game.get_node("Gum").settings == game.settings,
 		"Game, player and gum must share the assigned tuning resource")

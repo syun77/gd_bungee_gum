@@ -47,6 +47,7 @@ func settle_at_or_above(y: float) -> bool:
 func verify() -> void:
 	var game: Node2D = load("res://scenes/game.tscn").instantiate()
 	root.add_child(game)
+	game._physics_process(game.entrance.TOTAL_TIME)
 	game.set_physics_process(false)
 	player = game.player
 	gum = game.gum

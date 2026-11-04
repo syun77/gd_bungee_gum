@@ -18,6 +18,7 @@ func add_food(point: Vector2) -> Node2D:
 func verify() -> void:
 	var game = load("res://scenes/game.tscn").instantiate()
 	root.add_child(game)
+	game._physics_process(game.entrance.TOTAL_TIME)
 	game.set_physics_process(false)
 	game.settings = game.settings.duplicate()
 	game.settings.food_reel_speed = 200.0

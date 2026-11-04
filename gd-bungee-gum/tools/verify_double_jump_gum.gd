@@ -20,6 +20,7 @@ func key(code: Key, pressed: bool) -> void:
 func verify() -> void:
 	game = load("res://scenes/game.tscn").instantiate()
 	root.add_child(game)
+	game._physics_process(game.entrance.TOTAL_TIME)
 	var player = game.player
 	var gum = game.gum
 	var settings = game.settings.duplicate()

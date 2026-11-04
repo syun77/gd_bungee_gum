@@ -1,0 +1,8 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/game.tscn" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/stages/stage_2.tscn" id="2"]
+
+[node name="Game" instance=ExtResource("1")]
+stage_scene = ExtResource("2")
+stage_width = 2048

@@ -19,7 +19,7 @@ Game (Node)
 │       └── Exit / Hazard (Area2D)
 ├── PhysicsCoordinator (Node): 固定更新の順序と接続管理
 ├── GumView (Node2D / Line2D): 接続と張力の描画
-└── HUD (CanvasLayer): 照準、張力、再試行案内
+└── HUD (CanvasLayer): ガム状態・張力
 ```
 
 - PlayerController: 意図速度、外部速度、接触、蹴り出し、衝突後の速度整理。
@@ -136,3 +136,7 @@ move_and_slide()
 - [Ray-casting](https://docs.godotengine.org/en/stable/tutorials/physics/ray-casting.html): 固定更新中の照準・接着判定。
 
 床離脱後は`coyote_time`（初期値0.10秒、0で無効）の間、一度だけ接地キックを受け付ける。成功したキックは猶予を消費する。詳細は[キーボード操作](keyboard-controls.md)を参照。
+
+## 起動・ステージ選択
+
+F5は `scenes/stage_select.tscn` を起動し、選択から `scenes/game.tscn` に遷移する。Gameの直接F6起動も可能。OPTIONS／Esc／HUDのメニューボタンで全体を一時停止し、リトライ・ステージ選択に戻る・キャンセルを選ぶ。詳細は `stage-selection.md`。

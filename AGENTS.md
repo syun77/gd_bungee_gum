@@ -24,7 +24,7 @@
 
 - Current setting/art direction is a pop-colored family restaurant: cream ceramic, coral/mint trim, painted frames and muted teal background. `theater_*` filenames remain the current resource identifiers. Edit both atlas copies together (`images/tilesets/` and `gd-bungee-gum/assets/tilesets/`); `restaurant_tileset_source.png` is the color-edit source.
 
-- The first editable map is `gd-bungee-gum/scenes/stages/theater_stage.tscn` (160 × 24 cells, 32 px grid). F6 opens the stage alone; F5 runs `scenes/game.tscn` with the Teto player (A/D or arrows, Z for detach/contact kick-off, R for restart). Open `scenes/map_preview.tscn` with F6 for arrows to pan, 1–6 to select a section and Tab for overview.
+- The first editable map is `gd-bungee-gum/scenes/stages/theater_stage.tscn` (160 × 24 cells, 32 px grid). F6 opens the stage alone; F5 opens `scenes/stage_select.tscn`, whose restaurant card starts `scenes/game.tscn` with the Teto player (A/D or arrows, Z for detach/contact kick-off, R for restart). Open `scenes/map_preview.tscn` with F6 for arrows to pan, 1–6 to select a section and Tab for overview.
 - Ordinary map layers have collision disabled (except native one-way `OneWayPlatforms`); `TheaterStage/Terrain` owns merged rectangular static shapes on physics layer 1. When editing terrain tiles, update matching shapes and outline nodes together. `tools/build_theater_stage.gd` regenerates the scene/TileSet and overwrites manual edits; run only intentionally.
 - Local Godot executable: `/Applications/Godot_mono.app/Contents/MacOS/Godot` (4.5.1). For sandboxed headless runs, use `--log-file /tmp/<task>.log` to avoid a crash writing default user logs. Run the saved-map collision check with `--headless --path gd-bungee-gum --log-file /tmp/map-check.log --script res://tools/verify_theater_stage.gd`.
 
@@ -167,7 +167,7 @@
 
 - TileMapLayer support faces use collision RID/server convex polygon geometry (not CollisionObject2D shape owners); guard has_body_rid against erased tiles. verify_one_way covers mirrored outer-edge landings0/5/7/8px for60ticks without sideways drift; native one-way passage remains authoritative.
 
-- PS4/DualShock 4 uses any-device InputMap: D-pad/left stick move+eight-way aim (axis deadzone0.25), Cross=jump/detach, Square=gum_action, OPTIONS=restart. Aim quantizes active axis signs; shared pre-attachment Up/Down gates and press-edge rules apply. verify_controls.gd includes synthetic joypad/live Game coverage; USB/Bluetooth hardware QA remains separate.
+- PS4/DualShock 4 uses any-device InputMap: D-pad/left stick move+eight-way aim (axis deadzone0.25), Cross=jump/detach, Square=gum_action, OPTIONS=pause_menu. Aim quantizes active axis signs; shared pre-attachment Up/Down gates and press-edge rules apply. verify_controls.gd includes synthetic joypad/live Game coverage; USB/Bluetooth hardware QA remains separate.
 
 - Gum-only anchor artwork: `images/tilesets/restaurant_gum_anchor.png` plus identical runtime tileset copy,32×32 RGBA mint/coral hollow ring; see specs/gum-anchor-tile.md. TileSet source2/(0,0), collision-enabled GumAnchors layer, physics bit16 (player/boxes ignore), gum mask53. Layout.GUM_ANCHORS owns12 saved placements. Artwork fills30×30px inside32px (1px margin), gum-only48×48px octagon (Layout.GUM_ANCHOR_POLYGON),9px beyond artwork per side, including transparent hole for aiming; no wrapping obstacle. TileMap endpoints track collision RID, so erasing disables attachment. Run tools/verify_gum_anchors.gd.
 
@@ -225,7 +225,7 @@
 
 - Ladder climb animation: `images/normalized/teto_climb.png` and matching runtime copy,512×256/two256px cells,4px pixel clusters/baseline232. Back-facing alternating left-hand/right-foot then right-hand/left-foot; climb_animations.tres6fps, neutral pauses and no facing flip. `images/teto_climb.png` stays reference-only; generated sheet source is images/teto_climb_sheet_source.png.
 
-- Checkpoints: reusable feet-origin scenes/props/checkpoint.tscn under TheaterStage/Checkpoints; stage_layout.gd CHECKPOINTS owns5 placements. Player-only non-solid trigger;8-frame4x2 sign (restaurant_checkpoint_flip_source.png), inactive muted-coral flag → active mint check, stops on check without rebound; Sprite2D scale0.13 preserves approx58px size. Pit/spike deaths call Game.restart(true), restoring last touched node via consumed scene-scoped SceneTree metadata; manual R/OPTIONS restart clears it. Reload resets world/food/gum/velocity. See specs/checkpoints.md; run tools/verify_checkpoints.gd with spikes/controls/map suites.
+- Checkpoints: reusable feet-origin scenes/props/checkpoint.tscn under TheaterStage/Checkpoints; stage_layout.gd CHECKPOINTS owns5 placements. Player-only non-solid trigger;8-frame4x2 sign (restaurant_checkpoint_flip_source.png), inactive muted-coral flag → active mint check, stops on check without rebound; Sprite2D scale0.13 preserves approx58px size. Pit/spike deaths call Game.restart(true), restoring last touched node via consumed scene-scoped SceneTree metadata; manual R/menu Retry restart clears it. Reload resets world/food/gum/velocity. See specs/checkpoints.md; run tools/verify_checkpoints.gd with spikes/controls/map suites.
 
 - Spike disappearance uses PixelFX source `images/effects/player-disappear.mjs`,128px cells/5×4/19frames/30fps/0.6s; matching runtime PNG. Game freezes/hides player and gum, clears afterimages, plays once at swept contact center, then checkpoint restart; R/fall stay immediate. See specs/player-disappear-effect.md and verify_spikes.gd.
 
@@ -270,3 +270,27 @@
 
 
 - Hanging-only waypoint pulley: scenes/props/pulley_trolley.tscn + scripts/pulley_trolley.gd; Game at(944,384), F5 only. Bind existing Gum.adhesion_started: each fresh hit requests one segment, moving hits ignored/no queue, arrival waits, detach does not stop motor. Export local2D route_points(default80/184/288 on X), LOOP or PING_PONG(default), speed140/force18000. Force servo + per-segment native GrooveJoint2D retain real reciprocal gum physics; no tween/velocity overwrite. Carriage bit16/mask0, only pad(0,42) collides with gum; player/props pass through. Single-wheel PNG/atlas, generated dark route rails. See specs/pulley-trolley.md; verify_pulley_trolley.gd.
+
+- Gameplay HUD has no persistent control-help text; keep control documentation in specs/keyboard-controls.md. HUD/Status remains for runtime gum state.
+
+- Stage selection owns F5 startup (`scenes/stage_select.tscn`); stage_catalog.gd lists3 playable courses. Stage1 is original restaurant; inherited game_stage_2/3 scenes export stage_scene + stage_width2048. Rebuild only new maps via tools/build_provisional_stages.gd; original map/TileSet untouched. Game OPTIONS/Esc/HUD opens a pause menu with retry/selection/cancel; new entry clears checkpoint, R preserves selected scene, Exit player contact opens door, darkens/hides actor and closes before clear result. See specs/stage-selection.md and tools/verify_stage_select.gd.
+
+- Stage-start entrance source artwork: `images/tilesets/restaurant_stage_entrance_source.png` (transparent cream/mint doorway with coral canopy and arrow sign). This original is retained; the ENTRANCE animation variant supplies the normalized runtime sprite, separate from the terrain TileSet.
+
+- Entrance opening patterns: `images/tilesets/restaurant_stage_entrance_animation_source.png`, six states in3×2 reading order; reverse for closing, hold last for character emergence. The approved ENTRANCE variant is normalized separately; see specs/stage-entrance-art.md.
+
+- Current entrance animation sign variant: `images/tilesets/restaurant_stage_entrance_animation_entrance.png`; all six signs read ENTRANCE without arrows. Original arrow sheet retained as source; normalized runtime sheet and lifecycle are documented in specs/stage-entrance-art.md.
+
+- Stage entrance: Game advances stage_entrance.gd for1.10s on fresh/manual restart; checkpoint restore skips. Frozen player/reset_motion, hidden gum, no queued jump/shot.96×128 cells/3×2 sheet built by tools/build_stage_entrance_art.py; source/runtime copies identical. Same-Z ordering puts entrance after stage/before Player. Floor ray aligns feet. Run verify_stage_entrance.gd plus stage_select/controls suites.
+
+- Pause menu is scripts/pause_menu.gd (CanvasLayer PROCESS_MODE_ALWAYS), pauses whole SceneTree; OPTIONS has its own pause_menu action, R remains restart. HUD/Menu and Esc also toggle. Retry/selection close/unpause before scene transition; close consumes next Game tick to avoid UI Cross becoming jump. _exit_tree releases owned pause. verify_pause_menu.gd covers actual pad events and frozen physics/entrance.
+
+- UI accept explicitly maps any-device Cross plus Enter/KpEnter/Space in project.godot; Godot built-in ui_accept in this project contained keyboard events only. verify_pause_menu.gd uses actual D-pad/Cross events; do not rely solely on emitting Button.pressed for pad QA.
+
+- Exit doorway source art: `images/tilesets/restaurant_stage_exit_source.png`, transparent closed double doors matching entrance with EXIT sign/no arrow. Static source retained; the opening sheet supplies normalized runtime art at Exit markers.
+
+- EXIT opening patterns: `images/tilesets/restaurant_stage_exit_animation_source.png`, six states in3×2 reading order, closed→fully open; reverse closes. Runtime normalization/integration uses restaurant_stage_exit.png; see specs/stage-exit-art.md.
+
+- Exit sequence: Game creates stage_exit.gd at floor-aligned Exit marker; non-solid40×64 Area(bit2/player) triggers once.0.4s opening→0.5s RGB-to-black→hide player/zero masks→0.4s closing→clear. Fixed-step lock, detach/hidden gum, no actor teleport. build_stage_exit_art.py regenerates identical96×128-cell3×2 sheets. Run verify_stage_exit.gd and stage_select/entrance/pause/map suites.
+
+- Clear result uses a full-viewport CenterContainer under HUD; do not combine centered anchors with a second viewport-center position offset (that displaced the result outside the viewport).

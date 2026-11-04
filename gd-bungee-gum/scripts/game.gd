@@ -5,6 +5,13 @@ const SPIKE_LAYER := 64
 const RESPAWN_META := &"checkpoint_respawn"
 var active_checkpoint: NodePath
 @export var settings: Settings
+@export var stage_scene: PackedScene
+@export var stage_width := 5120
+var cleared := false
+var exit_door: Sprite2D
+var entrance: Sprite2D
+var pause_menu: CanvasLayer
+var suppress_gameplay_tick := false
 @onready var player: CharacterBody2D = $Player
 @onready var player_shape: CollisionShape2D = $Player/CollisionShape2D
 @onready var camera: Camera2D = $Camera2D
@@ -19,6 +26,7 @@ var down_wait_release := false
 var manual_down_pressed := false
 
 func _ready() -> void:
+	_setup_stage()
 	spike_sweep = ShapeCast2D.new()
 	spike_sweep.shape = player_shape.shape
 	spike_sweep.collision_mask = SPIKE_LAYER
@@ -41,15 +49,99 @@ func _ready() -> void:
 	$GumHitParticles.bind(gum, settings)
 	$GumHitShockwave.bind(gum, settings)
 	$LandingDustEffect.bind(player)
+	_setup_pause_menu()
 	aim_direction = Vector2.LEFT if player.sprite.flip_h else Vector2.RIGHT
 	camera.position = player.position
 	camera.zoom = Vector2.ONE * settings.camera_normal_zoom
+	_setup_entrance()
+	_setup_exit()
+
+func _setup_pause_menu() -> void:
+	pause_menu = preload("res://scripts/pause_menu.gd").new()
+	add_child(pause_menu)
+	pause_menu.retry_requested.connect(restart)
+	pause_menu.selection_requested.connect(return_to_stage_select)
+	pause_menu.resumed.connect(func(): suppress_gameplay_tick = true)
+	$HUD/Menu.pressed.connect(pause_menu.open)
+
+func _setup_entrance() -> void:
+	entrance = preload("res://scripts/stage_entrance.gd").new()
+	entrance.name = "StageEntrance"
+	add_child(entrance)
+	move_child(entrance, player.get_index())
+	var spawn: Vector2 = $TheaterStage/PlacementMarkers/PlayerSpawn.global_position
+	entrance.global_position = _door_floor_position(spawn)
+	if active_checkpoint.is_empty():
+		player.global_position = entrance.global_position
+		player.reset_motion()
+		entrance.begin(player.sprite)
+		gum.hide()
+		camera.position = player.position
+
+func _door_floor_position(marker_position: Vector2) -> Vector2:
+	var query := PhysicsRayQueryParameters2D.create(marker_position - Vector2(0, 1), marker_position + Vector2(0, 64), 1)
+	var hit := get_world_2d().direct_space_state.intersect_ray(query)
+	return hit.position if not hit.is_empty() else marker_position
+
+func _setup_exit() -> void:
+	exit_door = preload("res://scripts/stage_exit.gd").new()
+	exit_door.name = "StageExit"
+	add_child(exit_door)
+	move_child(exit_door, player.get_index())
+	exit_door.global_position = _door_floor_position($TheaterStage/PlacementMarkers/Exit.global_position)
+	exit_door.player_entered.connect(_begin_exit)
+
+func _begin_exit() -> void:
+	if restarting or cleared or entrance.active or exit_door.started or is_instance_valid(death_effect):
+		return
+	gum.detach("STAGE EXIT")
+	gum.hide()
+	player.reset_motion()
+	player.afterimages.clear()
+	$LandingDustEffect.stop()
+	exit_door.begin(player.sprite)
+
+func _setup_stage() -> void:
+	if stage_scene != null:
+		var old_stage := $TheaterStage
+		remove_child(old_stage)
+		old_stage.free()
+		var selected_stage := stage_scene.instantiate()
+		selected_stage.name = "TheaterStage"
+		add_child(selected_stage)
+	camera.limit_right = stage_width
+	var prop_markers := {"LightBox": "EntranceLightBox", "HeavyBox": "EntranceHeavyBox", "PulleyTrolley": "PulleySpawn"}
+	for prop in prop_markers:
+		var placement := get_node_or_null("TheaterStage/PlacementMarkers/" + prop_markers[prop])
+		if placement != null:
+			get_node(prop).position = placement.position
 
 func _physics_process(delta: float) -> void:
-	if restarting:
+	if restarting or cleared:
+		return
+	if suppress_gameplay_tick:
+		suppress_gameplay_tick = false
 		return
 	if Input.is_action_just_pressed("restart"):
 		restart()
+		return
+	if exit_door.active:
+		player.reset_motion()
+		exit_door.step(delta)
+		if not player.sprite.visible and player.visible:
+			player.hide()
+			player.collision_layer = 0
+			player.collision_mask = 0
+		if not exit_door.active:
+			_clear_stage()
+		return
+	if entrance.active:
+		player.reset_motion()
+		entrance.step(delta)
+		up_wait_release = Input.is_action_pressed("aim_up")
+		down_wait_release = Input.is_action_pressed("aim_down")
+		if not entrance.active:
+			gum.show()
 		return
 	if is_instance_valid(death_effect):
 		if death_effect.step(delta):
@@ -97,7 +189,7 @@ func _setup_checkpoints() -> void:
 		player.global_position = checkpoint.respawn_position()
 
 func _on_checkpoint_reached(checkpoint: Area2D) -> void:
-	if restarting or is_instance_valid(death_effect):
+	if restarting or exit_door.started or is_instance_valid(death_effect):
 		return
 	if not checkpoint.activated:
 		SoundEffects.play(&"checkpoint")
@@ -105,7 +197,7 @@ func _on_checkpoint_reached(checkpoint: Area2D) -> void:
 	checkpoint.activate()
 
 func _die_on_spikes(center: Vector2) -> void:
-	if restarting or is_instance_valid(death_effect):
+	if restarting or exit_door.started or is_instance_valid(death_effect):
 		return
 	SoundEffects.play(&"dead")
 	gum.detach("SPIKES")
@@ -122,6 +214,7 @@ func restart(from_checkpoint := false) -> void:
 	if restarting:
 		return
 	restarting = true
+	pause_menu.close()
 	if from_checkpoint and not active_checkpoint.is_empty() and has_node(active_checkpoint):
 		get_tree().set_meta(RESPAWN_META, {"scene": scene_file_path, "checkpoint": active_checkpoint})
 	elif get_tree().has_meta(RESPAWN_META):
@@ -206,3 +299,37 @@ func _update_status() -> void:
 		elif gum.state == gum.State.RETURNING:
 			phase = "RETURNING"
 		status.text = "%s | %s" % [phase, "TARGET" if gum.aim_valid else "NO TARGET"]
+
+func return_to_stage_select() -> void:
+	if restarting:
+		return
+	restarting = true
+	pause_menu.close()
+	if get_tree().has_meta(RESPAWN_META):
+		get_tree().remove_meta(RESPAWN_META)
+	gum.detach("STAGE SELECT")
+	get_tree().call_deferred("change_scene_to_file", "res://scenes/stage_select.tscn")
+
+func _clear_stage() -> void:
+	cleared = true
+	gum.detach("STAGE CLEAR")
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	$HUD.add_child(center)
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(460, 200)
+	center.add_child(panel)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 24)
+	panel.add_child(column)
+	var title := Label.new()
+	title.text = "STAGE CLEAR!"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 40)
+	column.add_child(title)
+	var back := Button.new()
+	back.text = "ステージ選択へ"
+	back.custom_minimum_size.y = 64
+	column.add_child(back)
+	back.pressed.connect(return_to_stage_select)
+	back.grab_focus()
