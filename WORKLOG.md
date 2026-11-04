@@ -1,3 +1,48 @@
+## Exit landing before approach
+- Goal/status: Airborne exit contact lands before horizontal auto-run; complete.
+- Completed: Separate gravity landing phase retains vertical entry speed, uses air pose/no horizontal motion, and waits for real walkable floor collision. Grounded contact confirms floor immediately; run then moves horizontally at landed height to center before rear art/timeline.
+- Files: stage_exit.gd/game.gd; verify_stage_exit.gd; exit/rear specs; AGENTS/WORKLOG.
+- Decisions: Immediate control/gum lock; vertical momentum captured before reset_motion, private fall accumulator follows shared gravity. No diagonal air approach/teleport; pause/retry remain supported.
+- Verification: Focused exit PASS across3stages, grounded start, airborne/upward arc, no prelanding horizontal movement/input/timeline, real floor, rear pose and result; stage-selection/pause PASS. Known sandbox CA warning only.
+- Refactoring: Landing and approach are exclusive phases with separate helpers; removed obsolete diagonal motion, retained existing timeline. Live verification waits boundedly for actual landing/approach completion rather than fixed frame count. Final focused rerun and git diff --check PASS.
+- Blockers: None. Next action: F5 contact exit while airborne to review landing then run.
+
+## Exit approach and rear pose integration
+- Goal/status: Lock controls, run to exit center, switch to rear art then exit sequence; complete.
+- Completed: Shared entrance/rear normalization builder; rear256px cell/runtime copy; collision-sliding approach120px/s in run; <=0.5px center switches static exit_back; existing open/fade/hide/close/result; Game caller/docs/assertions aligned.
+- Decisions: Opening begins after center arrival. No teleport, input/physics simulation remains locked throughout; OPTIONS pause/R/selection retained. Actor transform reset before run removes prior jump deformation.
+- Files: stage_exit.gd/game.gd; verify_stage_exit.gd; tools/build_character_door_art.py (replaces front-only builder); rear normalized/runtime PNG/import; exit/front/entrance specs; AGENTS/WORKLOG.
+- Verification: Rear normalized art visually inspected and source/runtime parity; focused exit PASS across3stages with real trigger, progressive movement/opposing input, rear texture, fade/lock/result; live left/airborne approach and paused movement PASS. Stage-selection, entrance and pause suites PASS. Import has known sandbox CA/Mono/editor settings warnings.
+- Refactoring: Extracted approach helper, collision remainder sliding for floor contact; unified front/rear normalization to remove duplication and updated current references. Final exit rerun, asset parity/baseline and git diff --check PASS.
+- Blockers: None. Next action: F5 playtest exit approach and rear-facing disappearance.
+
+## Rear-facing exit character art
+- Goal/status: Generate rear-facing Teto looking into screen for exit use; complete as source artwork.
+- Completed: Built-in imagegen using approved front source and idle style; reviewed back-facing head/jacket/boots, full silhouette, palette/proportions; saved images/teto_back_exit_source.png.
+- Decisions: Single neutral rear view with transparent exterior; no runtime changes. Normalize cell/baseline and generated low-alpha fringe when integrated.
+- Files: New source PNG; specs/character-back-exit.md; AGENTS.md; WORKLOG.md.
+- Final prompt: Full-body strictly rear-facing Teto looking away, neutral lowered arms/level feet, preserve red curls/white ornament/gray-red costume and chibi pixel style; rear jacket/boots, no face, transparent exterior, no scenery/text/duplicates.
+- Verification: Visual review PASS;1024×1536 RGBA and exterior/inter-leg alpha checked. Artwork task requires no gameplay tests or implementation refactor; documentation reviewed for current scope.
+- Blockers: None. Next action: Normalize and integrate with exit timeline if requested.
+
+## Entrance front-pose integration
+- Goal/status: Use approved front artwork until entrance controls unlock; complete.
+- Completed: Reproducible256px normalization (196px height,feet232,alpha threshold128 and transparent RGB cleanup), runtime copy; static entrance_front throughout fade/closing, idle restoration; docs and focused assertions.
+- Decisions: Reuse actor AnimatedSprite2D and private SpriteFrames for existing fade/visibility/pause ownership; no physics changes, checkpoint skip retained.
+- Files: tools/build_front_entrance_art.py; normalized/runtime PNGs/import; stage_entrance.gd; verify_stage_entrance.gd; entrance/front specs; AGENTS/WORKLOG.
+- Verification: Normalized sprite visually inspected; entrance suite PASS across3stages including correct texture/static pose/fade/locks/restoration/checkpoint; pause suite PASS. Import completed with known sandbox CA/Mono/editor-settings warnings.
+- Refactoring: Reviewed entire entrance lifecycle; one animation uses existing actor transforms/color, no extra sprite or duplicate timeline. Builder clears transparent RGB for clean previews. Final entrance rerun and git diff --check PASS.
+- Blockers: None. Next action: F5 select any stage to review front-facing emergence.
+
+## Front-facing entrance character art
+- Goal/status: Generate a transparent full-body front-facing Teto entrance sprite; complete as source artwork.
+- Completed: Reviewed original front/normalized idle references, generated neutral lowered-arm pose using built-in imagegen and requested background extraction; saved images/teto_front_entrance_source.png.
+- Decisions: One neutral front pose matching existing pixel art; no gameplay integration. Preserve generated alpha; normalize runtime cell/baseline when integrated.
+- Files: New source PNG; specs/character-front-entrance.md; AGENTS.md (corrected stale original reference path); WORKLOG.md.
+- Final prompt: Single full-body strictly front-facing Teto, neutral lowered arms, square shoulders/hips, forward eyes/boots, preserve red drill curls/gray-red costume/black boots and chibi pixel style, transparent exterior, no scenery/text. Follow-up extraction preserves character and removes exterior haze/shadows.
+- Verification: Visually reviewed pose/identity/full silhouette; confirmed1024×1536 RGBA and alpha0 exterior samples including between legs. Documentation review complete; source-art task requires no gameplay tests/refactoring.
+- Blockers: None. Next action: Normalize and integrate with entrance timeline if requested.
+
 ## Exit sequence integration
 - Goal/status: Contact-triggered opening → darken/hide player → closing → clear; complete.
 - Completed: Normalized six EXIT frames/shared header, runtime/source parity and reproducible builder. Dedicated player-only Area + fixed-step timeline; Game lock and deferred result, fade RGB preserving alpha, hide body/art + masks0. All3stages floor-aligned, old label/generator output removed. Updated specs/tests/AGENTS.

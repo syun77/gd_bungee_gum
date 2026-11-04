@@ -4,6 +4,8 @@ const CLOSED_HOLD := 0.20
 const OPEN_TIME := 0.40
 const EMERGE_TIME := 0.50
 const TOTAL_TIME := CLOSED_HOLD + OPEN_TIME + EMERGE_TIME
+const FRONT_POSE := &"entrance_front"
+const FRONT_TEXTURE := preload("res://assets/characters/teto_front_entrance.png")
 var elapsed := 0.0
 var active := false
 var actor: AnimatedSprite2D
@@ -24,7 +26,12 @@ func begin(sprite: AnimatedSprite2D) -> void:
 	frame = 0
 	actor.hide()
 	actor.self_modulate = Color(0, 0, 0, actor_color.a)
-	actor.play(&"idle")
+	if not actor.sprite_frames.has_animation(FRONT_POSE):
+		actor.sprite_frames.add_animation(FRONT_POSE)
+		actor.sprite_frames.add_frame(FRONT_POSE, FRONT_TEXTURE)
+	actor.flip_h = false
+	actor.play(FRONT_POSE)
+	actor.pause()
 
 func step(delta: float) -> void:
 	if not active:
@@ -44,4 +51,5 @@ func step(delta: float) -> void:
 		active = false
 		frame = 0
 		actor.self_modulate = actor_color
+		actor.play(&"idle")
 		actor.show()

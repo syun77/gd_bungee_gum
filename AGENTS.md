@@ -34,7 +34,7 @@
 
 - The Godot project root is `gd-bungee-gum/`; open `gd-bungee-gum/project.godot` in Godot and place engine project files under that directory.
 - Image assets are stored in the repository-root `images/` directory. Consult this directory when selecting or integrating game visuals.
-- Character references: `images/teto.png` is the front view; `teto_idle.png`, `teto_run.png`, and `teto_jump.png` are the intended idle, run, and jump sheets. See `specs/character-sprite-audit.md` for measured sizes and slicing issues before integration. Root-level `images/` is outside Godot’s `res://`.
+- Character references: `images/original/teto.png` is the original front view; original idle/run/jump references are also under `images/original/`, and runtime-ready sheets are under `images/normalized/`. See `specs/character-sprite-audit.md` for measured sizes and slicing issues before integration. Root-level `images/` is outside Godot’s `res://`.
 
 - Gum poses: `images/normalized/teto_gum_{fire,pull,hang}.png` and matching Godot copies under `assets/characters/teto/`; `gum_animations.tres` provides three eight-frame animations. See `specs/character-gum-animations.md`; poses do not drive physics.
 
@@ -294,3 +294,9 @@
 - Exit sequence: Game creates stage_exit.gd at floor-aligned Exit marker; non-solid40×64 Area(bit2/player) triggers once.0.4s opening→0.5s RGB-to-black→hide player/zero masks→0.4s closing→clear. Fixed-step lock, detach/hidden gum, no actor teleport. build_stage_exit_art.py regenerates identical96×128-cell3×2 sheets. Run verify_stage_exit.gd and stage_select/entrance/pause/map suites.
 
 - Clear result uses a full-viewport CenterContainer under HUD; do not combine centered anchors with a second viewport-center position offset (that displaced the result outside the viewport).
+
+- Entrance front-pose source: `images/teto_front_entrance_source.png`,1024×1536 transparent RGBA single neutral front-facing Teto. Normalize via `tools/build_character_door_art.py` to identical normalized/runtime256px cells (height196,feet232,alpha threshold128). stage_entrance.gd uses static entrance_front on the actor through emergence/closing and restores idle when controls unlock; checkpoint skips it. Original front reference is `images/original/teto.png`.
+
+- Exit rear-pose source: `images/teto_back_exit_source.png`,1024×1536 transparent RGBA neutral back-facing Teto, matched to entrance front art. Runtime rear pose uses identical normalized/runtime256px cells (height196,feet232,alpha128) via `tools/build_character_door_art.py`; stage_exit runs to center120px/s with collision sliding before static exit_back/open/fade/close. See specs/character-back-exit.md.
+
+- Exit contact locks controls immediately; stage_exit.gd first retains vertical entry speed and applies shared gravity without horizontal motion until a walkable floor collision, then runs horizontally120px/s to center before rear pose/open/fade/close. Game snapshots velocity.y before reset_motion; landing/approach own private motion while normal Player.simulate remains skipped. verify_stage_exit covers upward entry, no air drift/input and paused landing.

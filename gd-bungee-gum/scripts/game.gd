@@ -94,12 +94,13 @@ func _setup_exit() -> void:
 func _begin_exit() -> void:
 	if restarting or cleared or entrance.active or exit_door.started or is_instance_valid(death_effect):
 		return
+	var vertical_speed: float = player.velocity.y
 	gum.detach("STAGE EXIT")
 	gum.hide()
 	player.reset_motion()
 	player.afterimages.clear()
 	$LandingDustEffect.stop()
-	exit_door.begin(player.sprite)
+	exit_door.begin(player, vertical_speed)
 
 func _setup_stage() -> void:
 	if stage_scene != null:
