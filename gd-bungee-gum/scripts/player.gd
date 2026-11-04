@@ -8,6 +8,7 @@ const DOUBLE_JUMP_HAND_OFFSET := Vector2(143, 194)
 const GUM_LATERAL_ANGLE := 70.0 # From world up:20deg above horizontal.
 const HANG_ANGLES := [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0]
 const GUM_HANDS := {
+	&"gum_hair_pull": [Vector2(209, 109), Vector2(209, 109), Vector2(209, 109), Vector2(209, 109), Vector2(209, 109), Vector2(209, 109), Vector2(209, 109), Vector2(209, 109)],
 	&"gum_hang_angles": [Vector2(168, 48), Vector2(177, 51), Vector2(184, 57), Vector2(198, 63), Vector2(202, 73), Vector2(209, 83), Vector2(215, 94), Vector2(220, 108)],
 	&"gum_fire": [Vector2(180, 143), Vector2(176, 142), Vector2(185, 140), Vector2(196, 135), Vector2(207, 122), Vector2(216, 123), Vector2(214, 123), Vector2(211, 123)],
 	&"gum_pull": [Vector2(220, 109), Vector2(216, 109), Vector2(217, 109), Vector2(218, 110), Vector2(220, 106), Vector2(217, 106), Vector2(217, 104), Vector2(219, 102)],
@@ -46,6 +47,7 @@ var landing_time := 0.0
 var landing_floor_seen := false
 var landing_air_time := 0.0
 var landing_air_distance := 0.0
+var hair_pull_active := false
 var hanging_diagnostic_key := ""
 var hanging_diagnostic_next_tick := 0
 var gum_hand_offset := Vector2.ZERO
@@ -117,6 +119,7 @@ func on_gum_attached() -> void:
 	_update_visual_deformation(0.0)
 
 func reset_motion() -> void:
+	hair_pull_active = false
 	_leave_ladder()
 	jump_buffer_remaining = 0.0
 	_stop_double_jump_spin()
@@ -456,6 +459,7 @@ func _apply_ground_friction(delta: float, normal: Vector2) -> void:
 	external_velocity += tangent * (move_toward(speed, 0.0, settings.ground_friction * delta) - speed)
 
 func _update_animation(direction: float) -> void:
+	_update_hair_pull_state()
 	_select_animation(direction)
 	_log_hanging_pose()
 
@@ -481,6 +485,9 @@ func _select_animation(direction: float) -> void:
 			_select_gum_pose(aim, &"gum_fire")
 			return
 		if not is_on_floor() and gum.tension > 10.0:
+			if hair_pull_active:
+				sprite.play("gum_hair_pull")
+				return
 			_select_gum_pose(aim, &"gum_pull")
 			return
 	if not is_on_floor():
@@ -493,6 +500,16 @@ func _select_animation(direction: float) -> void:
 		sprite.frame = 6
 	else:
 		sprite.play("run" if direction != 0.0 or absf(velocity.x) > 12.0 else "idle")
+
+func _update_hair_pull_state() -> void:
+	if is_on_floor() or not is_instance_valid(gum) or gum.state != gum.State.ATTACHED or not gum.connected():
+		hair_pull_active = false
+		return
+	var force: Vector2 = gum.player_force
+	# This art reaches upward/sideways; vertical and downward loads retain their own poses.
+	var lateral := force.y <= 0.0 and absf(force.x) >= absf(force.y)
+	var threshold := settings.gum_hair_pull_force * (0.75 if hair_pull_active else 1.0)
+	hair_pull_active = lateral and absf(force.x) >= threshold
 
 func _gum_pose_direction() -> Vector2:
 	# The tip starts at the chest; the shot direction is valid even on that first tick.

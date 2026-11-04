@@ -3,6 +3,7 @@ extends SceneTree
 ## Rebuilds the authored scene and TileSet; manual scene edits will be overwritten.
 
 const Layout = preload("res://scripts/stage_layout.gd")
+const NoteLayout = preload("res://scripts/music_note_layout.gd")
 const TILE := Layout.TILE
 const STAGE_PATH := "res://scenes/stages/theater_stage.tscn"
 const TILESET_PATH := "res://assets/tilesets/theater_tileset.tres"
@@ -85,6 +86,7 @@ func _initialize() -> void:
 	foods.z_index = 3
 	for food in Layout.FOODS:
 		foods.set_cell(Vector2i(food.x, food.y), 0, Vector2i.ZERO, food.z)
+	add(stage, NoteLayout.create_layer(NoteLayout.RESTAURANT))
 	for placement in Layout.LADDERS:
 		var ladder = load("res://scenes/props/ladder.tscn").instantiate()
 		ladder.position = Vector2(placement.x, placement.y)

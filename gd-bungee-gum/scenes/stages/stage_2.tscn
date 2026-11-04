@@ -1,9 +1,10 @@
-[gd_scene load_steps=12 format=4]
+[gd_scene load_steps=13 format=4]
 
 [ext_resource type="TileSet" path="res://assets/tilesets/theater_tileset.tres" id="1_llf8k"]
 [ext_resource type="TileSet" path="res://assets/foods/food_tileset.tres" id="2_tiiek"]
 [ext_resource type="PackedScene" path="res://scenes/props/checkpoint.tscn" id="3_dg2hc"]
 [ext_resource type="Script" path="res://scripts/checkpoint.gd" id="4_kaxm4"]
+[ext_resource type="TileSet" path="res://assets/items/music_note_tileset.tres" id="music_notes"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_vhmg7"]
 size = Vector2(64, 768)
@@ -165,3 +166,9 @@ offset_top = 600.0
 offset_right = 1840.0
 offset_bottom = 600.0
 text = "GOAL"
+
+[node name="MusicNotes" type="TileMapLayer" parent="."]
+z_index = 3
+tile_map_data = PackedByteArray("AAAGABQAAAAAAAAAAAAIABIAAAAAAAAAAAAKABIAAAAAAAAAAAAMABIAAAAAAAAAAAAPABIAAAAAAAAAAAARABIAAAAAAAAAAAAUABQAAAAAAAAAAAAWABQAAAAAAAAAAAAWABIAAAAAAAAAAAAXABAAAAAAAAAAAAAZABAAAAAAAAAAAAAcABAAAAAAAAAAAAAfABIAAAAAAAAAAAAhABQAAAAAAAAAAAAjABQAAAAAAAAAAAAjABIAAAAAAAAAAAAlABIAAAAAAAAAAAAoABIAAAAAAAAAAAAsABQAAAAAAAAAAAAuABQAAAAAAAAAAAAuABIAAAAAAAAAAAAvABAAAAAAAAAAAAA0ABAAAAAAAAAAAAA3ABIAAAAAAAAAAAA7ABQAAAAAAAAAAAA=")
+tile_set = ExtResource("music_notes")
+collision_enabled = false

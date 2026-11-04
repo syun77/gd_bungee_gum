@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/items/music_note.tscn" id="1"]
+
+[node name="MusicNotePreview" type="Node2D"]
+
+[node name="Background" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-1000, -1000, 2000, -1000, 2000, 2000, -1000, 2000)
+color = Color(0.19, 0.32, 0.33, 1)
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(320, 180)
+zoom = Vector2(2, 2)
+
+[node name="NoteLeft" parent="." instance=ExtResource("1")]
+position = Vector2(256, 180)
+
+[node name="NoteCenter" parent="." instance=ExtResource("1")]
+position = Vector2(320, 180)
+
+[node name="NoteRight" parent="." instance=ExtResource("1")]
+position = Vector2(384, 180)

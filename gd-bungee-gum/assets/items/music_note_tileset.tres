@@ -1,0 +1,11 @@
+[gd_resource type="TileSet" load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/items/music_note.tscn" id="1"]
+
+[sub_resource type="TileSetScenesCollectionSource" id="Notes"]
+resource_name = "MusicNotes"
+scenes/0/scene = ExtResource("1")
+
+[resource]
+tile_size = Vector2i(32, 32)
+sources/0 = SubResource("Notes")

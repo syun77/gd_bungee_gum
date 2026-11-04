@@ -113,3 +113,7 @@ Shader hit wave: enabled by default, radius56px, duration0.32s, refraction stren
 **Player Movement → Kick Speed** (`kick_speed`) は初段・床／天井・コヨーテ・ガム解除・フード報酬・ハシゴのジャンプ速度。**Player Double Jump → Double Jump Kick Speed** (`double_jump_kick_speed`) は回転する二段目の空中ジャンプだけに適用する。単位はpx/s、二段目の既定380、現在の保存値は初段400・二段目300。上下・横の運動量処理、下降補正、ジャンプ回数・回転速度は各設定を変更しても同じ規則を使う。
 
 二段ジャンプの発動更新では縦速度を `-double_jump_kick_speed` に代入する。発動前の上昇・下降速度とその更新の重力は引き継がず、横速度だけを保持する。次更新から重力を再開する。初段・ガム解除などの補正は各既存規則を使う。
+
+## 強い横牽引の姿勢
+
+Gum Pull Pose / `gum_hair_pull_force` は大きな髪なびき姿勢に入る水平ガム力のしきい値（初期700、継続側75%）。空中・上向き〜水平・横成分優勢の接続時のみ。速度ではなく実際のガム力を使い、物理は変更しない。

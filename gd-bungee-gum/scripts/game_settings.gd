@@ -41,6 +41,10 @@ extends Resource
 ## Recovery time in seconds; zero disables landing deformation.
 @export_range(0.0, 1.0, 0.01) var landing_squash_duration := 0.31
 
+@export_group("Gum Pull Pose")
+## Horizontal gum force needed to enter the large hair follow-through pose.
+@export_range(1.0, 10000.0) var gum_hair_pull_force := 700.0
+
 @export_group("Player Afterimages")
 @export var afterimage_enabled := true
 ## Actual world movement speed (px/s), including vertical motion.

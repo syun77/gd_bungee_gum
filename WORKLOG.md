@@ -1,3 +1,77 @@
+## Music note vertical-axis turn
+- Goal/status: Add slow readable vertical-axis rotation without thin/collapsed sprite; in progress.
+- Decisions: Shallow ±32degree yaw over4s, compensated front width>=94%, small extruded side and perspective shading. Fixed pickup sensor/root transform; retain existing highlight.
+- Completed: Reviewed current shader/animation/pickup callers.
+- Files: WORKLOG.md. Verification: pending. Blockers: none.
+- Next action: Implement shader depth/yaw clock, update animation regression and visually render preview if available.
+
+## Music note contact pickup
+- Goal/status: Let player collect placed notes; complete.
+- Completed: Area2D18px sensor with player-bit/group filtering; immediate hide/item sound/one-shot collected() then deletion. Child Sprite retains independent highlight material/phases. All117 saved notes inherit pickup behavior, reload restores availability.
+- Decisions: No gum target/reeling, scoring, ability reward or extra particles. Pause inherited from scene tree. Runtime SoundEffects lookup avoids early preload/autoload identifier compile errors.
+- Files: scripts/music_note.gd; scenes/items/music_note.tscn; verify_music_note.gd/verify_music_note_placement.gd; new verify_music_note_pickup.gd; music-note spec/AGENTS/WORKLOG.
+- Verification: Final actual-contact suite PASS across3saved stages (player, prop/nonplayer exclusion, gum rays, paused contacts/resume, reload, duplicate requests); animation and117-placement suites PASS; git diff --check PASS. Known sandbox CA and pickup-suite exit ObjectDB/resource warnings remain.
+- Refactoring: Reviewed animation/pickup ownership and all scene callers; single Area2D owns lifecycle, child owns appearance, one guarded collection path; updated stale display-only documentation and strengthened placement script-loading assertion. Final focused reruns PASS.
+- Blockers: None. Next action: F5 touch notes to playtest contact radius/sound; score remains unimplemented.
+
+## Music note route placement
+- Goal/status: Place animated notes to guide traversal across3 playable stages; complete.
+- Completed: Editable MusicNotes scene TileSet/layers: restaurant70/terrace25/kitchen22 (117total). Authored route arrays/shared helper; original generator integration. Existing scene content preserved without rebuilding terrain.
+- Decisions: Sparse ground trails, upward lift cues,48px food clearance; display-only (no collection/scoring). No physics/tuning changes.
+- Files: scripts/music_note_layout.gd; assets/items/music_note_tileset.tres;3saved stage scenes; build_theater_stage.gd; verify_music_note_placement.gd; music-note spec; AGENTS/WORKLOG.
+- Verification: Placement suite PASS with real117scene instances and24×28 terrain/platform/hazard clearance; animation/map/food suites PASS; geometry overview visually reviewed. Food suite retains exit leak/resource warnings, engine sandbox CA warning remains. verify_stage_route fails at first upward lift with current160px range; identical failure reproduced after removing notes (temporary /tmp fixture), independent of this change. Full-route reachability is not verified.
+- Refactoring: Shared creation helper and top-level generator preload, no duplicated runtime spawn path; reviewed saved diffs to confirm only note resource/layer additions. Final placement rerun and git diff --check PASS.
+- Blockers: None for placement. Next action: F5 playtest note guidance/density; pickup/scoring remains separate work.
+
+## Music note highlight animation
+- Goal/status: Implement subtle local highlight loop; complete.
+- Completed: Runtime32px asset/reusable Sprite2D, cream-only shader,3s loop (2.4s quiet/0.6s sine-squared shine), independent positional phases and pause support;3-note F6 preview.
+- Decisions: Fixed silhouette/position/alpha; no outer glow/particles. Animation scene only; no collection/scoring/TileSet or map edits.
+- Files: assets/items/music_note.png; scenes/items/music_note.tscn; scenes/music_note_preview.tscn; scripts/music_note.gd; shaders/music_note_highlight.gdshader; tools/verify_music_note.gd; spec/AGENTS/WORKLOG.
+- Verification: Import complete with known sandbox CA/Mono/editor-settings warnings. Headless verify_music_note PASS (scene/size/materials/phases/quiet/peak/loop/transforms/pause). Graphical render attempt exited134 in sandbox, so actual rendered brightness remains manual review. Texture highlight mask inspected. Final refactoring review kept one clock and per-instance material, corrected CanvasItem tint to avoid double texture multiplication; final focused rerun and git diff --check PASS. Highlight affects6 of181 visible source pixels.
+- Blockers: No implementation blocker; graphical visual verification unavailable. Next action: F6 preview to review brightness.
+
+## Music note idle animation proposal
+- Goal/status: Propose subtle shine/rotation for note collectible; complete as design proposal.
+- Completed: Reviewed tile specification; proposed3s highlight loop (2.4s hold/0.6s local shine), staggered phases;4s shallow vertical-axis turn as alternative.
+- Decisions: Prefer local highlight only; preserve silhouette/location, no additional effects. Proposal not yet implemented or approved.
+- Files: specs/music-note-item-assets.md; WORKLOG.md.
+- Verification: Documentation reviewed against32px sprite and restrained presentation request; git diff --check PASS. No runtime changes/tests.
+- Blockers: None. Next action: Create animation artwork or runtime effect when requested.
+
+## Music note collectible artwork
+- Goal/status: Generate transparent coral music-note tile; complete.
+- Completed: Built-in imagegen source,32px nearest export; inspected full image and8× tile preview. Preserved generated alpha.
+- Decisions: Single static low-score pickup candidate; art only, no runtime collection/scoring changes.
+- Files: images/items/music_note{,_source}.png; specs/music-note-item-assets.md (full final prompt); AGENTS.md; WORKLOG.md.
+- Verification: Source1254×1254 RGBA/alpha0–255/all corners transparent;32×32 tile silhouette visually PASS. No gameplay tests needed. Asset/document review complete.
+- Blockers: None. Next action: Integrate tile placement and collection when requested.
+
+## Strong lateral gum hair pose integration
+- Goal/status: Select added hair-lag sheet under strong lateral gum force; implementation and focused checks complete.
+- Completed: Reproducible shared-cell normalization/source-runtime parity;8-frame10fps gum_hair_pull, mirrored hand samples and existing continuous hand follow; actual horizontal force threshold700/hold525, upward/sideways dominant force and airborne ATTACHED gate. Existing assets preserved.
+- Decisions: Shared Inspector Gum Pull Pose threshold; grounded/vertical/downward/outbound retain existing poses. Physics shape/forces unchanged. Temporal loop is initial playtest behavior.
+- Files: build_gum_hair_art.py; normalized/runtime PNGs; gum_animations.tres; player.gd/game_settings.gd; verify_hair_pull.gd; character-gum-animations/game-settings specs; AGENTS/WORKLOG.
+- Verification: Normalized sheet visually reviewed; hair/hanging(17304cases)/hand suites PASS. Player full regression and gum physics/live Game suite PASS; final focused rerun, asset parity/dimensions and git diff --check PASS. Import completed with known sandbox CA/Mono/editor settings warnings.
+- Refactoring: Dedicated state helper, shared settings and existing hand/animation lifecycle; no duplicate physics or rendering system.
+- Blockers: None. Next action: F5 playtest threshold/loop feel; implementation verified headlessly, live visual feel remains user review.
+
+## Large hair follow-through hanging variants
+- Goal/status: Add gentle body bend with large delayed drill-hair movement; complete as source artwork.
+- Completed: Built-in imagegen produced additional transparent4×2 temporal sheet; visually confirmed eight full bodies, shallow torso curve and pronounced hair sweep/return. Existing artwork/runtime preserved.
+- Decisions: Source patterns only; common-cell normalization, hand alignment and loop polish precede runtime integration. Low-alpha generation fringe retained.
+- Files: images/gum-source/teto_gum_hair_followthrough.png; specs/character-gum-animations.md (prompt and checks); AGENTS.md; WORKLOG.md.
+- Verification: Pillow1774×887 RGBA, alpha0–255, corners0/0/1/0; all8 cells occupied. Visual silhouette/hair review PASS. Documentation/asset scope reviewed; no gameplay changes or runtime tests. git diff --check PASS.
+- Blockers: None. Next action: Review added source patterns; normalize/integrate if requested.
+
+## Horizontal hanging pose review
+- Goal/status: Evaluate natural body pose during strong lateral gum pull; review complete, proposal only.
+- Completed: Inspected runtime hang-angle/pull sheets and player pose selection; documented gentle shoulder-to-hip arc, trailing relaxed legs and brief stronger onset response rather than sustained sharp waist fold.
+- Decisions: Arm direction follows support; body response should distinguish lateral tension/acceleration from travel speed. Existing implementation remains unchanged; proposal in character-gum-animations.md.
+- Files: specs/character-gum-animations.md; WORKLOG.md.
+- Verification: Visually reviewed both normalized sheets; checked _select_gum_pose and tension gate. Documentation-only review; no runtime tests required. Reviewed proposal against existing physics/collision constraints.
+- Blockers: None. Next action: If adopted, create lateral traction pose candidates and review their silhouettes before integration.
+
 ## Exit landing before approach
 - Goal/status: Airborne exit contact lands before horizontal auto-run; complete.
 - Completed: Separate gravity landing phase retains vertical entry speed, uses air pose/no horizontal motion, and waits for real walkable floor collision. Grounded contact confirms floor immediately; run then moves horizontally at landed height to center before rear art/timeline.
