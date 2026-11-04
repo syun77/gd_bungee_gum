@@ -1,9 +1,11 @@
 ## Music note vertical-axis turn
-- Goal/status: Add slow readable vertical-axis rotation without thin/collapsed sprite; in progress.
-- Decisions: Shallow ±32degree yaw over4s, compensated front width>=94%, small extruded side and perspective shading. Fixed pickup sensor/root transform; retain existing highlight.
-- Completed: Reviewed current shader/animation/pickup callers.
-- Files: WORKLOG.md. Verification: pending. Blockers: none.
-- Next action: Implement shader depth/yaw clock, update animation regression and visually render preview if available.
+- Goal/status: Add slow readable vertical-axis rotation without thin/collapsed sprite; complete.
+- Completed:4s ±32degree yaw, compensated face width>=94%, max~2px extruded sides, subtle perspective/shading; retained3s cream highlight and fixed18px pickup sensor. All117scene tiles inherit new appearance.
+- Decisions: Shallow back-and-forth yaw preserves note readability; no edge-on/full360 spin, node scaling or asset changes. Both clocks pause and use positional phases.
+- Files: scripts/music_note.gd; shaders/music_note.gdshader (replaces highlight-only name, preserved UID); scenes/items/music_note.tscn; verify_music_note.gd; music-note spec/AGENTS/WORKLOG.
+- Verification: Actual OpenGL32-frame4s capture visually reviewed;4× front silhouette68×84px, oblique72×84–85px (no collapse/clipping). Final headless animation/117-placement/3stage-physical-pickup suites PASS; git diff --check PASS. Known sandbox CA and pickup exit ObjectDB/resource warnings remain.
+- Refactoring: Unified appearance update, clear highlight/turn clock names and appearance material/shader name; removed old helper/name references. Shader helper returns UVs so built-in TEXTURE remains in fragment for Godot4.5 compiler compatibility. Final focused reruns PASS.
+- Blockers: None. Next action: F5 gameplay or F6 music_note_preview.tscn to review subtle turn at native size.
 
 ## Music note contact pickup
 - Goal/status: Let player collect placed notes; complete.

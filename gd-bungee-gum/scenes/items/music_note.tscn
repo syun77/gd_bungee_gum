@@ -2,9 +2,9 @@
 
 [ext_resource type="Script" path="res://scripts/music_note.gd" id="1"]
 [ext_resource type="Texture2D" path="res://assets/items/music_note.png" id="2"]
-[ext_resource type="Shader" path="res://shaders/music_note_highlight.gdshader" id="3"]
+[ext_resource type="Shader" path="res://shaders/music_note.gdshader" id="3"]
 
-[sub_resource type="ShaderMaterial" id="Highlight"]
+[sub_resource type="ShaderMaterial" id="Appearance"]
 shader = ExtResource("3")
 
 [sub_resource type="CircleShape2D" id="Pickup"]
@@ -18,7 +18,7 @@ monitorable = false
 script = ExtResource("1")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-material = SubResource("Highlight")
+material = SubResource("Appearance")
 texture = ExtResource("2")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

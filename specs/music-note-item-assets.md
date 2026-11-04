@@ -12,11 +12,13 @@
 ## 待機アニメーション
 
 - 再利用用シーン: `res://scenes/items/music_note.tscn`。Area2Dに32px等倍のSprite2Dを持ち、通常の子シーンとして配置する。画像は `assets/items/music_note.png`。得点処理は未実装。ステージでは下記の専用TileSetを使う。
-- `scripts/music_note.gd` が3秒周期を管理。通常2.4秒、続く0.6秒でsin²の滑らかな山を作り、中央2.7秒で最大になる。シーンツリーのポーズに従う。
-- `shaders/music_note_highlight.gdshader` が既存クリーム色の画素だけを最大45%淡いクリームへ混ぜる。輪郭・透過・コーラル色の本体・位置・大きさは固定。外周発光や粒子はない。
-- 各インスタンスは独立したマテリアルを持つ。初期ワールド位置から周期の位相を決め、列状配置の一斉点滅を避ける。
+- `scripts/music_note.gd` がハイライト3秒周期と縦軸回転4秒周期を管理。ハイライトは通常2.4秒、続く0.6秒でsin²の滑らかな山を作り、中央2.7秒で最大になる。シーンツリーのポーズに従う。
+- `shaders/music_note.gdshader` が既存クリーム色の画素だけを最大45%淡いクリームへ混ぜる。外周発光や粒子はない。
+- 縦軸回転は正面→右32度→正面→左32度→正面を4秒で往復する。横向きになるまで一周させず、圧縮補正で正面幅を94%以上保つ。最大約2pxの暗い側面と弱い遠近/陰影をシェーダーで描き、奥行きを表現する。元PNGとSprite/Area2Dのscaleは変更しない。Nearestの画素単位サンプリング、透明余白内で完結。
+- 回収判定の位置・半径18px・ルートの変形は固定。見た目の回転は物理に影響しない。
+- 各インスタンスは独立したマテリアルを持つ。初期ワールド位置から周期の位相を決め、列状配置の一斉点滅と回転同期を避ける。
 - 確認: `scenes/music_note_preview.tscn` を開いてF6。落ち着いたティール背景に3個を表示する。
-- 検証: `Godot --headless --path gd-bungee-gum --log-file /tmp/music-note-check.log --script res://tools/verify_music_note.gd`。シーン読み込み・寸法・位相/マテリアル独立・通常区間・ピーク・周期・変形なし・ポーズ/再開を確認する。
+- 検証: `Godot --headless --path gd-bungee-gum --log-file /tmp/music-note-check.log --script res://tools/verify_music_note.gd`。シーン読み込み・寸法・位相/マテリアル独立・通常区間・ピーク・両周期・回転角/正面幅下限・回収判定固定・ポーズ/再開を確認する。
 
 ## ステージ配置
 
