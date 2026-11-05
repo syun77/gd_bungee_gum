@@ -1,5 +1,7 @@
 extends SceneTree
 ## Rebuild only stage2/3 scenes; shared TileSet and original restaurant are untouched.
+const NoteLayout = preload("res://scripts/music_note_layout.gd")
+const BaguetteLayout = preload("res://scripts/baguette_layout.gd")
 var stage: Node2D
 var tiles := preload("res://assets/tilesets/theater_tileset.tres")
 
@@ -91,6 +93,8 @@ func build(number: int) -> void:
 		label.position = entry.position
 		label.modulate = Color("fff0cc")
 		add(stage, label)
+	add(stage, NoteLayout.create_layer(NoteLayout.TERRACE if number == 2 else NoteLayout.KITCHEN))
+	BaguetteLayout.add_pickups(stage, BaguetteLayout.STAGE_2 if number == 2 else BaguetteLayout.STAGE_3)
 	var packed := PackedScene.new()
 	assert(packed.pack(stage) == OK)
 	assert(ResourceSaver.save(packed, "res://scenes/stages/stage_%d.tscn" % number) == OK)

@@ -1,11 +1,10 @@
 [gd_resource type="SpriteFrames" format=3 uid="uid://cwpjwwewpud32"]
 
 [ext_resource type="Texture2D" uid="uid://b2c7guxtonwnc" path="res://assets/characters/teto/teto_gum_fire.png" id="fire"]
+[ext_resource type="Texture2D" uid="uid://b7jd6rlopxrdr" path="res://assets/characters/teto/teto_gum_hair_followthrough.png" id="hair"]
 [ext_resource type="Texture2D" uid="uid://b2i5ilgayckis" path="res://assets/characters/teto/teto_gum_hang.png" id="hang"]
 [ext_resource type="Texture2D" uid="uid://bppsw8fne3ray" path="res://assets/characters/teto/teto_gum_hang_angles.png" id="hang_angles"]
 [ext_resource type="Texture2D" uid="uid://cksybomax7ymj" path="res://assets/characters/teto/teto_gum_pull.png" id="pull"]
-
-[ext_resource type="Texture2D" path="res://assets/characters/teto/teto_gum_hair_followthrough.png" id="hair"]
 
 [sub_resource type="AtlasTexture" id="fire_0"]
 atlas = ExtResource("fire")
@@ -37,6 +36,38 @@ region = Rect2(512, 256, 256, 256)
 
 [sub_resource type="AtlasTexture" id="fire_7"]
 atlas = ExtResource("fire")
+region = Rect2(768, 256, 256, 256)
+
+[sub_resource type="AtlasTexture" id="hair_0"]
+atlas = ExtResource("hair")
+region = Rect2(0, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="hair_1"]
+atlas = ExtResource("hair")
+region = Rect2(256, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="hair_2"]
+atlas = ExtResource("hair")
+region = Rect2(512, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="hair_3"]
+atlas = ExtResource("hair")
+region = Rect2(768, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="hair_4"]
+atlas = ExtResource("hair")
+region = Rect2(0, 256, 256, 256)
+
+[sub_resource type="AtlasTexture" id="hair_5"]
+atlas = ExtResource("hair")
+region = Rect2(256, 256, 256, 256)
+
+[sub_resource type="AtlasTexture" id="hair_6"]
+atlas = ExtResource("hair")
+region = Rect2(512, 256, 256, 256)
+
+[sub_resource type="AtlasTexture" id="hair_7"]
+atlas = ExtResource("hair")
 region = Rect2(768, 256, 256, 256)
 
 [sub_resource type="AtlasTexture" id="hang_0"]
@@ -135,45 +166,8 @@ region = Rect2(512, 256, 256, 256)
 atlas = ExtResource("pull")
 region = Rect2(768, 256, 256, 256)
 
-[sub_resource type="AtlasTexture" id="hair_0"]
-atlas = ExtResource("hair")
-region = Rect2(0, 0, 256, 256)
-
-[sub_resource type="AtlasTexture" id="hair_1"]
-atlas = ExtResource("hair")
-region = Rect2(256, 0, 256, 256)
-
-[sub_resource type="AtlasTexture" id="hair_2"]
-atlas = ExtResource("hair")
-region = Rect2(512, 0, 256, 256)
-
-[sub_resource type="AtlasTexture" id="hair_3"]
-atlas = ExtResource("hair")
-region = Rect2(768, 0, 256, 256)
-
-[sub_resource type="AtlasTexture" id="hair_4"]
-atlas = ExtResource("hair")
-region = Rect2(0, 256, 256, 256)
-
-[sub_resource type="AtlasTexture" id="hair_5"]
-atlas = ExtResource("hair")
-region = Rect2(256, 256, 256, 256)
-
-[sub_resource type="AtlasTexture" id="hair_6"]
-atlas = ExtResource("hair")
-region = Rect2(512, 256, 256, 256)
-
-[sub_resource type="AtlasTexture" id="hair_7"]
-atlas = ExtResource("hair")
-region = Rect2(768, 256, 256, 256)
-
 [resource]
 animations = [{
-"frames": [{"duration": 1.0, "texture": SubResource("hair_0")}, {"duration": 1.0, "texture": SubResource("hair_1")}, {"duration": 1.0, "texture": SubResource("hair_2")}, {"duration": 1.0, "texture": SubResource("hair_3")}, {"duration": 1.0, "texture": SubResource("hair_4")}, {"duration": 1.0, "texture": SubResource("hair_5")}, {"duration": 1.0, "texture": SubResource("hair_6")}, {"duration": 1.0, "texture": SubResource("hair_7")}],
-"loop": true,
-"name": &"gum_hair_pull",
-"speed": 10.0
-}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("fire_0")
@@ -202,6 +196,35 @@ animations = [{
 "loop": 0,
 "name": &"gum_fire",
 "speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("hair_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("hair_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("hair_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("hair_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("hair_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("hair_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("hair_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("hair_7")
+}],
+"loop": 1,
+"name": &"gum_hair_pull",
+"speed": 10.0
 }, {
 "frames": [{
 "duration": 1.0,

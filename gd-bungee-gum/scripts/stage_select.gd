@@ -29,7 +29,27 @@ func _ready() -> void:
 		_add_card(cards, index)
 	start_button = stage_buttons[0]
 	_label(content, "クリック / 矢印で選択・Enter / パッドで選択・決定", 20)
+	var back := Button.new()
+	back.text = "モード選択へ"
+	back.custom_minimum_size = Vector2(220, 52)
+	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	content.add_child(back)
+	back.pressed.connect(_open_mode_select)
 	start_button.grab_focus()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		_open_mode_select()
+
+func _open_mode_select() -> void:
+	if starting:
+		return
+	starting = true
+	var error := get_tree().change_scene_to_file("res://scenes/mode_select.tscn")
+	if error != OK:
+		starting = false
+		push_error("Cannot open mode selection: %s" % error_string(error))
 
 func _add_card(parent: HBoxContainer, index: int) -> void:
 	var course: Dictionary = Catalog.STAGES[index]

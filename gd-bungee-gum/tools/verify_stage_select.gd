@@ -14,8 +14,22 @@ func settle() -> void:
 	await process_frame
 
 func verify() -> void:
-	check(ProjectSettings.get_setting("application/run/main_scene") == "res://scenes/stage_select.tscn", "F5 opens stage selection")
-	change_scene_to_file("res://scenes/stage_select.tscn")
+	var startup: String = ProjectSettings.get_setting("application/run/main_scene")
+	check(startup == "res://scenes/mode_select.tscn", "F5 opens mode selection")
+	change_scene_to_file(startup)
+	await settle()
+	var mode_buttons := current_scene.find_children("*", "Button", true, false)
+	check(mode_buttons.size() == 2 and not mode_buttons[1].disabled, "Time Attack can be selected")
+	check(mode_buttons[0].has_focus(), "Stage Mode has initial focus")
+	mode_buttons[0].pressed.emit()
+	await settle()
+	check(current_scene.scene_file_path == "res://scenes/stage_select.tscn", "Stage Mode opens stage selection")
+	var back_buttons := current_scene.find_children("*", "Button", true, false)
+	back_buttons[3].pressed.emit()
+	await settle()
+	check(current_scene.scene_file_path == startup, "Back opens mode selection")
+	mode_buttons = current_scene.find_children("*", "Button", true, false)
+	mode_buttons[0].pressed.emit()
 	await settle()
 	var menu = current_scene
 	check(menu.start_button.has_focus(), "Start is focused for keyboard and pad")

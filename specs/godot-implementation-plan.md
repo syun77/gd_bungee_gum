@@ -139,4 +139,4 @@ move_and_slide()
 
 ## 起動・ステージ選択
 
-F5は `scenes/stage_select.tscn` を起動し、選択から `scenes/game.tscn` に遷移する。Gameの直接F6起動も可能。OPTIONS／Esc／HUDのメニューボタンで全体を一時停止し、リトライ・ステージ選択に戻る・キャンセルを選ぶ。詳細は `stage-selection.md`。
+F5は `scenes/mode_select.tscn` を起動し、ステージモードとステージを選ぶと `scenes/game.tscn` に遷移する。Gameの直接F6起動も可能。OPTIONS／Esc／HUDのメニューボタンで全体を一時停止し、リトライ・ステージ選択に戻る・キャンセルを選ぶ。詳細は `stage-selection.md`。

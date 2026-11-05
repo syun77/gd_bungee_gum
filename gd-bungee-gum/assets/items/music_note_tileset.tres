@@ -1,4 +1,4 @@
-[gd_resource type="TileSet" load_steps=3 format=3]
+[gd_resource type="TileSet" format=3 uid="uid://cekfltm0x7mrq"]
 
 [ext_resource type="PackedScene" path="res://scenes/items/music_note.tscn" id="1"]
 

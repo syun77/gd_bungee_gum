@@ -24,7 +24,7 @@
 
 - Current setting/art direction is a pop-colored family restaurant: cream ceramic, coral/mint trim, painted frames and muted teal background. `theater_*` filenames remain the current resource identifiers. Edit both atlas copies together (`images/tilesets/` and `gd-bungee-gum/assets/tilesets/`); `restaurant_tileset_source.png` is the color-edit source.
 
-- The first editable map is `gd-bungee-gum/scenes/stages/theater_stage.tscn` (160 × 24 cells, 32 px grid). F6 opens the stage alone; F5 opens `scenes/stage_select.tscn`, whose restaurant card starts `scenes/game.tscn` with the Teto player (A/D or arrows, Z for detach/contact kick-off, R for restart). Open `scenes/map_preview.tscn` with F6 for arrows to pan, 1–6 to select a section and Tab for overview.
+- The first editable map is `gd-bungee-gum/scenes/stages/theater_stage.tscn` (160 × 24 cells, 32 px grid). F6 opens the stage alone; F5 opens mode selection. In Stage Mode, the restaurant card starts `scenes/game.tscn` with the Teto player (A/D or arrows, Z for detach/contact kick-off, R for restart). Open `scenes/map_preview.tscn` with F6 for arrows to pan, 1–6 to select a section and Tab for overview.
 - Ordinary map layers have collision disabled (except native one-way `OneWayPlatforms`); `TheaterStage/Terrain` owns merged rectangular static shapes on physics layer 1. When editing terrain tiles, update matching shapes and outline nodes together. `tools/build_theater_stage.gd` regenerates the scene/TileSet and overwrites manual edits; run only intentionally.
 - Local Godot executable: `/Applications/Godot_mono.app/Contents/MacOS/Godot` (4.5.1). For sandboxed headless runs, use `--log-file /tmp/<task>.log` to avoid a crash writing default user logs. Run the saved-map collision check with `--headless --path gd-bungee-gum --log-file /tmp/map-check.log --script res://tools/verify_theater_stage.gd`.
 
@@ -273,7 +273,7 @@
 
 - Gameplay HUD has no persistent control-help text; keep control documentation in specs/keyboard-controls.md. HUD/Status remains for runtime gum state.
 
-- Stage selection owns F5 startup (`scenes/stage_select.tscn`); stage_catalog.gd lists3 playable courses. Stage1 is original restaurant; inherited game_stage_2/3 scenes export stage_scene + stage_width2048. Rebuild only new maps via tools/build_provisional_stages.gd; original map/TileSet untouched. Game OPTIONS/Esc/HUD opens a pause menu with retry/selection/cancel; new entry clears checkpoint, R preserves selected scene, Exit player contact opens door, darkens/hides actor and closes before clear result. See specs/stage-selection.md and tools/verify_stage_select.gd.
+- F5 opens `scenes/mode_select.tscn`. Stage Mode opens `scenes/stage_select.tscn`, whose Back button and ui_cancel return to mode selection. Time Attack opens `scenes/game_time_attack.tscn`; stage_catalog.gd lists3 playable courses. Stage1 is original restaurant; inherited game_stage_2/3 scenes export stage_scene + stage_width2048. Rebuild only new maps via tools/build_provisional_stages.gd; original map/TileSet untouched. Game OPTIONS/Esc/HUD opens a pause menu with retry/selection/cancel; new entry clears checkpoint, R preserves selected scene, Exit player contact opens door, darkens/hides actor and closes before clear result. See specs/stage-selection.md and tools/verify_stage_select.gd.
 
 - Stage-start entrance source artwork: `images/tilesets/restaurant_stage_entrance_source.png` (transparent cream/mint doorway with coral canopy and arrow sign). This original is retained; the ENTRANCE animation variant supplies the normalized runtime sprite, separate from the terrain TileSet.
 
@@ -310,3 +310,12 @@
 - Current verify_stage_route.gd fails at first upward shot with saved/default attachment_range160 (fixture documents240/222px chest-to-beam). Reproduced with MusicNotes removed; do not treat this as a note placement regression or silently raise user tuning.
 
 - music_note.gd resolves SoundEffects via `/root/SoundEffects` at pickup: early TileSet scene preloads in headless fixtures can compile before autoload identifiers register. verify_music_note_pickup.gd covers physical contacts across3stages, filtering, gum exclusion, pause/reload and duplicate requests.
+
+- Small score-item baguette artwork is `images/foods/baguette.png`, a standalone 32 × 32 transparent RGBA sprite. Use nearest-neighbor filtering.
+- Baguettes are 100-point contact pickups under each saved stage's `Baguettes` node (3 per stage); keep placements aligned with `scripts/baguette_layout.gd`. Game owns the stage score/HUD and scene reload resets score and pickups. Music notes and baguettes share `contact_pickup.gd`; only baguettes award points. Keep the source and runtime baguette PNG copies identical.
+
+- Time Attack uses one dedicated 64×24 stage, `scenes/stages/time_attack.tscn`. `tools/build_time_attack_stage.gd` overwrites the saved map with its initial layout. After manual edits, sync Terrain rectangles to the saved TerrainTiles occupancy without rerunning the builder. Game counts active physics time immediately after the entrance animation, freezes it on goal contact, and saves one local best in `user://time_attack.cfg`. See `specs/time-attack-courses.md`.
+
+- Time Attack's TerrainTiles material fills transparent pixels inside each painted 32px atlas cell. Keep terrain visuals on TileMapLayer and merged StaticBody2D shapes aligned for gum wrapping.
+
+- Time Attack activates checkpoints under the stage’s Checkpoints node. The scene-scoped respawn payload carries elapsed time across automatic death reloads, including fallback to the entrance. Manual retry clears both checkpoint and timer.

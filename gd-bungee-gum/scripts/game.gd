@@ -1,12 +1,19 @@
 extends Node2D
 ## Fixed-step owner: validate -> direction / actions -> gum -> player -> presentation.
 const Settings = preload("res://scripts/game_settings.gd")
+const TIME_ATTACK_RECORD := "user://time_attack.cfg"
 const SPIKE_LAYER := 64
+const BAGUETTE_POINTS := 100
 const RESPAWN_META := &"checkpoint_respawn"
 var active_checkpoint: NodePath
 @export var settings: Settings
 @export var stage_scene: PackedScene
 @export var stage_width := 5120
+@export var time_attack := false
+var elapsed := 0.0
+var best_time := 0.0
+var timer_label: Label
+var score := 0
 var cleared := false
 var exit_door: Sprite2D
 var entrance: Sprite2D
@@ -27,6 +34,7 @@ var manual_down_pressed := false
 
 func _ready() -> void:
 	_setup_stage()
+	_setup_score_pickups()
 	spike_sweep = ShapeCast2D.new()
 	spike_sweep.shape = player_shape.shape
 	spike_sweep.collision_mask = SPIKE_LAYER
@@ -39,11 +47,14 @@ func _ready() -> void:
 	gum.settings = settings
 	player.global_position = $TheaterStage/PlacementMarkers/PlayerSpawn.global_position
 	_setup_checkpoints()
-	$PuzzleLightBox.global_position = $TheaterStage/PlacementMarkers/LightBoxSpawn.global_position
-	$PuzzleHeavyBox.global_position = $TheaterStage/PlacementMarkers/HeavyBoxSpawn.global_position
+	if time_attack:
+		for prop in [$LightBox, $HeavyBox, $PuzzleLightBox, $PuzzleHeavyBox, $PulleyTrolley]:
+			prop.free()
+		_setup_timer()
+	else:
+		_setup_puzzle_props()
 	gum.player = player
 	player.gum = gum
-	$PulleyTrolley.bind(gum)
 	$GumAttachmentEffect.bind(gum)
 	$GumShotParticles.bind(gum, settings)
 	$GumHitParticles.bind(gum, settings)
@@ -56,9 +67,43 @@ func _ready() -> void:
 	_setup_entrance()
 	_setup_exit()
 
+func _setup_puzzle_props() -> void:
+	$PuzzleLightBox.global_position = $TheaterStage/PlacementMarkers/LightBoxSpawn.global_position
+	$PuzzleHeavyBox.global_position = $TheaterStage/PlacementMarkers/HeavyBoxSpawn.global_position
+	$PulleyTrolley.bind(gum)
+
+func _setup_timer() -> void:
+	timer_label = $HUD/Score
+	var record := ConfigFile.new()
+	if record.load(TIME_ATTACK_RECORD) == OK:
+		best_time = record.get_value("record", "seconds", 0.0)
+	timer_label.text = "TIME %.2f" % elapsed
+
+func _finish_time_attack() -> void:
+	if best_time <= 0.0 or elapsed < best_time:
+		best_time = elapsed
+		var record := ConfigFile.new()
+		record.set_value("record", "seconds", best_time)
+		var error := record.save(TIME_ATTACK_RECORD)
+		if error != OK:
+			push_warning("Cannot save Time Attack record: %s" % error_string(error))
+	timer_label.text = "TIME %.2f  |  BEST %.2f" % [elapsed, best_time]
+
+func _setup_score_pickups() -> void:
+	var baguettes := get_node_or_null("TheaterStage/Baguettes")
+	if baguettes != null:
+		for pickup in baguettes.get_children():
+			pickup.collected.connect(_score_baguette)
+
+func _score_baguette() -> void:
+	score += BAGUETTE_POINTS
+	$HUD/Score.text = "SCORE %d" % score
+
 func _setup_pause_menu() -> void:
 	pause_menu = preload("res://scripts/pause_menu.gd").new()
 	add_child(pause_menu)
+	if time_attack:
+		pause_menu.buttons[1].text = "モード選択に戻る"
 	pause_menu.retry_requested.connect(restart)
 	pause_menu.selection_requested.connect(return_to_stage_select)
 	pause_menu.resumed.connect(func(): suppress_gameplay_tick = true)
@@ -94,6 +139,8 @@ func _setup_exit() -> void:
 func _begin_exit() -> void:
 	if restarting or cleared or entrance.active or exit_door.started or is_instance_valid(death_effect):
 		return
+	if time_attack:
+		_finish_time_attack()
 	var vertical_speed: float = player.velocity.y
 	gum.detach("STAGE EXIT")
 	gum.hide()
@@ -118,13 +165,15 @@ func _setup_stage() -> void:
 			get_node(prop).position = placement.position
 
 func _physics_process(delta: float) -> void:
-	if restarting or cleared:
+	if restarting:
 		return
 	if suppress_gameplay_tick:
 		suppress_gameplay_tick = false
 		return
-	if Input.is_action_just_pressed("restart"):
+	if Input.is_action_just_pressed("restart") and (time_attack or not cleared):
 		restart()
+		return
+	if cleared:
 		return
 	if exit_door.active:
 		player.reset_motion()
@@ -144,6 +193,9 @@ func _physics_process(delta: float) -> void:
 		if not entrance.active:
 			gum.show()
 		return
+	if time_attack:
+		elapsed += delta
+		timer_label.text = "TIME %.2f" % elapsed
 	if is_instance_valid(death_effect):
 		if death_effect.step(delta):
 			restart(true)
@@ -175,16 +227,20 @@ func _physics_process(delta: float) -> void:
 	_update_status()
 
 func _setup_checkpoints() -> void:
-	for checkpoint in $TheaterStage/Checkpoints.get_children():
-		checkpoint.reached.connect(_on_checkpoint_reached)
+	var checkpoints := get_node_or_null("TheaterStage/Checkpoints")
+	if checkpoints != null:
+		for checkpoint in checkpoints.get_children():
+			checkpoint.reached.connect(_on_checkpoint_reached)
 	if not get_tree().has_meta(RESPAWN_META):
 		return
 	var saved: Dictionary = get_tree().get_meta(RESPAWN_META)
 	get_tree().remove_meta(RESPAWN_META)
 	if saved.get("scene") != scene_file_path:
 		return
+	if time_attack:
+		elapsed = saved.get("elapsed", 0.0)
 	var checkpoint = get_node_or_null(saved.get("checkpoint", NodePath()))
-	if checkpoint != null and checkpoint.get_parent() == $TheaterStage/Checkpoints:
+	if checkpoint != null and checkpoint.get_parent() == checkpoints:
 		active_checkpoint = get_path_to(checkpoint)
 		checkpoint.activate(false)
 		player.global_position = checkpoint.respawn_position()
@@ -216,8 +272,10 @@ func restart(from_checkpoint := false) -> void:
 		return
 	restarting = true
 	pause_menu.close()
-	if from_checkpoint and not active_checkpoint.is_empty() and has_node(active_checkpoint):
-		get_tree().set_meta(RESPAWN_META, {"scene": scene_file_path, "checkpoint": active_checkpoint})
+	if from_checkpoint and (time_attack or not active_checkpoint.is_empty()):
+		get_tree().set_meta(RESPAWN_META, {
+			"scene": scene_file_path, "checkpoint": active_checkpoint, "elapsed": elapsed,
+		})
 	elif get_tree().has_meta(RESPAWN_META):
 		get_tree().remove_meta(RESPAWN_META)
 	gum.detach("RESTART")
@@ -309,7 +367,8 @@ func return_to_stage_select() -> void:
 	if get_tree().has_meta(RESPAWN_META):
 		get_tree().remove_meta(RESPAWN_META)
 	gum.detach("STAGE SELECT")
-	get_tree().call_deferred("change_scene_to_file", "res://scenes/stage_select.tscn")
+	var selection := "mode_select" if time_attack else "stage_select"
+	get_tree().call_deferred("change_scene_to_file", "res://scenes/%s.tscn" % selection)
 
 func _clear_stage() -> void:
 	cleared = true
@@ -324,13 +383,19 @@ func _clear_stage() -> void:
 	column.add_theme_constant_override("separation", 24)
 	panel.add_child(column)
 	var title := Label.new()
-	title.text = "STAGE CLEAR!"
+	title.text = "TIME %.2f  /  BEST %.2f" % [elapsed, best_time] if time_attack else "STAGE CLEAR!"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 40)
 	column.add_child(title)
 	var back := Button.new()
-	back.text = "ステージ選択へ"
+	back.text = "モード選択へ" if time_attack else "ステージ選択へ"
 	back.custom_minimum_size.y = 64
+	if time_attack:
+		var retry := Button.new()
+		retry.text = "リトライ"
+		retry.custom_minimum_size.y = 64
+		column.add_child(retry)
+		retry.pressed.connect(restart)
 	column.add_child(back)
 	back.pressed.connect(return_to_stage_select)
 	back.grab_focus()

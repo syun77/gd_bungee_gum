@@ -7,6 +7,7 @@ const NoteLayout = preload("res://scripts/music_note_layout.gd")
 const TILE := Layout.TILE
 const STAGE_PATH := "res://scenes/stages/theater_stage.tscn"
 const TILESET_PATH := "res://assets/tilesets/theater_tileset.tres"
+const BaguetteLayout = preload("res://scripts/baguette_layout.gd")
 var stage: Node2D
 var tiles: TileSet
 
@@ -87,6 +88,7 @@ func _initialize() -> void:
 	for food in Layout.FOODS:
 		foods.set_cell(Vector2i(food.x, food.y), 0, Vector2i.ZERO, food.z)
 	add(stage, NoteLayout.create_layer(NoteLayout.RESTAURANT))
+	BaguetteLayout.add_pickups(stage, BaguetteLayout.THEATER_STAGE)
 	for placement in Layout.LADDERS:
 		var ladder = load("res://scenes/props/ladder.tscn").instantiate()
 		ladder.position = Vector2(placement.x, placement.y)

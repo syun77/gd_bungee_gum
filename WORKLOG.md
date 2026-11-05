@@ -1,3 +1,78 @@
+## Time Attack checkpoint recovery
+
+- Goal/status: Enable checkpoint recovery while preserving elapsed Time Attack time. Complete.
+- Completed/decisions: Moved the already placed checkpoint under Checkpoints, preserving its position. Shared Game setup restores the checkpoint and elapsed time on scene-scoped automatic reloads. Death before activation preserves time at the entrance. Manual restart clears both.
+- Files: game.gd, stages/time_attack.tscn, specs/time-attack-courses.md, AGENTS, WORKLOG.
+- Verification: Reviewed scene-scoped metadata and normal restart paths. Live Godot test passed for contact, fall death, respawn position, elapsed time continuity and manual reset. Standard stage selection suite and git diff --check passed; known sandbox CA warning.
+- Blockers: None. Next action: F5 for manual route playtest.
+
+## Time Attack countdown disabled
+
+- Goal/status: Disable the Time Attack countdown. Complete.
+- Completed/decisions: Removed countdown-only state and gameplay gate. The HUD begins at TIME 0.00, and Game starts movement and timing on the first gameplay tick after the existing entrance.
+- Files: game.gd, specs/time-attack-courses.md, AGENTS.md, WORKLOG.md.
+- Verification: Reviewed the shared entrance/restart flow. Headless live scene probe passed for zero time during entrance, immediate movement/timer/gum availability, and reset on restart. git diff --check passed. Known sandbox CA warning.
+- Blockers: None. Next action: F5 to playtest the start.
+
+## Time Attack collision sync after manual tile edits
+
+- Goal/status: Match collisions to the saved tile placement. Complete.
+- Completed/decisions: Used TerrainTiles as the source of truth and replaced only Terrain rectangle resources and nodes. The 493 occupied cells are covered by 12 nonoverlapping grid-aligned rectangles.
+- Files: scenes/stages/time_attack.tscn, specs/time-attack-courses.md, AGENTS.md, WORKLOG.md.
+- Verification: Both serialized tile layers preserved byte for byte. Godot headless loaded actual Game and verified exact cell coverage, live raised step and ceiling hits, and an erased floor gap without collision. git diff --check passed.
+- Blockers: None. Next action: Playtest the edited route in F5.
+
+## Time Attack TileMap terrain presentation
+
+- Goal/status: Preserve tile editing while aligning the terrain silhouette. Complete.
+- Completed/decisions: TerrainTiles shader fills alpha gaps within each painted cell. Removed independent terrain backing polygons and rims. Merged static rectangle colliders still provide gum wrapping geometry.
+- Files: Time Attack generator and saved stage, time_attack_terrain.gdshader, spec, AGENTS, WORKLOG.
+- Verification: Godot headless generation and saved stage check passed for painted/empty cells, node types and wall/top rays at x384/y608. git diff --check passed. Shader appearance awaits visual playtest.
+- Blockers: None. Next action: F5 to check the tile edges in the rendered game.
+
+## Time Attack prototype implementation
+
+- Goal/status: Create the single Restaurant Sprint stage and make it playable. Complete.
+- Completed/decisions: 64×24 map with service entrance, atrium, terrace, six rings and recovery floor. Direct entry from mode select, three-second countdown after entrance, active physics timer, best time file, restart and return to modes. Existing Game owns the clock and goal timing.
+- Files: game.gd, mode_select.gd, game_time_attack.tscn, stages/time_attack.tscn, build_time_attack_stage.gd, verify_stage_select.gd, specs, AGENTS and WORKLOG.
+- Verification: Headless generator and standard 3-stage selection suite passed. Automated live route passed in 20.33s using direct gum aim and actual player/rigid physics. Goal freeze and retry record persistence passed with the record file redirected to a writable temporary fixture. Sandbox default user directory was not writable; known CA and teardown resource warnings persist. git diff --check passed.
+- Refactoring: Centralized Time Attack timer advancement and kept standard prop/checkpoint setup separate. Reviewed result/pause/restart destinations and reran both suites.
+- Blockers: None. Next action: F5 → Time Attack for visual and eight-way manual playtesting and tuning of the airborne line.
+
+## Time Attack single-stage proposal
+
+- Goal/status: Consolidate Time Attack into one dedicated stage. Proposal complete.
+- Completed/decisions: One route from the service entrance through the atrium to the terrace, with stable and faster lines, a direct mode entry, and one whole-stage personal best. The 30–45s target is provisional.
+- Files: specs/time-attack-courses.md, AGENTS.md and WORKLOG.md.
+- Verification: Reviewed navigation, layout constraints and timing for consistency. git diff --check passed. Layout and timing await playtesting.
+- Blockers: None. Next action: Block out the atrium and test landing and airborne lines at the saved 160px firing range.
+
+## Mode selection before stage selection
+
+- Goal/status: Add startup mode selection. Complete.
+- Completed/decisions: F5 opens Stage and Time Attack cards. Stage leads to the existing stage catalog, and Time Attack displays 準備中 until gameplay is implemented. Stage selection has a back button and ui_cancel.
+- Files: project.godot, mode_select scene/script, stage_select.gd, verify_stage_select.gd, specs, AGENTS and WORKLOG.
+- Verification: Godot 4.5.1 headless startup and expanded stage selection suite PASS, including round-trip navigation and all three stages. git diff --check PASS. Existing sandbox CA warning.
+- Refactoring: Reviewed card construction, navigation guards and existing gameplay return paths.
+- Blockers: None. Next action: F5 for visual review. Time Attack rules and timer are future work.
+
+## Baguette score pickup integration
+
+- Goal/status: Add baguette pickups alongside music notes. Complete.
+- Completed: Three placements per saved stage and matching generator layouts, shared contact pickup lifecycle, 100-point Game score and HUD, runtime sprite copy and spec. Scene reload resets score and pickups.
+- Files: game/stage/item scenes, game/music_note/contact_pickup/baguette_layout scripts, both stage generators, runtime baguette asset, baguette-score-item spec, AGENTS and WORKLOG.
+- Verification: Godot import and live contact probe passed in all three games; nine pickup sensors clear terrain/platforms/spikes. Existing music-note appearance, pickup and 117-placement checks plus stage exit passed. Known sandbox CA and pickup-suite exit warnings persist.
+- Refactoring: Shared one-shot pickup handling between both items and kept scoring in Game. Reviewed generator alignment and final diff.
+- Blockers: None. Next action: F5 for interactive HUD and route playtest.
+
+## Small baguette score-item sprite
+
+- Goal/status: Create a small French baguette sprite for Teto; image complete.
+- Completed/decisions: Built-in imagegen produced a golden diagonal baguette with three cuts. Cropped alpha and resized with nearest-neighbor to a centered 32 × 32 RGBA canvas with transparent margins. Scope is artwork.
+- Files: images/foods/baguette.png, AGENTS.md, WORKLOG.md.
+- Verification: Pillow checked transparency; inspected the nearest-neighbor enlarged preview for shape, scoring cuts and margins. git diff --check passed.
+- Blockers: None. Next action: Use the sprite if a baguette pickup is added to the game.
+
 ## Music note vertical-axis turn
 - Goal/status: Add slow readable vertical-axis rotation without thin/collapsed sprite; complete.
 - Completed:4s ±32degree yaw, compensated face width>=94%, max~2px extruded sides, subtle perspective/shading; retained3s cream highlight and fixed18px pickup sensor. All117scene tiles inherit new appearance.
