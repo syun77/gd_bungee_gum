@@ -9,6 +9,7 @@ var active_checkpoint: NodePath
 @export var settings: Settings
 @export var stage_scene: PackedScene
 @export var stage_width := 5120
+@export var fall_restart_offset := 0.0
 @export var time_attack := false
 var elapsed := 0.0
 var best_time := 0.0
@@ -200,7 +201,7 @@ func _physics_process(delta: float) -> void:
 		if death_effect.step(delta):
 			restart(true)
 		return
-	if player.position.y > settings.restart_y:
+	if player.position.y > settings.restart_y + fall_restart_offset:
 		SoundEffects.play(&"dead")
 		restart(true)
 		return

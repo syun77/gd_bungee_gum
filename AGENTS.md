@@ -319,3 +319,5 @@
 - Time Attack's TerrainTiles material fills transparent pixels inside each painted 32px atlas cell. Keep terrain visuals on TileMapLayer and merged StaticBody2D shapes aligned for gum wrapping.
 
 - Time Attack activates checkpoints under the stage’s Checkpoints node. The scene-scoped respawn payload carries elapsed time across automatic death reloads, including fallback to the entrance. Manual retry clears both checkpoint and timer.
+
+- Game fall death checks the player origin against shared restart_y plus the scene’s fall_restart_offset. Time Attack adds64px (default Y=964).

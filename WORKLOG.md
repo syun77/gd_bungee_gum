@@ -1,3 +1,18 @@
+## Time Attack collision sync for revised platforms
+
+- Goal/status: Align collision with the manually revised saved tiles. Complete.
+- Completed/decisions: Replaced only the Terrain shape resources and nodes in time_attack.tscn. The 441 occupied terrain cells are covered by 13 nonoverlapping rectangles. Tile layers were preserved byte for byte.
+- Verification: Godot loaded the Time Attack game and verified exact rectangle coverage and live physics at all 1536 cell centers, including empty cells. git diff --check passed. Known sandbox CA warning.
+- Blockers: None. Next action: F5 to playtest the revised layout.
+
+## Time Attack lower fall-death threshold
+
+- Goal/status: Move Time Attack fall death slightly lower. Complete.
+- Completed/decisions: Added a per-scene offset and set Time Attack to +64px (two tiles), taking the default threshold from Y=900 to Y=964.
+- Files: game.gd, game_time_attack.tscn, Time Attack spec, AGENTS, WORKLOG.
+- Verification: Reviewed the default zero offset. Headless actual scene survived just past Y=900 and respawned at the checkpoint past Y=964 with elapsed time preserved. git diff --check passed. Known CA and teardown warnings.
+- Blockers: None. Next action: F5 for fall-depth playtest.
+
 ## Time Attack checkpoint recovery
 
 - Goal/status: Enable checkpoint recovery while preserving elapsed Time Attack time. Complete.
