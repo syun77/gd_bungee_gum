@@ -1,3 +1,11 @@
+## Tilemap editor guidance
+
+- Goal/status: Create concise instructions for building a tilemap editor. Complete.
+- Completed/decisions: Added a guide covering rectangular grids, tile selection and painting, undo grouping, storage validation, and save/load checks. It inherits the general tool guide and prioritizes existing formats.
+- Files changed: `.agents/タイルマップエディタ作成.md`, `AGENTS.md`, `WORKLOG.md`.
+- Verification: Checked both guide references and whitespace.
+- Blockers: None. Next action: Use both guides when implementing a tilemap editor.
+
 ## Tool creation guidance
 
 - Goal/status: Review the guide for general-purpose tools and correct scope gaps. Complete.

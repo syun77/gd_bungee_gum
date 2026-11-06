@@ -65,7 +65,7 @@
 
 ## Development policy
 
-- Before creating or extending a tool for this repository, read and follow `.agents/ツール作成.md` for implementation, editor interactions, file handling, and verification.
+- Before creating or extending a tool for this repository, read and follow `.agents/ツール作成.md` for implementation, editor interactions, file handling, and verification. For tilemap editors, also follow `.agents/タイルマップエディタ作成.md`.
 
 - This project is under active development and does not require backward compatibility. Prefer the best current design, including breaking changes, over compatibility shims, deprecated paths, or preservation of obsolete APIs.
 - When changing a design or interface, update every affected implementation, caller, test, configuration, fixture, asset, and document to the new form in the same task. Do not leave mixed old and new patterns behind.
