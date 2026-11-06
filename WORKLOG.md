@@ -1,3 +1,11 @@
+## Tilemap editor design guidance
+
+- Goal/status: Record tilemap editor research as repository guidance. Complete.
+- Completed/decisions: Documented separate tileset/map storage, per-layer palette references, stable IDs, editing tools, minimap navigation, cursor-anchored zoom and verification. Semantic layers and automatic painting are extensions to manual painting.
+- Files changed: `.agents/タイルマップエディタ作成.md`, `WORKLOG.md`. AGENTS.md already references the guide.
+- Verification: Reviewed guide sections, local references and whitespace.
+- Blockers: None. Next action: Use the guide when implementing the editor.
+
 ## Tilemap editor guidance
 
 - Goal/status: Create concise instructions for building a tilemap editor. Complete.
