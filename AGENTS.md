@@ -325,3 +325,11 @@
 - Game fall death checks the player origin against shared restart_y plus the scene’s fall_restart_offset. Time Attack adds64px (default Y=964).
 
 - On macOS, launch MapEdit by double-clicking `tools/mapedit/run.command` in Finder or running `./tools/mapedit/run.sh`. Godot’s MapEdit plugin exchanges versioned gameplay placements for the directly opened Theater or Time Attack stage, rejects stale clipboard snapshots, and applies terrain collision/rim changes in the same Undo action. See `specs/mapedit.md`; verify with `--headless --editor --script res://tools/verify_mapedit.gd`.
+
+- MapEdit stores its last working map on normal quit in the user Application Support directory under `BungeeGumMapEdit/session.json`. This session is separate from manually saved placement JSON and Godot scenes.
+
+- MapEdit uses a dedicated appearance-aware AppKit right sidebar with a scrollable two-column placement grid and a layer-backed content hierarchy. Canvas and minimap drawing each clip explicitly to their own bounds; keep panel frames disjoint.
+
+- MapEdit draws every tile kind as a full grid cell; overlapping tiles prefer the selected kind. Canvas fills and sidebar swatches share Canvas.placementColor. Markers retain pixel positions; start/goal/checkpoint use 14pt screen markers and shared green/pink/orange swatches.
+
+- MapEdit minimap uses Canvas.visibleMapRect in map pixels. Invalidate the overview on canvas resize, camera movement and document changes; minimap clicks preserve zoom.

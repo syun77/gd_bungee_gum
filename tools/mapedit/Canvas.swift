@@ -1,7 +1,8 @@
 import AppKit
 
 final class Canvas: NSView {
-    var document: MapDocument? { didSet { needsDisplay = true } }
+    var document: MapDocument? { didSet { refreshView() } }
+    var onOverviewChange: (() -> Void)?
     var selectedKind: String? { didSet { needsDisplay = true } }
     var tile: [Int]?
     var marker: String? { didSet { needsDisplay = true } }
@@ -20,11 +21,23 @@ final class Canvas: NSView {
     override var acceptsFirstResponder: Bool { true }
     private var step: CGFloat { CGFloat(document?.tileSize ?? 32) * zoom }
 
-    static let colors: [String: NSColor] = [
+    private static let colors: [String: NSColor] = [
         "TerrainTiles": .systemBrown, "OneWayPlatforms": .systemTeal,
         "GumPassBarriers": .systemCyan, "GumAnchors": .systemGreen,
         "Spikes": .systemRed, "Foods": .systemOrange, "MusicNotes": .systemPurple
     ]
+
+    private static func routeMarkerColor(for path: String) -> NSColor? {
+        switch path {
+        case "PlacementMarkers/PlayerSpawn": return .systemGreen
+        case "PlacementMarkers/Exit": return .systemPink
+        default: return path.hasPrefix("Checkpoints/") ? .systemOrange : nil
+        }
+    }
+
+    static func placementColor(for kind: String) -> NSColor {
+        colors[kind] ?? routeMarkerColor(for: kind) ?? .systemBlue
+    }
 
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
@@ -35,12 +48,32 @@ final class Canvas: NSView {
         tracking = area
     }
 
+    var visibleMapRect: CGRect {
+        CGRect(x: (bounds.minX - origin.x) / zoom, y: (bounds.minY - origin.y) / zoom,
+               width: bounds.width / zoom, height: bounds.height / zoom)
+    }
+
+    func centerMap(on point: CGPoint) {
+        origin = CGPoint(x: bounds.midX - point.x * zoom, y: bounds.midY - point.y * zoom)
+        refreshView()
+    }
+
+    override func setFrameSize(_ newSize: NSSize) {
+        super.setFrameSize(newSize)
+        onOverviewChange?()
+    }
+
+    private func refreshView() {
+        needsDisplay = true
+        onOverviewChange?()
+    }
+
     func fit() {
         guard let document, bounds.width > 32, bounds.height > 32 else { return }
         zoom = min((bounds.width - 32) / CGFloat(document.width * document.tileSize),
                    (bounds.height - 32) / CGFloat(document.height * document.tileSize))
         origin = CGPoint(x: 16, y: 16)
-        needsDisplay = true
+        refreshView()
     }
 
     private func rect(_ point: GridPoint) -> CGRect {
@@ -49,6 +82,9 @@ final class Canvas: NSView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
+        NSGraphicsContext.saveGraphicsState()
+        defer { NSGraphicsContext.restoreGraphicsState() }
+        NSBezierPath(rect: bounds).addClip()
         NSColor.windowBackgroundColor.setFill()
         dirtyRect.fill()
         guard let document else {
@@ -79,22 +115,14 @@ final class Canvas: NSView {
         for (point, placements) in occupied {
             let cell = rect(point)
             guard dirtyRect.intersects(cell) else { continue }
-            if placements.contains(where: { $0.kind == "TerrainTiles" }) {
-                NSColor.systemBrown.setFill()
-                cell.fill()
+            guard let visible = placements.first(where: { $0.kind == selectedKind }) ?? placements.last else {
+                continue
             }
-            let details = placements.filter { $0.kind != "TerrainTiles" }
-            for (index, placement) in details.enumerated() {
-                let width = step * 0.82 / CGFloat(details.count)
-                let symbol = CGRect(x: cell.minX + step * 0.09 + CGFloat(index) * width,
-                                    y: cell.minY + step * 0.2, width: width, height: step * 0.6)
-                let color = Self.colors[placement.kind] ?? .systemGray
-                color.withAlphaComponent(placement.kind == selectedKind ? 1 : 0.75).setFill()
-                symbol.fill()
-            }
-            if step >= 24, let selected = placements.first(where: { $0.kind == selectedKind }) {
-                let id = selected.tile
-                let label = selected.kind == "Foods" || selected.kind == "MusicNotes" ? "\(id[3])" : "\(id[1]),\(id[2])"
+            Self.placementColor(for: visible.kind).setFill()
+            cell.fill()
+            if step >= 24 && visible.kind == selectedKind {
+                let id = visible.tile
+                let label = visible.kind == "Foods" || visible.kind == "MusicNotes" ? "\(id[3])" : "\(id[1]),\(id[2])"
                 (label as NSString).draw(at: CGPoint(x: cell.minX + 2, y: cell.minY + 2),
                     withAttributes: [.foregroundColor: NSColor.white, .backgroundColor: NSColor.black.withAlphaComponent(0.65),
                                      .font: NSFont.monospacedSystemFont(ofSize: 9, weight: .medium)])
@@ -106,10 +134,17 @@ final class Canvas: NSView {
             let y = origin.y + position[1] * zoom
             let selected = path == marker
             let label = String(path.split(separator: "/").last ?? "")
-            (selected ? NSColor.systemYellow : NSColor.systemBlue).setFill()
-            NSBezierPath(ovalIn: CGRect(x: x - 4, y: y - 4, width: 8, height: 8)).fill()
+            let radius: CGFloat = Self.routeMarkerColor(for: path) == nil ? 4 : 7
+            let dot = NSBezierPath(ovalIn: CGRect(x: x - radius, y: y - radius,
+                                                 width: radius * 2, height: radius * 2))
+            Self.placementColor(for: path).setFill()
+            dot.fill()
+            if selected {
+                NSColor.systemYellow.setStroke()
+                dot.stroke()
+            }
             if selected || step >= 16 {
-                (label as NSString).draw(at: CGPoint(x: x + 5, y: y - 7),
+                (label as NSString).draw(at: CGPoint(x: x + radius + 2, y: y - 7),
                     withAttributes: [.foregroundColor: NSColor.labelColor, .backgroundColor: NSColor.controlBackgroundColor,
                                      .font: NSFont.systemFont(ofSize: 10)])
             }
@@ -117,7 +152,7 @@ final class Canvas: NSView {
         if let hover, document.contains(hover) {
             let preview = NSBezierPath(rect: rect(hover).insetBy(dx: 1, dy: 1))
             if let selectedKind, tile != nil {
-                Self.colors[selectedKind]?.withAlphaComponent(0.35).setFill()
+                Self.placementColor(for: selectedKind).withAlphaComponent(0.35).setFill()
                 preview.fill()
             }
             NSColor.labelColor.setStroke()
@@ -190,7 +225,7 @@ final class Canvas: NSView {
     private func pan(_ x: CGFloat, _ y: CGFloat) {
         origin.x += x
         origin.y += y
-        needsDisplay = true
+        refreshView()
     }
 
     private func scale(by factor: CGFloat, at point: CGPoint) {
@@ -198,7 +233,7 @@ final class Canvas: NSView {
         origin = CGPoint(x: point.x - (point.x - origin.x) * next / zoom,
                          y: point.y - (point.y - origin.y) * next / zoom)
         zoom = next
-        needsDisplay = true
+        refreshView()
     }
 
     private func begin(_ event: NSEvent, erase: Bool) {
@@ -244,5 +279,69 @@ final class Canvas: NSView {
         defer { panning = false; start = nil }
         guard let start, let document, start.cells != document.cells || start.markers != document.markers else { return }
         onCommit?(start)
+    }
+}
+
+final class Minimap: NSView {
+    weak var canvas: Canvas?
+    override var isFlipped: Bool { true }
+
+    private func mapFrame(for map: MapDocument) -> CGRect {
+        let available = bounds.insetBy(dx: 8, dy: 8)
+        guard available.width > 0, available.height > 0 else { return .zero }
+        let scale = min(available.width / CGFloat(map.width), available.height / CGFloat(map.height))
+        let size = CGSize(width: CGFloat(map.width) * scale, height: CGFloat(map.height) * scale)
+        return CGRect(x: available.midX - size.width / 2, y: available.midY - size.height / 2,
+                      width: size.width, height: size.height)
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        NSGraphicsContext.saveGraphicsState()
+        defer { NSGraphicsContext.restoreGraphicsState() }
+        NSBezierPath(rect: bounds).addClip()
+        NSColor.controlBackgroundColor.setFill()
+        dirtyRect.fill()
+        guard let canvas, let map = canvas.document else { return }
+        let frame = mapFrame(for: map)
+        guard !frame.isEmpty else { return }
+        let step = frame.width / CGFloat(map.width)
+        let scale = step / CGFloat(map.tileSize)
+        NSColor.windowBackgroundColor.setFill()
+        frame.fill()
+
+        for cell in map.cells {
+            Canvas.placementColor(for: cell.kind).setFill()
+            CGRect(x: frame.minX + CGFloat(cell.x) * step, y: frame.minY + CGFloat(cell.y) * step,
+                   width: step, height: step).fill()
+        }
+        for (path, point) in map.markers {
+            Canvas.placementColor(for: path).setFill()
+            let x = frame.minX + point[0] * scale
+            let y = frame.minY + point[1] * scale
+            CGRect(x: x - 2, y: y - 2, width: 4, height: 4).fill()
+        }
+
+        let visible = canvas.visibleMapRect
+        let overview = CGRect(x: frame.minX + visible.minX * scale, y: frame.minY + visible.minY * scale,
+                              width: visible.width * scale, height: visible.height * scale)
+        let clipped = overview.intersection(frame)
+        guard !clipped.isEmpty else { return }
+        let outline = NSBezierPath(rect: clipped)
+        NSColor.black.setStroke()
+        outline.lineWidth = 3
+        outline.stroke()
+        NSColor.white.setStroke()
+        outline.lineWidth = 1
+        outline.stroke()
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard let canvas, let map = canvas.document else { return }
+        let frame = mapFrame(for: map)
+        let point = convert(event.locationInWindow, from: nil)
+        guard frame.contains(point) else { return }
+        let scale = CGFloat(map.width * map.tileSize) / frame.width
+        canvas.centerMap(on: CGPoint(x: (point.x - frame.minX) * scale, y: (point.y - frame.minY) * scale))
+        window?.makeFirstResponder(canvas)
     }
 }

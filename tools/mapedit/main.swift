@@ -1,12 +1,24 @@
 import AppKit
 
+private struct SavedSession: Codable {
+    let map: MapDocument
+    let baseline: Data?
+    let file: URL?
+}
+
+private final class PaletteGrid: NSGridView {
+    override var isFlipped: Bool { true }
+}
+
 final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1180, height: 620),
                                   styleMask: [.titled, .closable, .miniaturizable, .resizable],
                                   backing: .buffered, defer: false)
     private let canvas = Canvas()
-    private let category = NSPopUpButton()
-    private let variant = NSPopUpButton()
+    private let palette = PaletteGrid()
+    private let paletteScroll = NSScrollView()
+    private var categoryButtons: [NSButton] = []
+    private let variant = NSPopUpButton(frame: .zero, pullsDown: false)
     private let status = NSTextField(labelWithString: "")
     private let history = UndoManager()
     private var baseline: Data?
@@ -23,31 +35,65 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.center()
         installMenu()
 
-        category.target = self
-        category.action = #selector(selectCategory)
         variant.target = self
         variant.action = #selector(selectVariant)
         let fitButton = NSButton(title: "全体表示", target: self, action: #selector(fit))
-        let bar = NSStackView(views: [NSTextField(labelWithString: "配置"), category, variant, fitButton, status])
-        bar.spacing = 8
+        let categoryLabel = NSTextField(labelWithString: "配置種別")
+        let variantLabel = NSTextField(labelWithString: "タイル")
+        variant.bezelStyle = .rounded
+        variant.isBordered = true
+        palette.columnSpacing = 6
+        palette.rowSpacing = 4
+        paletteScroll.documentView = palette
+        paletteScroll.hasVerticalScroller = true
+        paletteScroll.autohidesScrollers = true
+        paletteScroll.drawsBackground = false
+        let tools = NSStackView(views: [categoryLabel, paletteScroll, variantLabel, variant, fitButton, status])
+        tools.orientation = .vertical
+        tools.alignment = .leading
+        tools.spacing = 8
+        let sidebar = NSBox()
+        sidebar.boxType = .custom
+        sidebar.fillColor = .controlBackgroundColor
+        sidebar.contentViewMargins = .zero
+        sidebar.contentView?.addSubview(tools)
+        tools.translatesAutoresizingMaskIntoConstraints = false
 
         let hint = NSTextField(labelWithString: "左ドラッグで配置・移動　右ドラッグで消去　Space + ドラッグでパン　ホイール／ピンチでズーム")
         hint.textColor = .secondaryLabelColor
+        hint.lineBreakMode = .byTruncatingTail
         let root = NSView()
+        root.wantsLayer = true
         window.contentView = root
-        for view in [bar, canvas, hint] {
+        let minimap = Minimap()
+        minimap.canvas = canvas
+        minimap.toolTip = "ミニマップをクリックして表示位置を移動"
+        canvas.onOverviewChange = { [weak minimap] in minimap?.needsDisplay = true }
+        for view in [canvas, sidebar, minimap, hint] {
             view.translatesAutoresizingMaskIntoConstraints = false
             root.addSubview(view)
         }
         NSLayoutConstraint.activate([
-            bar.topAnchor.constraint(equalTo: root.topAnchor, constant: 10),
-            bar.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 12),
-            bar.trailingAnchor.constraint(lessThanOrEqualTo: root.trailingAnchor, constant: -12),
-            canvas.topAnchor.constraint(equalTo: bar.bottomAnchor, constant: 8),
+            sidebar.topAnchor.constraint(equalTo: root.topAnchor),
+            sidebar.bottomAnchor.constraint(equalTo: root.bottomAnchor),
+            sidebar.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+            sidebar.widthAnchor.constraint(equalToConstant: 270),
+            tools.topAnchor.constraint(equalTo: sidebar.topAnchor, constant: 12),
+            tools.bottomAnchor.constraint(equalTo: sidebar.bottomAnchor, constant: -12),
+            tools.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor, constant: 12),
+            tools.trailingAnchor.constraint(equalTo: sidebar.trailingAnchor, constant: -12),
+            paletteScroll.widthAnchor.constraint(equalTo: tools.widthAnchor),
+            variant.widthAnchor.constraint(equalTo: tools.widthAnchor),
+            canvas.topAnchor.constraint(equalTo: root.topAnchor),
             canvas.leadingAnchor.constraint(equalTo: root.leadingAnchor),
-            canvas.trailingAnchor.constraint(equalTo: root.trailingAnchor),
-            hint.topAnchor.constraint(equalTo: canvas.bottomAnchor, constant: 6),
+            canvas.trailingAnchor.constraint(equalTo: sidebar.leadingAnchor),
+            minimap.topAnchor.constraint(equalTo: canvas.bottomAnchor),
+            minimap.leadingAnchor.constraint(equalTo: canvas.leadingAnchor),
+            minimap.trailingAnchor.constraint(equalTo: canvas.trailingAnchor),
+            minimap.heightAnchor.constraint(equalToConstant: 84),
+            hint.topAnchor.constraint(equalTo: minimap.bottomAnchor, constant: 6),
             hint.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 12),
+            hint.trailingAnchor.constraint(equalTo: canvas.trailingAnchor, constant: -12),
             hint.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -8)
         ])
         canvas.onHover = { [weak self] label in self?.status.stringValue = label }
@@ -59,6 +105,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.makeFirstResponder(canvas)
         NSApp.activate(ignoringOtherApps: true)
         refreshPalette()
+        restoreSession()
     }
 
     private func installMenu() {
@@ -92,28 +139,49 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func refreshPalette() {
-        category.removeAllItems()
+        while palette.numberOfRows > 0 { palette.removeRow(at: palette.numberOfRows - 1) }
+        categoryButtons.removeAll()
+        palette.setFrameSize(.zero)
         guard let map = canvas.document else {
-            category.isEnabled = false
             variant.isEnabled = false
             return
         }
         let labels = ["TerrainTiles": "地形", "OneWayPlatforms": "片方向床", "GumPassBarriers": "バリア",
                       "GumAnchors": "ガムアンカー", "Spikes": "トゲ", "Foods": "食べ物", "MusicNotes": "音符"]
-        categories = MapDocument.order.filter { map.layers[$0] != nil }
-        category.addItems(withTitles: categories.map { labels[$0] ?? $0 })
-        categories.append(contentsOf: map.markers.keys.sorted())
-        for path in map.markers.keys.sorted() {
-            let label = String(path.split(separator: "/").last ?? "")
-            category.addItem(withTitle: label == "PlayerSpawn" ? "スタート" : label == "Exit" ? "ゴール" : label)
+        categories = MapDocument.order.filter { map.layers[$0] != nil } + map.markers.keys.sorted()
+        for (index, kind) in categories.enumerated() {
+            let name = String(kind.split(separator: "/").last ?? "")
+            let title = labels[kind] ?? (name == "PlayerSpawn" ? "スタート" : name == "Exit" ? "ゴール" : name)
+            let button = NSButton(title: title, target: self, action: #selector(chooseCategory(_:)))
+            let label = NSMutableAttributedString(string: "■  " + title)
+            label.addAttribute(.foregroundColor, value: Canvas.placementColor(for: kind),
+                               range: NSRange(location: 0, length: 1))
+            button.attributedTitle = label
+            button.tag = index
+            button.toolTip = title
+            button.setButtonType(.pushOnPushOff)
+            button.bezelStyle = .rounded
+            button.lineBreakMode = .byTruncatingTail
+            button.widthAnchor.constraint(equalToConstant: 112).isActive = true
+            categoryButtons.append(button)
         }
-        category.isEnabled = true
-        selectCategory()
+        let columns = 2
+        for start in stride(from: 0, to: categoryButtons.count, by: columns) {
+            let end = min(start + columns, categoryButtons.count)
+            palette.addRow(with: Array(categoryButtons[start..<end]))
+        }
+        palette.setFrameSize(palette.fittingSize)
+        palette.scroll(.zero)
+        selectCategory(at: 0)
     }
 
-    @objc private func selectCategory() {
-        let index = category.indexOfSelectedItem
+    @objc private func chooseCategory(_ sender: NSButton) {
+        selectCategory(at: sender.tag)
+    }
+
+    private func selectCategory(at index: Int) {
         guard categories.indices.contains(index), let map = canvas.document else { return }
+        for button in categoryButtons { button.state = button.tag == index ? .on : .off }
         let selected = categories[index]
         variant.removeAllItems()
         variants = map.layers[selected]?.palette ?? []
@@ -176,12 +244,17 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         try map.validate()
         let normalized = try encode(map)
         guard allowReplacement() else { return }
+        load(map, file: file, baseline: normalized)
+    }
+
+    private func load(_ map: MapDocument, file: URL?, baseline: Data?) {
         self.file = file
-        baseline = normalized
+        self.baseline = baseline
         canvas.document = map
         history.removeAllActions()
         refreshPalette()
         refreshTitle()
+        window.contentView?.layoutSubtreeIfNeeded()
         canvas.fit()
         window.makeFirstResponder(canvas)
     }
@@ -262,8 +335,44 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         alert.runModal()
     }
 
+    private func sessionURL() throws -> URL {
+        try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
+                                    appropriateFor: nil, create: false)
+            .appendingPathComponent("BungeeGumMapEdit", isDirectory: true)
+            .appendingPathComponent("session.json")
+    }
+
+    private func restoreSession() {
+        do {
+            let url = try sessionURL()
+            guard FileManager.default.fileExists(atPath: url.path) else { return }
+            let session = try JSONDecoder().decode(SavedSession.self, from: Data(contentsOf: url))
+            try session.map.validate()
+            var map = session.map
+            map.cells.sort(by: Placement.ordered)
+            let file = session.file.flatMap { url in
+                url.isFileURL && FileManager.default.fileExists(atPath: url.path) ? url : nil
+            }
+            load(map, file: file, baseline: session.baseline)
+        } catch {
+            show(MapError("前回の作業を復元できませんでした。\n\(error.localizedDescription)"))
+        }
+    }
+
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        allowReplacement() ? .terminateNow : .terminateCancel
+        guard let map = canvas.document else { return .terminateNow }
+        do {
+            try map.validate()
+            let url = try sessionURL()
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
+                                                    withIntermediateDirectories: true)
+            let session = SavedSession(map: map, baseline: baseline, file: file)
+            try JSONEncoder().encode(session).write(to: url, options: .atomic)
+            return .terminateNow
+        } catch {
+            show(MapError("作業を自動保存できませんでした。\n\(error.localizedDescription)"))
+            return .terminateCancel
+        }
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {

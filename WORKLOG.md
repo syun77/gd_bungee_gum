@@ -1,3 +1,67 @@
+## MapEdit minimap rendering regression
+
+- Goal/status: Restore canvas and sidebar visibility alongside the minimap. Fixed.
+- Completed/decisions: The minimap introduced a custom-drawn sibling into a mixed layer-backed hierarchy with no explicit minimap clip. Use one layer-backed content hierarchy and clip both custom draws to their view bounds.
+- Files: tools/mapedit/Canvas.swift, tools/mapedit/main.swift, AGENTS.md, WORKLOG.md.
+- Verification: Swift build and git diff --check passed. Dark Aqua AppKit offscreen composite showed the canvas, palette and minimap together for Time Attack and Theater. Live WindowServer rendering on the reported desktop remains unverified.
+- Blockers: None. Next action: Relaunch MapEdit via run.command.
+
+## MapEdit minimap
+
+- Goal/status: Show a bottom overview with viewport outline and click navigation. Complete.
+- Completed/decisions: Aspect-fit tile and marker overview; outlined visible intersection; click centers the canvas at the current zoom. Viewport and placements invalidate the overview.
+- Files: tools/mapedit/Canvas.swift, tools/mapedit/main.swift, tools/mapedit/README.md, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift build and synthetic AppKit clicks near both ends and at center passed for both stage payloads, preserving zoom and data. git diff --check passed. Desktop visuals unverified.
+- Blockers: None. Next action: Relaunch MapEdit with run.command.
+
+## MapEdit route marker visibility
+
+- Goal/status: Enlarge and distinguish start, goal and checkpoint markers. Complete.
+- Completed/decisions: Route markers use a 14pt screen diameter, with green start, pink exit and orange checkpoints. Sidebar uses the same colors. Marker coordinates and tile rendering stay intact.
+- Files: tools/mapedit/Canvas.swift, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift build and git diff --check passed. Interactive rendering was not checked.
+- Blockers: None. Next action: Relaunch MapEdit via run.command.
+
+## MapEdit cell size and swatches
+
+- Goal/status: Use uniform tile sizes and show matching color swatches in the palette. Complete.
+- Completed/decisions: Full-cell rendering for every tile kind; active kind takes display priority on overlap. Added a colored square before each palette label using the shared placement colors. Markers retain pixel positions.
+- Files: tools/mapedit/Canvas.swift, tools/mapedit/main.swift, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift build and git diff --check passed. Desktop rendering remains unverified.
+- Blockers: None. Next action: Relaunch MapEdit via run.command.
+
+## MapEdit right sidebar
+
+- Goal/status: Move placement controls into a Tiled-style right pane. Complete.
+- Completed/decisions: Map is on the left; a fixed-width right pane holds a scrollable two-column category grid, tile variant picker and fit button. Fit on load uses the laid-out canvas bounds.
+- Files: tools/mapedit/main.swift, tools/mapedit/README.md, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift build and both-stage AppKit layout/selection probes passed at 650×350, including restaurant palette overflow and separate canvas/sidebar bounds. git diff --check passed. Desktop appearance remains unverified.
+- Blockers: None. Next action: Relaunch MapEdit via run.command.
+
+## MapEdit placement grid
+
+- Goal/status: Replace the placement-kind dropdown with a clickable grid. Complete.
+- Completed/decisions: Added a five-column AppKit grid for tile categories and markers with one highlighted selection. Kept the tile variant popup in the row below the grid.
+- Files: tools/mapedit/main.swift, tools/mapedit/README.md, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift build and AppKit probes passed for both real stage documents, including anchor and goal selection, single selected button, and separate canvas bounds. git diff --check passed. Interactive display remains unverified.
+- Blockers: None. Next action: Relaunch MapEdit via run.command.
+
+## MapEdit palette visibility
+
+- Goal/status: Restore visible placement type and tile controls in Dark Mode. Implementation complete.
+- Completed/decisions: Put explicitly initialized, bordered popup controls and labels on a dedicated AppKit toolbar with a fixed height and minimum control widths. Clip the layer-backed canvas to its own bounds.
+- Files: tools/mapedit/main.swift, AGENTS.md, WORKLOG.md.
+- Verification: Swift compilation and a Dark Aqua layout probe passed with real Time Attack data, visible control geometry, selected title and disjoint toolbar/canvas frames. git diff --check passed. Interactive rendering on the reported desktop remains unverified.
+- Blockers: None. Next action: Relaunch with run.command and check the palette in Dark Mode.
+
+## MapEdit session restore
+
+- Goal/status: Automatically save the working map on quit and restore it on launch. Complete.
+- Completed/decisions: Atomic app-local session stores the current map, original baseline and optional manual save URL. Quit is canceled on write failure. Normal load validation also applies to restore.
+- Files: tools/mapedit/main.swift, tools/mapedit/README.md, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: AppKit build passed. Two-process test of the save/restore methods with a real Time Attack payload and temporary storage passed, including unsaved marker edits and dirty state. git diff --check passed.
+- Blockers: None. Next action: Close and reopen MapEdit during normal use.
+
 ## MapEdit Finder launcher
 
 - Goal/status: Add a double-click launcher for MapEdit. Complete.
