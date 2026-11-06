@@ -1,3 +1,19 @@
+## Tool creation guidance
+
+- Goal/status: Review the guide for general-purpose tools and correct scope gaps. Complete.
+- Completed/decisions: Split common practices from CLI/batch, interactive editor, and grid guidance. Scoped framework and format defaults, clarified write failures and undo/save behavior, and added checks for batch failures and reruns.
+- Files changed: `.agents/ツール作成.md`, `WORKLOG.md`. Existing reference in `AGENTS.md` remains valid.
+- Verification: Reviewed against read-only CLI, batch writer, file editor and grid editor use cases. Whitespace checks passed.
+- Blockers: None. Next action: Apply the relevant sections during the next tool task.
+
+## Time Attack width expansion
+
+- Goal/status: Triple the saved Time Attack stage width. Complete.
+- Completed/decisions: Expanded 64→192 columns with a straight floor and ceiling extension, moved the east wall and exit 4096px east, and updated background/camera width to 6144px. Preserved authored footholds, anchors and checkpoint. The expanded course has a separate local best file.
+- Files: time_attack.tscn, game_time_attack.tscn, game.gd, Time Attack spec, AGENTS, WORKLOG.
+- Verification: Reviewed old/new geometry and camera values. Godot headless verified exact rectangle coverage and live physics across all 4608 cells plus the camera limit and exit floor. git diff --check passed. Known CA warning.
+- Blockers: None. Next action: F5 to playtest or edit the extension.
+
 ## Time Attack collision sync for revised platforms
 
 - Goal/status: Align collision with the manually revised saved tiles. Complete.

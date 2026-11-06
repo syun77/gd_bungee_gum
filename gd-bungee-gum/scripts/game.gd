@@ -1,7 +1,7 @@
 extends Node2D
 ## Fixed-step owner: validate -> direction / actions -> gum -> player -> presentation.
 const Settings = preload("res://scripts/game_settings.gd")
-const TIME_ATTACK_RECORD := "user://time_attack.cfg"
+const TIME_ATTACK_RECORD := "user://time_attack_sprint.cfg"
 const SPIKE_LAYER := 64
 const BAGUETTE_POINTS := 100
 const RESPAWN_META := &"checkpoint_respawn"

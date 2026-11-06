@@ -65,6 +65,8 @@
 
 ## Development policy
 
+- Before creating or extending a tool for this repository, read and follow `.agents/ツール作成.md` for implementation, editor interactions, file handling, and verification.
+
 - This project is under active development and does not require backward compatibility. Prefer the best current design, including breaking changes, over compatibility shims, deprecated paths, or preservation of obsolete APIs.
 - When changing a design or interface, update every affected implementation, caller, test, configuration, fixture, asset, and document to the new form in the same task. Do not leave mixed old and new patterns behind.
 - Implement the solution judged best for the current codebase rather than minimizing the diff. Remove superseded code and stale compatibility machinery when it is safe and in scope.
@@ -314,7 +316,7 @@
 - Small score-item baguette artwork is `images/foods/baguette.png`, a standalone 32 × 32 transparent RGBA sprite. Use nearest-neighbor filtering.
 - Baguettes are 100-point contact pickups under each saved stage's `Baguettes` node (3 per stage); keep placements aligned with `scripts/baguette_layout.gd`. Game owns the stage score/HUD and scene reload resets score and pickups. Music notes and baguettes share `contact_pickup.gd`; only baguettes award points. Keep the source and runtime baguette PNG copies identical.
 
-- Time Attack uses one dedicated 64×24 stage, `scenes/stages/time_attack.tscn`. `tools/build_time_attack_stage.gd` overwrites the saved map with its initial layout. After manual edits, sync Terrain rectangles to the saved TerrainTiles occupancy without rerunning the builder. Game counts active physics time immediately after the entrance animation, freezes it on goal contact, and saves one local best in `user://time_attack.cfg`. See `specs/time-attack-courses.md`.
+- Time Attack uses one dedicated 192×24 stage, `scenes/stages/time_attack.tscn`. `tools/build_time_attack_stage.gd` overwrites the saved map with its initial layout. After manual edits, sync Terrain rectangles to the saved TerrainTiles occupancy without rerunning the builder. Game counts active physics time immediately after the entrance animation, freezes it on goal contact, and saves one local best in `user://time_attack_sprint.cfg`. See `specs/time-attack-courses.md`.
 
 - Time Attack's TerrainTiles material fills transparent pixels inside each painted 32px atlas cell. Keep terrain visuals on TileMapLayer and merged StaticBody2D shapes aligned for gum wrapping.
 
