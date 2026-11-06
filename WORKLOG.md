@@ -1,3 +1,19 @@
+## MapEdit Finder launcher
+
+- Goal/status: Add a double-click launcher for MapEdit. Complete.
+- Completed/decisions: Executable run.command resolves its own directory and delegates to run.sh. Updated the README and durable launch instructions.
+- Files: tools/mapedit/run.command, tools/mapedit/README.md, AGENTS.md, WORKLOG.md.
+- Verification: Shell syntax, executable bit, git diff --check and direct launch from /tmp passed. Finder interaction was not exercised.
+- Blockers: None. Next action: Double-click run.command in Finder when using MapEdit.
+
+## MapEdit
+
+- Goal/status: Implement the macOS single-canvas placement editor and Godot round trip. Complete.
+- Completed/decisions: Added Swift/AppKit editor, clipboard and atomic JSON files, typed palettes, brush/erase and marker movement, pan/zoom and Undo/Redo. Godot plugin validates stage and clipboard revision, previews differences and commits placements, merged static collision and theater rims together. Time Attack and Theater supported. Canvas uses semantic colors and tile IDs. Existing marker instances are movable.
+- Files: tools/mapedit, gd-bungee-gum/addons/mapedit, gd-bungee-gum/tools/verify_mapedit.gd, project.godot, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: AppKit build and launch smoke passed. Swift model decoded and re-encoded both real stage payloads, rejected duplicates, and UndoManager undo/redo passed. Godot editor tests passed for both stages (no-op, invalid data, changes, collision coverage, stale paste, Undo/Redo). Saved Theater map test and git diff --check passed. Sandbox Godot CA/editor-settings and AppKit service warnings were observed.
+- Blockers: None. Next action: Manual desktop clipboard and pointer/trackpad playtest; launch and workflow are documented in tools/mapedit/README.md.
+
 ## Tilemap editor design guidance
 
 - Goal/status: Record tilemap editor research as repository guidance. Complete.

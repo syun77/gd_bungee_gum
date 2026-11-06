@@ -323,3 +323,5 @@
 - Time Attack activates checkpoints under the stage’s Checkpoints node. The scene-scoped respawn payload carries elapsed time across automatic death reloads, including fallback to the entrance. Manual retry clears both checkpoint and timer.
 
 - Game fall death checks the player origin against shared restart_y plus the scene’s fall_restart_offset. Time Attack adds64px (default Y=964).
+
+- On macOS, launch MapEdit by double-clicking `tools/mapedit/run.command` in Finder or running `./tools/mapedit/run.sh`. Godot’s MapEdit plugin exchanges versioned gameplay placements for the directly opened Theater or Time Attack stage, rejects stale clipboard snapshots, and applies terrain collision/rim changes in the same Undo action. See `specs/mapedit.md`; verify with `--headless --editor --script res://tools/verify_mapedit.gd`.

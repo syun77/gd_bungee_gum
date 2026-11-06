@@ -31,6 +31,10 @@ window/size/window_width_override=1280
 window/size/window_height_override=768
 window/stretch/mode="canvas_items"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/mapedit/plugin.cfg")
+
 [gui]
 
 theme/custom="res://resources/debug_theme.tres"
