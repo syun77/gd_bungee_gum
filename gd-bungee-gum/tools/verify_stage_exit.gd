@@ -11,6 +11,7 @@ func ticks(count := 3) -> void:
 		await physics_frame
 		await process_frame
 func verify() -> void:
+	root.get_node("ReplayStore").save_path = "/tmp/bungee-verify_stage_exit-replay.dat"
 	for path in ["res://scenes/game.tscn", "res://scenes/game_stage_2.tscn", "res://scenes/game_stage_3.tscn"]:
 		var game = load(path).instantiate()
 		root.add_child(game)
@@ -124,4 +125,5 @@ func verify() -> void:
 	airborne_game.free()
 	await process_frame
 	print("Stage exit: %s" % ("PASS" if failures == 0 else "FAIL"))
+	DirAccess.remove_absolute("/tmp/bungee-verify_stage_exit-replay.dat")
 	quit(0 if failures == 0 else 1)

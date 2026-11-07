@@ -27,6 +27,12 @@ func _ready() -> void:
 
 	stage_button.pressed.connect(_open_scene.bind("stage_select"))
 	time_button.pressed.connect(_open_scene.bind("game_time_attack"))
+	var replay := Button.new()
+	replay.text = "リプレイ再生"
+	replay.custom_minimum_size.y = 64
+	replay.disabled = not ReplayStore.available()
+	content.add_child(replay)
+	replay.pressed.connect(func(): ReplayStore.play("res://scenes/mode_select.tscn"))
 	stage_button.grab_focus()
 
 func _add_card(parent: HBoxContainer, tag: String, title: String, description: String,

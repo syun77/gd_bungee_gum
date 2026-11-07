@@ -15,3 +15,4 @@ gum_hit_shockwave_radius = 80.0
 gum_hit_shockwave_duration = 0.6
 gum_hit_shockwave_strength = 5.0
 gum_hit_shockwave_opacity = 0.18
+camera_normal_zoom = 1.9100000000000001

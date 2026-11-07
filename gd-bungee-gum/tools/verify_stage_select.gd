@@ -22,6 +22,7 @@ func toggle_menu() -> void:
 		Input.flush_buffered_events()
 
 func verify() -> void:
+	root.get_node("ReplayStore").save_path = "/tmp/bungee-verify_stage_select-replay.dat"
 	var startup: String = ProjectSettings.get_setting("application/run/main_scene")
 	check(startup == "res://scenes/game_time_attack.tscn", "F5 starts Time Attack directly")
 	change_scene_to_file(startup)
@@ -29,14 +30,14 @@ func verify() -> void:
 	check(current_scene.time_attack, "Startup is Time Attack")
 	current_scene._clear_stage()
 	var results := current_scene.get_node("HUD").find_children("*", "Button", true, false)
-	check(results.size() == 1, "Time Attack result offers only retry")
+	check(results.size() == 2, "Time Attack result offers replay and retry")
 	toggle_menu()
 	check(current_scene.pause_menu.is_open, "Time Attack menu opens after clear")
 	current_scene.pause_menu.buttons[1].pressed.emit()
 	await settle()
 	check(current_scene.scene_file_path == "res://scenes/mode_select.tscn", "Time Attack menu returns to mode selection")
 	var mode_buttons := current_scene.find_children("*", "Button", true, false)
-	check(mode_buttons.size() == 2 and not mode_buttons[1].disabled, "Time Attack can be selected")
+	check(mode_buttons.size() == 3 and not mode_buttons[1].disabled, "Time Attack can be selected")
 	check(mode_buttons[0].has_focus(), "Stage Mode has initial focus")
 	mode_buttons[0].pressed.emit()
 	await settle()
@@ -171,4 +172,5 @@ func verify() -> void:
 	print("Stage selection: %s" % ("PASS" if failures == 0 else "FAIL"))
 	current_scene.queue_free()
 	await settle()
+	DirAccess.remove_absolute("/tmp/bungee-verify_stage_select-replay.dat")
 	quit(0 if failures == 0 else 1)

@@ -1,3 +1,59 @@
+## Food orbit test scene
+
+- Goal/status: Center Teto in test.tscn and orbit food artwork; complete.
+- Completed/decisions: Existing Teto static texture at0.32 scale;11 existing64px food sprites, upright clockwise orbit230px/30degrees per second. Viewport center follows resizing; root exports radius/speed. Visual-only scene.
+- Files: scenes/test.tscn, scripts/food_orbit_demo.gd (+UID), specs/test-scene.md, AGENTS.md, WORKLOG.md.
+- Verification: Godot editor import and120-frame headless scene run exited0; no script/parse errors. git diff --check PASS. Existing sandbox certificate/Mono/editor-settings warnings remain. Graphical appearance not manually inspected.
+- Final refactoring: Reviewed scene/script ownership; one layout method shared by initial positioning, resize and frame updates; no gameplay coupling.
+- Blockers: None. Next action: Open scenes/test.tscn and press F6 to view the orbit.
+
+## Replay current Camera Normal Zoom
+
+- Goal/status: Make playback use current shared Camera Normal Zoom, including saved runs; complete.
+- Decisions: replay.tscn supplies shared settings through the exported Resource; every applied frame uses settings.camera_normal_zoom. Camera center and world transforms remain recorded; gum-driven recorded zoom does not apply. New recordings omit unused zoom; schema no longer requires it. Recorded centers can reveal stage-edge margins at wider views, documented in specs/replay.md.
+- Completed/files: scripts/replay_player.gd, scripts/replay_store.gd, scenes/replay.tscn, tools/verify_replay.gd, specs/replay.md, AGENTS.md, WORKLOG.md. User's saved Camera Normal Zoom tuning was left intact.
+- Verification: verify_replay PASS, including changed shared zoom after disk roundtrip, zoom changes each frame, ignoring saved zoom and retained camera center; existing full replay integration passes. git diff --check PASS. Known certificate/resource-exit warnings plus intentional failure-case warnings remain; graphical inspection not performed.
+- Final refactoring: Reviewed settings ownership and removed obsolete zoom storage/validation; all current consumers/specs aligned, no gameplay physics changes.
+- Blockers: None. Next action: Launch any saved replay and visually confirm the current Camera Normal Zoom.
+
+## Replay recording and menu playback
+
+- Goal/status: Record start-to-goal play and launch replay from menus; complete.
+- Decisions: Fixed-tick visual deltas and sound cues avoid rigid-physics divergence. Latest completed run is atomically ZSTD-saved to user://latest_replay.dat; death reload preserves the run, manual retry resets it, pause adds no time. Playback creates only visuals with tile collision/navigation/scene sources disabled and returns to mode selection.
+- Completed: Recorder/autoload; isolated renderer; character/boxes/tiles/changes/pickups/doors/checkpoints/gum/glow/aim/camera/score/timer/particle cores/shader params/sound capture; pause/mode/clear replay buttons; playback pause/restart/back/end; malformed data and failed-save handling; specs/AGENTS updated. Decorative particle halos/hit arcs and READY tile blink are excluded per specs/replay.md.
+- Files: project.godot; replay_store/player/gum/particles.gd (+UIDs), replay.tscn; game/gum_connection/gum_hit_particles/gum_shot_particles/pause_menu/mode_select/sound_effects.gd; verify_replay.gd (+UID), verify_pause_menu/stage_select/stage_exit/gum_hit_particles.gd; specs/replay.md, specs/pause-menu.md, AGENTS.md, WORKLOG.md. Existing MapEdit edits preserved.
+- Verification: Final verify_replay PASS (actual movement/gum/rotated box/tile deletion/death reload/exit finish, compressed disk roundtrip, both menu launches, physics-free visuals, exact final transform set, pause/restart/back/end, saved-run immutability, retry, malformed data, failed-save preservation). verify_controls/gum/pause_menu/stage_select/stage_exit/sound_effects/gum_shot_particles/gum_hit_particles PASS. Final editor import has no script/parse errors; git diff --check PASS. Expected failure-case warnings and known sandbox certificate/editor/exit-resource warnings remain. Graphical playback not manually inspected.
+- Final refactoring: Centralized menu focus links, uniform visual metadata/shader capture and typed data validation; renderer stays independent of gameplay; test save paths use /tmp. Updated stale particle test assumptions (12/0.27s) to current configured count/lifetime; no gameplay tuning changed.
+- Blockers: None. Next action: Play a course to the goal, select リプレイ再生 from Esc/OPTIONS or mode selection, and visually check playback/audio balance.
+
+## Repair MapEdit copy/send stage validation
+
+- Goal/status: Fix copy/send rejection while time_attack is open; complete.
+- Confirmed cause: Saved Time Attack terrain layer renamed from TerrainTiles to full-width whitespace. Restored required node name, preserving cells and all other authored data.
+- Decision: Removed unverified automatic scene-routing experiment from preceding interrupted turn; keep explicit active-scene contract. Central snapshot_error reports exact missing node/type/TileSet problem to copy and send.
+- Files: time_attack.tscn, plugin.gd, stage_exchange.gd, verify_mapedit_snapshot.gd, MapEdit README/spec, AGENTS.md, WORKLOG.md.
+- Verification: verify_mapedit_snapshot PASS for both saved stages, JSON validation, whitespace rename, restoration and missing TileSet; headless editor import has no script/parse errors; git diff --check PASS. Known sandbox certificate/editor-settings/.NET warnings remain. Live GUI resend not performed.
+- Final refactoring: Centralized structural validation in snapshot_error; removed duplicate snapshot checks and speculative routing.
+- Blockers: None. Next action: Reload saved Time Attack in Godot (preserve unsaved work), verify TerrainTiles name, copy/send again.
+
+## Thin one-way floor editor display
+
+- Goal/status: Draw one-way floors in top fifth of cell; complete.
+- Decision: Shared placement rectangle owns main-map/minimap/preview geometry; keep grid editing and saved data unchanged. Hide tile ID when shape height is below14px.
+- Files: Canvas.swift, specs/mapedit.md, MapEdit README, AGENTS.md, WORKLOG.md.
+- Verification: Swift app build PASS; geometry probe PASS at2/16/32/96px cells, nonzero origin and ordinary terrain isolation; git diff --check PASS. Live GUI visual check not performed.
+- Final refactoring: Main-map/minimap reuse placementRect; preview now shares same geometry instead of separate full-cell rectangle. No persistence or physics changes.
+- Blockers: None. Next action: Restart MapEdit to see thin one-way floor bands.
+
+## One-way floor MapEdit placement
+
+- Goal/status: Enable one-way floor placement in both supported maps; complete.
+- Findings/decision: Exchange and Swift model already support OneWayPlatforms; Time Attack lacked the layer. Added empty collision-enabled layer and generator parity without regenerating authored map. Category is 一方通行床; variants 左端/中間/右端/単独.
+- Files: time_attack.tscn, build_time_attack_stage.gd, verify_mapedit.gd, MapEdit main.swift/README, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift app build PASS; temporary headless both-stage palette/validation/diff/PackedScene roundtrip/native one-way flag probe PASS; verify_one_way PASS (passage/landing/kick/rigid/gum/paint/erase). git diff --check PASS. Existing macOS certificate warning remains. Live GUI gestures not exercised.
+- Refactoring: Reviewed shared category/palette/commit paths; reused existing layer protocol and native TileSet collision. No new storage format or authored tile changes.
+- Blockers: None. Next action: Restart MapEdit, reopen saved Time Attack in Godot and copy/paste fresh placements; select 一方通行床.
+
 ## Note and baguette pickup sound
 
 - Goal/status: Assign item3.wav to notes and baguettes; replacement source refreshed and verified; complete.

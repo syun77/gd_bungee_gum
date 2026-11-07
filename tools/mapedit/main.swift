@@ -220,7 +220,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFi
     }
 
     private func placementName(for kind: String) -> String {
-        let labels = [MapDocument.breakableKind: "破壊可能ブロック", "TerrainTiles": "地形", "OneWayPlatforms": "片方向床", "GumPassBarriers": "バリア",
+        let labels = [MapDocument.breakableKind: "破壊可能ブロック", "TerrainTiles": "地形", "OneWayPlatforms": "一方通行床", "GumPassBarriers": "バリア",
                       "GumAnchors": "ガムアンカー", "Spikes": "即死トゲ", "GumBoxes": "可動ブロック", "Foods": "食べ物", "Baguettes": "フランスパン", "MusicNotes": "音符", MapDocument.checkpointKind: "チェックポイント"]
         let name = String(kind.split(separator: "/").last ?? "")
         return canvas.placementStyle(for: kind)?.name ?? labels[kind]
@@ -377,6 +377,9 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFi
         variant.addItems(withTitles: variants.enumerated().map { index, id in
             let identifier = "\(id[0]) / \(id[1]),\(id[2]) / \(id[3])"
             if selected == MapDocument.breakableKind { return "茶色レンガ" }
+            if selected == "OneWayPlatforms", id[0] == 1, id[2] == 0, (0...3).contains(id[1]) {
+                return ["左端", "中間", "右端", "単独"][id[1]]
+            }
             let labelIndex = source?.palette.firstIndex(of: id) ?? index
             guard labels.indices.contains(labelIndex), !labels[labelIndex].isEmpty else { return identifier }
             return MapDocument.namedItemKinds.contains(selected) ? labels[labelIndex] : "\(labels[labelIndex]) · \(identifier)"

@@ -35,6 +35,7 @@ func build() -> void:
 	var terrain_material := ShaderMaterial.new()
 	terrain_material.shader = preload("res://shaders/time_attack_terrain.gdshader")
 	terrain.material = terrain_material
+	layer("OneWayPlatforms", tiles, true)
 	var body := StaticBody2D.new()
 	body.name = "Terrain"
 	body.collision_layer = 1

@@ -15,6 +15,8 @@ func verify() -> void:
 		var stage := EditorInterface.get_edited_scene_root()
 		assert(stage != null and stage.scene_file_path == path)
 		var before := Exchange.snapshot(stage)
+		assert(before.layers.OneWayPlatforms.palette == Exchange.ATLAS_PALETTES.OneWayPlatforms)
+		assert((stage.get_node("OneWayPlatforms") as TileMapLayer).collision_enabled)
 		assert(before.layers.Foods.palette.size() == 11)
 		assert(before.layers.Foods.labels.has("ミラノ風ドリア"))
 		assert(not before.layers.Foods.labels.has(""))

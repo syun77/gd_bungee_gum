@@ -47,9 +47,7 @@ func _ready() -> void:
 	buttons[0].pressed.connect(func(): retry_requested.emit())
 	buttons[1].pressed.connect(func(): selection_requested.emit())
 	buttons[2].pressed.connect(close)
-	for index in buttons.size():
-		buttons[index].focus_neighbor_top = buttons[index].get_path_to(buttons[posmod(index - 1, buttons.size())])
-		buttons[index].focus_neighbor_bottom = buttons[index].get_path_to(buttons[(index + 1) % buttons.size()])
+	_update_focus_neighbors()
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause_menu") or event.is_action_pressed("ui_cancel"):
@@ -80,3 +78,20 @@ func close() -> void:
 func _exit_tree() -> void:
 	if is_open:
 		get_tree().paused = false
+
+func add_replay_action(action: Callable) -> void:
+	var button := Button.new()
+	button.text = "リプレイ再生"
+	button.custom_minimum_size.y = 64
+	buttons[0].get_parent().add_child(button)
+	button.pressed.connect(action)
+	buttons.append(button)
+	# Availability changes when a run reaches the goal.
+	visibility_changed.connect(func(): button.disabled = not ReplayStore.available())
+	button.disabled = not ReplayStore.available()
+	_update_focus_neighbors()
+
+func _update_focus_neighbors() -> void:
+	for index in buttons.size():
+		buttons[index].focus_neighbor_top = buttons[index].get_path_to(buttons[posmod(index - 1, buttons.size())])
+		buttons[index].focus_neighbor_bottom = buttons[index].get_path_to(buttons[(index + 1) % buttons.size()])

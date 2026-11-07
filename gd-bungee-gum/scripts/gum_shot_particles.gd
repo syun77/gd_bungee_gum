@@ -98,3 +98,10 @@ func _draw_halos() -> void:
 		var appearance := _appearance(particle)
 		for layer in range(3, 0, -1):
 			halo.draw_circle(halo.to_local(particle.position), (particle.radius + layer) * appearance.x, Color(1.0, 0.45, 0.72, appearance.y * 0.045), true, -1.0, true)
+
+func replay_particles() -> Array:
+	var circles: Array = []
+	for particle in particles:
+		var appearance := _appearance(particle)
+		circles.append([particle.position, float(particle.radius * appearance.x), Color(particle.color, appearance.y)])
+	return circles

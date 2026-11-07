@@ -36,7 +36,7 @@ func verify() -> void:
 	check(gum.player_force.is_zero_approx(), "Hit particles preserve force-free arrival")
 	check(effect.z_index == gum.z_index and effect.get_index() > gum.get_index() and effect.z_index < game.get_node("GumAttachmentEffect").z_index, "Hit particles draw above gum and below patch")
 	var burst: Dictionary = effect.bursts[0]
-	check(burst.particles.size() == 12 and not burst.arcs, "Default sparse particle ring has no arcs")
+	check(burst.particles.size() == effect.settings.gum_hit_particle_count and not burst.arcs, "Configured sparse particle ring has no arcs")
 	for particle in burst.particles:
 		check(particle.direction.dot(Vector2.LEFT) >= -0.0001, "Surface burst stays in outward hemisphere")
 		check(effect.particle_position(burst, particle).distance_to(burst.center) >= 2.99, "Particles begin around center, not in patch")
@@ -53,7 +53,7 @@ func verify() -> void:
 	check(effect.bursts.size() == 1, "Contraction does not retrigger burst")
 	gum.detach()
 	check(effect.bursts.size() == 1, "Detach retains residue")
-	effect._process(0.13)
+	effect._process(effect.settings.gum_hit_particle_lifetime)
 	check(effect.bursts.is_empty(), "Burst expires by configured lifetime")
 	box.position = Vector2(10000, 200)
 	box.rotation = 0.0
@@ -95,7 +95,7 @@ func verify() -> void:
 	check(effect.bursts.size() == 1, "Target deletion retains independent residue")
 	effect._process(0.12)
 	check(not effect.bursts.is_empty() and burst.age > effect.ARC_LIFETIME, "Arcs finish before particle residue")
-	effect._process(0.15)
+	effect._process(effect.settings.gum_hit_particle_lifetime)
 	check(effect.bursts.is_empty(), "Erased-target burst expires without querying target")
 	# Repeat adhesion is bounded and prior residues remain independent.
 	for i in 6:

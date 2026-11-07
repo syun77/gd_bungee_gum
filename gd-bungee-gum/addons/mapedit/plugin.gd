@@ -35,9 +35,14 @@ func _exit_tree() -> void:
 	message.queue_free()
 
 func copy_stage() -> void:
-	var data := Exchange.snapshot(EditorInterface.get_edited_scene_root())
+	var stage := EditorInterface.get_edited_scene_root()
+	var error := Exchange.snapshot_error(stage)
+	if not error.is_empty():
+		show_message(error)
+		return
+	var data := Exchange.snapshot(stage)
 	if data.is_empty():
-		show_message("Open time_attack.tscn or theater_stage.tscn directly.")
+		show_message("ステージの配置データを取得できませんでした。")
 		return
 	data["base"] = Exchange.token(data)
 	data["source"] = {"cells": data.cells, "markers": data.markers}

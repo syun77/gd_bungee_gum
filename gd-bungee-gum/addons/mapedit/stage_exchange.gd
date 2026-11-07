@@ -37,8 +37,28 @@ const STALE := "Godot placements have changed. Copy the stage again before editi
 const TILE := 32
 const HEIGHT := 24
 
+static func snapshot_error(stage: Node) -> String:
+	if stage == null or not WIDTHS.has(stage.scene_file_path):
+		return "time_attack.tscn または theater_stage.tscn を Godot で直接開いてください。"
+	for path in ["Terrain", "Checkpoints", "TerrainTiles", "PlacementMarkers/PlayerSpawn", "PlacementMarkers/Exit"]:
+		if not stage.has_node(NodePath(path)):
+			return "%s に必須ノード %s がありません。ノード名を確認してください。" % [stage.scene_file_path.get_file(), path]
+	for kind in LAYERS:
+		var node := stage.get_node_or_null(NodePath(kind))
+		if node == null:
+			continue
+		var layer := node as TileMapLayer
+		if layer == null:
+			return "%s は TileMapLayer である必要があります。" % kind
+		if layer.tile_set == null or layer.tile_set.tile_size != Vector2i(TILE, TILE):
+			return "%s に 32×32 の TileSet を設定してください。" % kind
+	for path in ["PlacementMarkers/PlayerSpawn", "PlacementMarkers/Exit"]:
+		if not stage.get_node(NodePath(path)) is Node2D:
+			return "%s は Node2D である必要があります。" % path
+	return ""
+
 static func snapshot(stage: Node) -> Dictionary:
-	if stage == null or not WIDTHS.has(stage.scene_file_path) or not stage.has_node("Terrain") or not stage.has_node("Checkpoints"):
+	if not snapshot_error(stage).is_empty():
 		return {}
 	var layers := {}
 	var cells: Array = []
@@ -46,8 +66,6 @@ static func snapshot(stage: Node) -> Dictionary:
 		var layer := stage.get_node_or_null(kind) as TileMapLayer
 		if layer == null:
 			continue
-		if layer.tile_set == null or layer.tile_set.tile_size != Vector2i(TILE, TILE):
-			return {}
 		var palette := {}
 		var labels := {}
 		for tile: Array in ATLAS_PALETTES.get(kind, []):
@@ -76,8 +94,6 @@ static func snapshot(stage: Node) -> Dictionary:
 		variants.sort_custom(func(a: Array, b: Array) -> bool: return str(a) < str(b))
 		layers[kind] = {"tileset": layer.tile_set.resource_path, "palette": variants,
 			"labels": variants.map(func(tile: Array) -> String: return labels.get(str(tile), ""))}
-	if not layers.has("TerrainTiles"):
-		return {}
 	var markers := {}
 	for parent in ["PlacementMarkers", "Checkpoints"]:
 		var group := stage.get_node_or_null(parent)
@@ -85,8 +101,6 @@ static func snapshot(stage: Node) -> Dictionary:
 			for node in group.get_children():
 				if node is Node2D:
 					markers[str(stage.get_path_to(node))] = [node.position.x, node.position.y]
-	if not markers.has("PlacementMarkers/PlayerSpawn") or not markers.has("PlacementMarkers/Exit"):
-		return {}
 	return {"version": 1, "stage": stage.scene_file_path, "width": WIDTHS[stage.scene_file_path],
 		"height": HEIGHT, "tileSize": TILE, "layers": layers, "cells": cells, "markers": markers}
 
@@ -106,8 +120,10 @@ static func index_cells(cells: Array) -> Dictionary:
 	return result
 
 static func validate(stage: Node, before: Dictionary, data: Variant) -> String:
-	if before.is_empty() or not data is Dictionary:
-		return "Open a supported stage and paste a MapEdit JSON document."
+	if not data is Dictionary:
+		return "送信データが MapEdit の JSON オブジェクトではありません。"
+	if before.is_empty():
+		return snapshot_error(stage)
 	for key in ["version", "stage", "width", "height", "tileSize"]:
 		if data.get(key) != before[key]:
 			return "The document version, stage or grid does not match."

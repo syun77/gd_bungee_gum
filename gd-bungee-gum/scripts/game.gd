@@ -68,6 +68,7 @@ func _ready() -> void:
 	camera.zoom = Vector2.ONE * settings.camera_normal_zoom
 	_setup_entrance()
 	_setup_exit()
+	ReplayStore.begin(self)
 
 func _setup_puzzle_props() -> void:
 	$PuzzleLightBox.global_position = $TheaterStage/PlacementMarkers/LightBoxSpawn.global_position
@@ -134,6 +135,7 @@ func _setup_pause_menu() -> void:
 		pause_menu.buttons[1].text = "モード選択に戻る"
 	pause_menu.retry_requested.connect(restart)
 	pause_menu.selection_requested.connect(return_to_stage_select)
+	pause_menu.add_replay_action(func(): ReplayStore.play("res://scenes/mode_select.tscn"))
 	pause_menu.resumed.connect(func(): suppress_gameplay_tick = true)
 
 func _setup_entrance() -> void:
@@ -297,6 +299,7 @@ func restart(from_checkpoint := false) -> void:
 	if restarting:
 		return
 	restarting = true
+	ReplayStore.suspend(from_checkpoint)
 	pause_menu.close()
 	if from_checkpoint and (time_attack or not active_checkpoint.is_empty()):
 		get_tree().set_meta(RESPAWN_META, {
@@ -374,6 +377,7 @@ func _handle_actions(jump_requested: bool) -> void:
 func return_to_stage_select() -> void:
 	if restarting:
 		return
+	ReplayStore.suspend(false)
 	restarting = true
 	pause_menu.close()
 	if get_tree().has_meta(RESPAWN_META):
@@ -383,6 +387,7 @@ func return_to_stage_select() -> void:
 	get_tree().call_deferred("change_scene_to_file", "res://scenes/%s.tscn" % selection)
 
 func _clear_stage() -> void:
+	ReplayStore.finish()
 	cleared = true
 	gum.detach("STAGE CLEAR")
 	var center := CenterContainer.new()
@@ -399,6 +404,16 @@ func _clear_stage() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 40)
 	column.add_child(title)
+	var replay := Button.new()
+	replay.text = "リプレイ再生"
+	replay.disabled = not ReplayStore.available()
+	replay.custom_minimum_size.y = 64
+	column.add_child(replay)
+	if not ReplayStore.failure.is_empty():
+		var error_label := Label.new()
+		error_label.text = ReplayStore.failure
+		column.add_child(error_label)
+	replay.pressed.connect(func(): ReplayStore.play("res://scenes/mode_select.tscn"))
 	if time_attack:
 		var retry := Button.new()
 		retry.text = "リトライ"

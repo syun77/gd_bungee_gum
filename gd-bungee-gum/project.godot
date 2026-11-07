@@ -22,6 +22,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 SoundEffects="*res://scripts/sound_effects.gd"
+ReplayStore="*res://scripts/replay_store.gd"
 
 [display]
 

@@ -1,0 +1,80 @@
+[gd_scene format=3 uid="uid://ucctxbnsajr6"]
+
+[ext_resource type="Script" uid="uid://btbomrucp5uyr" path="res://scripts/food_orbit_demo.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dy0urnbalokgu" path="res://assets/characters/teto.png" id="2_teto"]
+[ext_resource type="Texture2D" uid="uid://h4fljrwwmijq" path="res://assets/foods/milano_doria.png" id="food_0"]
+[ext_resource type="Texture2D" uid="uid://d2kga3wdxv0c2" path="res://assets/foods/escargot_oven_baked.png" id="food_1"]
+[ext_resource type="Texture2D" uid="uid://cityi63um8lm8" path="res://assets/foods/chicken_diavola.png" id="food_2"]
+[ext_resource type="Texture2D" uid="uid://c5gacubop5hje" path="res://assets/foods/shrimp_salad.png" id="food_3"]
+[ext_resource type="Texture2D" uid="uid://cqcmsu6x8gbhq" path="res://assets/foods/spicy_chicken.png" id="food_4"]
+[ext_resource type="Texture2D" uid="uid://coaov22e0k18h" path="res://assets/foods/margherita_pizza.png" id="food_5"]
+[ext_resource type="Texture2D" uid="uid://clrodcpeowg3b" path="res://assets/foods/tarako_pasta.png" id="food_6"]
+[ext_resource type="Texture2D" uid="uid://bnqppps8418nf" path="res://assets/foods/hamburger_steak.png" id="food_7"]
+[ext_resource type="Texture2D" uid="uid://bv0mbgiipqwu3" path="res://assets/foods/sauteed_spinach.png" id="food_8"]
+[ext_resource type="Texture2D" uid="uid://c0wrfgknolb6g" path="res://assets/foods/peperoncino.png" id="food_9"]
+[ext_resource type="Texture2D" uid="uid://cllto5wbrwfpp" path="res://assets/foods/italian_pudding.png" id="food_10"]
+
+[node name="Test" type="Node2D" unique_id=707005006]
+texture_filter = 1
+script = ExtResource("1_script")
+
+[node name="Teto" type="Sprite2D" parent="." unique_id=193616339]
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("2_teto")
+
+[node name="Foods" type="Node2D" parent="." unique_id=1869178168]
+
+[node name="MilanoDoria" type="Sprite2D" parent="Foods" unique_id=1597320465]
+position = Vector2(230, 0)
+scale = Vector2(2, 2)
+texture = ExtResource("food_0")
+
+[node name="EscargotOvenBaked" type="Sprite2D" parent="Foods" unique_id=1880545408]
+position = Vector2(193.4883, 124.3474)
+scale = Vector2(2, 2)
+texture = ExtResource("food_1")
+
+[node name="ChickenDiavola" type="Sprite2D" parent="Foods" unique_id=1570483754]
+position = Vector2(95.5455, 209.2154)
+scale = Vector2(2, 2)
+texture = ExtResource("food_2")
+
+[node name="ShrimpSalad" type="Sprite2D" parent="Foods" unique_id=2063307361]
+position = Vector2(-32.7324, 227.6589)
+scale = Vector2(2, 2)
+texture = ExtResource("food_3")
+
+[node name="SpicyChicken" type="Sprite2D" parent="Foods" unique_id=546659680]
+position = Vector2(-150.618, 173.8224)
+scale = Vector2(2, 2)
+texture = ExtResource("food_4")
+
+[node name="MargheritaPizza" type="Sprite2D" parent="Foods" unique_id=206792591]
+position = Vector2(-220.6834, 64.7985)
+scale = Vector2(2, 2)
+texture = ExtResource("food_5")
+
+[node name="TarakoPasta" type="Sprite2D" parent="Foods" unique_id=1875756250]
+position = Vector2(-220.6834, -64.7985)
+scale = Vector2(2, 2)
+texture = ExtResource("food_6")
+
+[node name="HamburgerSteak" type="Sprite2D" parent="Foods" unique_id=899166195]
+position = Vector2(-150.618, -173.8224)
+scale = Vector2(2, 2)
+texture = ExtResource("food_7")
+
+[node name="SauteedSpinach" type="Sprite2D" parent="Foods" unique_id=97582401]
+position = Vector2(-32.7324, -227.6589)
+scale = Vector2(2, 2)
+texture = ExtResource("food_8")
+
+[node name="Peperoncino" type="Sprite2D" parent="Foods" unique_id=956989859]
+position = Vector2(95.5455, -209.2154)
+scale = Vector2(2, 2)
+texture = ExtResource("food_9")
+
+[node name="ItalianPudding" type="Sprite2D" parent="Foods" unique_id=326922311]
+position = Vector2(193.4883, -124.3474)
+scale = Vector2(2, 2)
+texture = ExtResource("food_10")

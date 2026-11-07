@@ -15,6 +15,7 @@ const CLIPS := {
 	&"shoot": preload("res://assets/sounds/shoot.wav"),
 }
 const MAX_VOICES := 24
+signal played(cue: StringName)
 
 func play(cue: StringName) -> void:
 	if get_child_count() >= MAX_VOICES:
@@ -26,3 +27,4 @@ func play(cue: StringName) -> void:
 	add_child(voice)
 	voice.finished.connect(voice.queue_free)
 	voice.play()
+	played.emit(cue)

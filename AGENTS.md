@@ -393,3 +393,15 @@
 - Free falling speed uses Player Movement/max_fall_speed (default600px/s); player.gd caps downward velocity after jump resolution, before contact solving. Any connected gum (taut/slack) bypasses; detach resumes immediately. Horizontal/upward momentum stays unchanged. verify_player.gd covers default/custom cap and detach; coyote compensation fixture raises cap to isolate compensation.
 
 - Notes/baguettes share ContactPickup score_item cue (sounds/item3.wav and identical runtime copy); food retains item.wav via item cue.
+
+- MapEdit one-way floor category uses OneWayPlatforms on both supported stages; preserve the empty collision-enabled layer in Time Attack and its generator. Source1 atlas x0/1/2/3 means left/middle/right/single. Old imported sessions need a fresh Godot copy to expose newly added layers.
+
+- MapEdit OneWayPlatforms renders full-width/top-aligned at one fifth of cell height via Canvas.placementRect (main map/preview/minimap); keep hit testing and exchange cell-based. Tile ID labels require14px display height.
+
+- MapEdit snapshot_error is shared by copy/send validation; required stage node names are TerrainTiles/Terrain/Checkpoints and PlacementMarkers/{PlayerSpawn,Exit}. A whitespace-renamed TerrainTiles caused both copy and send rejection. Run tools/verify_mapedit_snapshot.gd for saved-stage/renamed-node/TileSet diagnostics without an editor UI.
+
+- ReplayStore autoload records fixed-tick visual deltas after Game (priority100), persists latest completed start-to-goal run to user://latest_replay.dat with atomic compressed save. Death restart(true) carries recording; manual retry resets. Replay scene creates only visuals, disables tile collision/navigation and removes scene-tile sources; never instantiate live Game/Player/rigid/pickup logic. SoundEffects.played records cues. See specs/replay.md; verify_replay.gd uses /tmp so user replay remains intact.
+
+- Replay camera uses current shared Camera Normal Zoom each applied frame via replay.tscn exported settings Resource; saved camera center is retained. Recorded zoom is unused; changing settings affects existing replays without re-recording. verify_replay covers post-recording/shared and per-frame zoom changes.
+
+- Standalone `scenes/test.tscn` displays static Teto with11 upright food sprites orbiting via `scripts/food_orbit_demo.gd`; F6 previews, root Inspector controls radius/speed (230px/30deg per second). No gameplay logic; see specs/test-scene.md.

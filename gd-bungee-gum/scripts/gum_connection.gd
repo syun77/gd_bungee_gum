@@ -541,3 +541,29 @@ func _dynamic_obstruction() -> bool:
 				}
 			return true
 	return false
+
+func replay_visual() -> Dictionary:
+	if not is_visible_in_tree() or not is_instance_valid(player):
+		return {}
+	var ratio := tension / settings.maximum_tension
+	var color := _gum_color(ratio)
+	var pivots := PackedVector2Array()
+	for pivot in path.pivots:
+		pivots.append(pivot.position)
+	var data := {"kind": "gum", "ready": state == State.READY,
+		"points": _world_display_points() if state != State.READY else PackedVector2Array([player.gum_visual_origin(), aim_point]),
+		"color": color, "width": settings.gum_line_width + ratio * settings.gum_tension_width,
+		"pivots": pivots, "endpoint": endpoint() if state != State.READY else aim_point,
+		"glow_radius": settings.gum_glow_radius, "glow_opacity": settings.gum_glow_opacity,
+		"core": settings.gum_core_brightness,
+		"transform": Transform2D.IDENTITY, "modulate": Color.WHITE, "z": z_index}
+	if state == State.READY:
+		color = settings.aim_valid_color if aim_valid else settings.aim_invalid_color
+		if not aim_valid:
+			color.a *= settings.aim_guide_opacity
+		data.color = color
+		data.width = settings.aim_line_width
+		data["dash"] = settings.aim_dash_length
+		data["reticle_radius"] = settings.aim_reticle_radius
+		data["reticle_width"] = settings.aim_reticle_width
+	return data

@@ -122,3 +122,13 @@ func _draw_particles(canvas: Node2D, glowing: bool) -> void:
 					canvas.draw_circle(point, (particle.radius + layer) * scale, Color(1.0, 0.45, 0.72, alpha * 0.045), true, -1.0, true)
 			else:
 				canvas.draw_circle(point, particle.radius * scale, Color(particle.color, alpha), true, -1.0, true)
+
+func replay_particles() -> Array:
+	var circles: Array = []
+	for burst in bursts:
+		for particle in burst.particles:
+			var progress: float = burst.age / particle.lifetime
+			var scale := lerpf(1.0, 0.25, progress)
+			var alpha: float = minf(burst.age / 0.02, 1.0) * (1.0 - progress * progress) * settings.gum_hit_particle_opacity
+			circles.append([particle_position(burst, particle), float(particle.radius * scale), Color(particle.color, alpha)])
+	return circles

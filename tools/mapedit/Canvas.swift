@@ -94,6 +94,9 @@ final class Canvas: NSView {
     }
 
     static func placementRect(in cell: CGRect, kind: String) -> CGRect {
+        if kind == "OneWayPlatforms" {
+            return CGRect(x: cell.minX, y: cell.minY, width: cell.width, height: cell.height / 5)
+        }
         guard kind == "GumAnchors" || MapDocument.namedItemKinds.contains(kind) else { return cell }
         return cell.insetBy(dx: cell.width * 0.1, dy: cell.height * 0.1)
     }
@@ -194,7 +197,7 @@ final class Canvas: NSView {
             let placement = Self.placementRect(in: cell, kind: visible.kind)
             placement.fill()
             drawPlacementOutline(in: placement, kind: visible.kind, tile: visible.tile)
-            if step >= 24 && visible.kind == selectedKind {
+            if step >= 24 && placement.height >= 14 && visible.kind == selectedKind {
                 let id = visible.tile
                 let label = MapDocument.namedItemKinds.contains(visible.kind) ? "\(id[3])" : "\(id[1]),\(id[2])"
                 (label as NSString).draw(at: CGPoint(x: cell.minX + 2, y: cell.minY + 2),
@@ -226,7 +229,10 @@ final class Canvas: NSView {
             }
         }
         if let hover, document.contains(hover) {
-            let preview = NSBezierPath(rect: rect(hover).insetBy(dx: 1, dy: 1))
+            let cell = rect(hover)
+            let previewRect = selectedKind.map { Self.placementRect(in: cell, kind: $0) }
+                ?? cell
+            let preview = NSBezierPath(rect: previewRect)
             if let selectedKind, tile != nil || selectedKind == MapDocument.checkpointKind {
                 placementColor(for: selectedKind, tile: tile).withAlphaComponent(0.35).setFill()
                 preview.fill()
