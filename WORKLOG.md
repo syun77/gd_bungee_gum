@@ -1,3 +1,83 @@
+## MapEdit direct-send UI cleanup
+
+- Goal/status: Remove the clipboard-based Godot paste and MapEdit export controls. Complete.
+- Completed/decisions: Godot retains the copy-to-MapEdit menu; MapEdit retains clipboard import and uses direct send for Godot updates. Removed the obsolete export shortcut and handlers.
+- Files: tools/mapedit/main.swift and README.md, gd-bungee-gum/addons/mapedit/{plugin,direct_paste}.gd, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift build, both Godot editor stage probes and git diff --check passed.
+- Blockers: None. Next action: Reopen Godot and MapEdit to load the updated menus.
+
+## MapEdit repeated direct paste
+
+- Goal/status: Keep subsequent direct sends accurate after an apply. Complete.
+- Completed/decisions: The direct bridge returns the final confirmation result. A full apply advances the client comparison source to the submitted document, independent of ongoing local edits. Undo and strokes retain the latest source. Cancellation and partial application do not advance it.
+- Files: Swift MapEdit app/canvas, Godot direct bridge/plugin/verifier, README/spec, AGENTS.md, WORKLOG.md.
+- Verification: Swift build, deferred applied/canceled loopback, both-stage repeated-send rollback and conflict tests, git diff --check passed. Live two-window click-through not run.
+- Blockers: None. Next action: Restart both apps and repeat successive sends.
+
+## MapEdit stale direct paste merge
+
+- Goal/status: Resolve the reported revision rejection without discarding edits. Complete.
+- Completed/decisions: Verified both sides communicated and the saved checkpoint already exists. Carry source placements and use a three-way merge for stale submissions. Restore the source from the original baseline for existing clipboard sessions.
+- Files: MapEdit Swift model/app, Godot mapedit exchange/plugin and verifier, README/spec, AGENTS.md, WORKLOG.md.
+- Verification: Real session and current saved stage merge produces only the intended anchor move from (38,15) to (39,12), preserving unrelated Godot edits. Swift build, both Godot regression cases and git diff --check passed. Scene and session files were not edited.
+- Blockers: None. Next action: Restart both apps and resend the current session for confirmation.
+
+## MapEdit direct paste diagnostics
+
+- Goal/status: Make direct paste failures traceable from both apps. Complete.
+- Completed/decisions: Added correlated timestamped sender and listener logs without logging payload JSON. Godot records validation, preview, cancel and scene apply. Documented log locations and common states.
+- Files: tools/mapedit/main.swift, tools/mapedit/README.md, gd-bungee-gum/addons/mapedit/{direct_paste,plugin}.gd, AGENTS.md, WORKLOG.md.
+- Verification: Swift build, both Godot editor regressions, and loopback request/reply logs passed. The normal port was occupied by an open Godot instance, so the loopback probe used an ephemeral port. git diff --check passed.
+- Blockers: Original failure has no captured trace yet. Next action: Relaunch both apps and repeat direct paste, then correlate the logged attempt.
+
+## MapEdit direct paste
+
+- Goal/status: Send a MapEdit payload straight to the open Godot editor. Complete.
+- Completed/decisions: Added a Godot send button and an interactive editor localhost bridge. Both entry points share preview, conflict handling, confirmation and Undo. Clipboard remains available. Updated the editor fixture to choose unused checkpoint names.
+- Files: tools/mapedit/main.swift, tools/mapedit/README.md, gd-bungee-gum/addons/mapedit/{plugin,direct_paste}.gd, gd-bungee-gum/tools/verify_mapedit.gd, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift build, Godot TCP request/response loopback, two-stage editor regression suite and git diff --check passed. The live two-window confirmation flow was not manually exercised.
+- Blockers: None. Next action: Relaunch both apps, open the target Godot stage, and use Godot に送る.
+
+## MapEdit copy button
+
+- Goal/status: Add a copy button above Fit. Complete.
+- Completed/decisions: Added a Godot clipboard button above Fit in the right sidebar using the existing Cmd+C action.
+- Files: tools/mapedit/main.swift, tools/mapedit/README.md, WORKLOG.md.
+- Verification: Swift build and git diff --check passed. Interactive clipboard button use was not checked.
+- Blockers: None. Next action: Relaunch MapEdit via run.command.
+
+## MapEdit stale checkpoint paste
+
+- Goal/status: Recover checkpoint paste from a stale Time Attack clipboard. Complete.
+- Completed/decisions: Reproduced the revision mismatch with the supplied payload. Current Godot terrain differs by one cell. The plugin now offers a confirmed additions-only operation for noncolliding MapEdit checkpoint IDs, preserving current scene placements.
+- Files: gd-bungee-gum/addons/mapedit/{plugin,stage_exchange}.gd, gd-bungee-gum/tools/verify_mapedit.gd, tools/mapedit/README.md, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Exact attachment validates as one checkpoint-only addition at (912, 416); both editor regression cases and git diff --check passed. The stage file was not edited by this task.
+- Blockers: None. Next action: Reload the Godot plugin and paste the same payload, then confirm the checkpoint-only addition.
+
+## MapEdit multiple checkpoints
+
+- Goal/status: Place and remove multiple checkpoints from MapEdit. Complete.
+- Completed/decisions: One orange checkpoint brush adds one checkpoint per cell and erases with the right button. Origins align with cell bottom-center. Godot validates new marker IDs, instantiates checkpoint.tscn and includes additions/removals in scene history and paste preview.
+- Files: tools/mapedit/{MapDocument,Canvas,main}.swift, tools/mapedit/README.md, gd-bungee-gum/addons/mapedit/{plugin,stage_exchange}.gd, gd-bungee-gum/tools/verify_mapedit.gd, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift build and real Time Attack model brush/duplicate/erase probe passed. Headless editor verification passed on both stages for addition, deletion, packing, and Undo/Redo. git diff --check passed. No stage scene files were written.
+- Blockers: None. Next action: Relaunch MapEdit and reload the Godot project before pasting checkpoints.
+
+## MapEdit camera restore
+
+- Goal/status: Restore camera zoom and scroll on relaunch. Complete.
+- Completed/decisions: Save optional camera zoom and canvas origin in the atomic session; restore after layout. Missing camera data falls back to fit.
+- Files: tools/mapedit/Canvas.swift, tools/mapedit/main.swift, tools/mapedit/README.md, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift build, camera JSON and viewport round trip, missing camera decoding, and git diff --check passed.
+- Blockers: None. Next action: Use run.command and close normally after positioning the camera.
+
+## MapEdit minimap drag
+
+- Goal/status: Enable left-drag camera navigation in the minimap. Complete.
+- Completed/decisions: Click and drag share the coordinate conversion and preserve zoom. Only drags started inside the map navigate; they clamp to the map edge and stop on release.
+- Files: tools/mapedit/Canvas.swift, tools/mapedit/main.swift, tools/mapedit/README.md, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift build and git diff --check passed. Interactive dragging was not checked.
+- Blockers: None. Next action: Relaunch MapEdit via run.command.
+
 ## MapEdit minimap rendering regression
 
 - Goal/status: Restore canvas and sidebar visibility alongside the minimap. Fixed.

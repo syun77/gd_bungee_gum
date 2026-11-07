@@ -324,12 +324,22 @@
 
 - Game fall death checks the player origin against shared restart_y plus the scene’s fall_restart_offset. Time Attack adds64px (default Y=964).
 
-- On macOS, launch MapEdit by double-clicking `tools/mapedit/run.command` in Finder or running `./tools/mapedit/run.sh`. Godot’s MapEdit plugin exchanges versioned gameplay placements for the directly opened Theater or Time Attack stage, rejects stale clipboard snapshots, and applies terrain collision/rim changes in the same Undo action. See `specs/mapedit.md`; verify with `--headless --editor --script res://tools/verify_mapedit.gd`.
+- On macOS, launch MapEdit by double-clicking `tools/mapedit/run.command` in Finder or running `./tools/mapedit/run.sh`. Godot’s MapEdit plugin exchanges versioned gameplay placements for the directly opened Theater or Time Attack stage, rejects stale full pastes and offers confirmed checkpoint-only additions, and applies terrain collision/rim changes in the same Undo action. See `specs/mapedit.md`; verify with `--headless --editor --script res://tools/verify_mapedit.gd`.
 
-- MapEdit stores its last working map on normal quit in the user Application Support directory under `BungeeGumMapEdit/session.json`. This session is separate from manually saved placement JSON and Godot scenes.
+- MapEdit stores its last working map and camera zoom/origin on normal quit in the user Application Support directory under `BungeeGumMapEdit/session.json`. This session is separate from manually saved placement JSON and Godot scenes.
 
 - MapEdit uses a dedicated appearance-aware AppKit right sidebar with a scrollable two-column placement grid and a layer-backed content hierarchy. Canvas and minimap drawing each clip explicitly to their own bounds; keep panel frames disjoint.
 
 - MapEdit draws every tile kind as a full grid cell; overlapping tiles prefer the selected kind. Canvas fills and sidebar swatches share Canvas.placementColor. Markers retain pixel positions; start/goal/checkpoint use 14pt screen markers and shared green/pink/orange swatches.
 
-- MapEdit minimap uses Canvas.visibleMapRect in map pixels. Invalidate the overview on canvas resize, camera movement and document changes; minimap clicks preserve zoom.
+- MapEdit minimap uses Canvas.visibleMapRect in map pixels. Invalidate the overview on canvas resize, camera movement and document changes; minimap clicks and left drags preserve zoom; active drags clamp to map edges.
+
+- MapEdit’s Checkpoints brush places the checkpoint origin at the cell’s bottom-center. It adds/removes checkpoint.tscn instances under Checkpoints through the same Godot Undo action as tiles. Keep Game._setup_checkpoints group discovery; verify_mapedit covers both stages and scene packing.
+
+- MapEdit direct paste uses a localhost-only TCP listener on 127.0.0.1:47653 in the interactive Godot plugin. Swift sends newline-terminated JSON; the plugin replies after confirmation or immediately for unchanged/error and uses the editor confirmation and Undo path.
+
+- Direct paste logs use `[MapEditPaste]` in MapEdit stderr and Godot Output. The first 12 hex digits of SHA-256 over the newline-terminated request correlate the two logs without logging placement JSON.
+
+- MapEdit carries original source cells/markers alongside edits. A stale paste merges independent changes against the source, skips already-applied values, and rejects divergent changes to the same entry.
+
+- After confirmed direct paste, MapEdit advances the source to the exact submitted placements, retaining newer local edits and keeping the source across local Undo and normal restart. Do not advance it on cancel or a partial checkpoint-only apply.

@@ -13,11 +13,15 @@ const ATLAS_PALETTES := {
 	"GumPassBarriers": [[3, 0, 0, 0]],
 	"Spikes": [[0, 0, 0, 0]],
 }
+const CHECKPOINT_SCENE := preload("res://scenes/props/checkpoint.tscn")
+const CHECKPOINT_PREFIX := "Checkpoints/"
+const NEW_CHECKPOINT_PREFIX := CHECKPOINT_PREFIX + "CheckpointMapEdit_"
+const STALE := "Godot placements have changed. Copy the stage again before editing."
 const TILE := 32
 const HEIGHT := 24
 
 static func snapshot(stage: Node) -> Dictionary:
-	if stage == null or not WIDTHS.has(stage.scene_file_path) or not stage.has_node("Terrain"):
+	if stage == null or not WIDTHS.has(stage.scene_file_path) or not stage.has_node("Terrain") or not stage.has_node("Checkpoints"):
 		return {}
 	var layers := {}
 	var cells: Array = []
@@ -90,7 +94,7 @@ static func validate(stage: Node, before: Dictionary, data: Variant) -> String:
 		if data.get(key) != before[key]:
 			return "The document version, stage or grid does not match."
 	if data.get("base") != token(before):
-		return "Godot placements have changed. Copy the stage again before editing."
+		return STALE
 	if not data.get("cells") is Array or not data.get("markers") is Dictionary or not data.get("layers") is Dictionary:
 		return "Missing layers, cells or markers."
 	if data.layers.size() != before.layers.size():
@@ -116,9 +120,12 @@ static func validate(stage: Node, before: Dictionary, data: Variant) -> String:
 			return "Tile variant is outside the layer palette."
 	if index_cells(data.cells).size() != data.cells.size():
 		return "Duplicate tile in one layer."
-	if data.markers.size() != before.markers.size():
-		return "Marker set does not match the stage."
 	for path in before.markers:
+		if not path.begins_with(CHECKPOINT_PREFIX) and not data.markers.has(path):
+			return "Missing marker: " + path
+	for path in data.markers:
+		if not before.markers.has(path) and not is_new_checkpoint_path(path):
+			return "Unknown marker: " + path
 		var pos: Variant = data.markers.get(path)
 		if not pos is Array or pos.size() != 2:
 			return "Missing marker: " + path
@@ -127,6 +134,62 @@ static func validate(stage: Node, before: Dictionary, data: Variant) -> String:
 			if not (pos[axis] is int or pos[axis] is float) or not is_finite(pos[axis]) or pos[axis] < 0 or pos[axis] > limit:
 				return "Marker outside the stage: " + path
 	return ""
+
+static func merge_stale(stage: Node, before: Dictionary, data: Dictionary) -> Dictionary:
+	var source: Variant = data.get("source")
+	if not source is Dictionary:
+		return {}
+	var original := data.duplicate()
+	original.cells = source.get("cells")
+	original.markers = source.get("markers")
+	original.base = token(before)
+	var edited := data.duplicate()
+	edited.base = original.base
+	for document in [original, edited]:
+		var error := validate(stage, before, document)
+		if not error.is_empty():
+			return {"error": error}
+	var cells := merge_entries(index_cells(before.cells), index_cells(original.cells), index_cells(edited.cells))
+	var markers := merge_entries(before.markers, original.markers, edited.markers)
+	if cells.has("conflict") or markers.has("conflict"):
+		return {"error": "Godot and MapEdit both changed: " + str(cells.get("conflict", markers.get("conflict")))}
+	var candidate := before.duplicate()
+	candidate.base = original.base
+	candidate.cells = cells.entries.values()
+	candidate.markers = markers.entries
+	return {"data": candidate}
+
+static func merge_entries(current: Dictionary, original: Dictionary, edited: Dictionary) -> Dictionary:
+	var result := current.duplicate()
+	var keys := original.duplicate()
+	keys.merge(edited)
+	for key in keys:
+		var old: Variant = original.get(key)
+		var next: Variant = edited.get(key)
+		var existing: Variant = current.get(key)
+		if old == next or existing == next:
+			continue
+		if existing != old:
+			return {"conflict": key}
+		if next == null:
+			result.erase(key)
+		else:
+			result[key] = next
+	return {"entries": result}
+
+static func is_new_checkpoint_path(path: String) -> bool:
+	var suffix := path.trim_prefix(NEW_CHECKPOINT_PREFIX)
+	return suffix != path and suffix.is_valid_int() and int(suffix) > 0 and str(int(suffix)) == suffix
+
+static func checkpoint_additions_only(before: Dictionary, stale: Dictionary) -> Dictionary:
+	if not stale.get("markers") is Dictionary:
+		return {}
+	var candidate := before.duplicate(true)
+	candidate.base = token(before)
+	for path in stale.markers:
+		if is_new_checkpoint_path(path) and not before.markers.has(path):
+			candidate.markers[path] = stale.markers[path]
+	return candidate if candidate.markers.size() > before.markers.size() else {}
 
 static func valid_tile(tileset: TileSet, tile: Array) -> bool:
 	var id := int(tile[0])
@@ -146,6 +209,8 @@ static func diff(before: Dictionary, after: Dictionary) -> Dictionary:
 	var removed := {}
 	var placed := {}
 	var markers := {}
+	var checkpoints_added := {}
+	var checkpoints_removed: Array[String] = []
 	var terrain_changed := false
 	for key in old:
 		if not next.has(key) or old[key].tile != next[key].tile:
@@ -156,16 +221,22 @@ static func diff(before: Dictionary, after: Dictionary) -> Dictionary:
 			placed[key] = next[key]
 			terrain_changed = terrain_changed or (next[key].kind == "TerrainTiles" and not old.has(key))
 	for path in before.markers:
-		if before.markers[path] != after.markers[path]:
+		if not after.markers.has(path):
+			checkpoints_removed.append(path)
+		elif before.markers[path] != after.markers[path]:
 			markers[path] = [Vector2(before.markers[path][0], before.markers[path][1]),
 				Vector2(after.markers[path][0], after.markers[path][1])]
+	for path in after.markers:
+		if not before.markers.has(path):
+			checkpoints_added[path] = Vector2(after.markers[path][0], after.markers[path][1])
 	var terrain := {}
 	if terrain_changed:
 		for cell: Dictionary in next.values():
 			if cell.kind == "TerrainTiles":
 				terrain[Vector2i(cell.x, cell.y)] = true
 	return {"old": removed, "next": placed, "markers": markers,
-		"terrain_changed": terrain_changed, "terrain": terrain}
+		"terrain_changed": terrain_changed, "terrain": terrain,
+		"checkpoints_added": checkpoints_added, "checkpoints_removed": checkpoints_removed}
 
 static func commit(history: EditorUndoRedoManager, stage: Node, changes: Dictionary) -> void:
 	history.create_action("Apply MapEdit placements", UndoRedo.MERGE_DISABLE, stage, true)
@@ -187,6 +258,18 @@ static func commit(history: EditorUndoRedoManager, stage: Node, changes: Diction
 		var marker := stage.get_node(NodePath(path)) as Node2D
 		history.add_do_property(marker, "position", changes.markers[path][1])
 		history.add_undo_property(marker, "position", changes.markers[path][0])
+	var checkpoints := stage.get_node("Checkpoints")
+	var removed_nodes: Array[Node] = []
+	for path in changes.checkpoints_removed:
+		removed_nodes.append(stage.get_node(NodePath(path)))
+	removed_nodes.sort_custom(func(a: Node, b: Node) -> bool: return a.get_index() > b.get_index())
+	for checkpoint in removed_nodes:
+		remove_scene_child(history, checkpoints, checkpoint, stage)
+	for path in changes.checkpoints_added:
+		var checkpoint := CHECKPOINT_SCENE.instantiate() as Node2D
+		checkpoint.name = path.trim_prefix(CHECKPOINT_PREFIX)
+		checkpoint.position = changes.checkpoints_added[path]
+		add_scene_child(history, checkpoints, checkpoint, stage)
 	if changes.terrain_changed:
 		sync_terrain(history, stage, changes.terrain)
 	history.commit_action()
@@ -223,14 +306,14 @@ static func sync_terrain(history: EditorUndoRedoManager, stage: Node, cells: Dic
 	shapes.reverse()
 	for child in shapes:
 		if child is CollisionShape2D:
-			remove_derived(history, body, child, stage)
+			remove_scene_child(history, body, child, stage)
 	var has_rim := stage.scene_file_path.ends_with("/theater_stage.tscn")
 	if has_rim:
 		var children := stage.get_children()
 		children.reverse()
 		for child in children:
 			if child is Line2D and str(child.name).begins_with("Rim"):
-				remove_derived(history, stage, child, stage)
+				remove_scene_child(history, stage, child, stage)
 	var rects := rectangles(cells)
 	for index in rects.size():
 		var rect := rects[index]
@@ -241,7 +324,7 @@ static func sync_terrain(history: EditorUndoRedoManager, stage: Node, cells: Dic
 		shape.shape = box
 		var origin := Vector2(rect.position * TILE)
 		shape.position = origin + box.size / 2
-		add_derived(history, body, shape, stage)
+		add_scene_child(history, body, shape, stage)
 		if has_rim:
 			var rim := Line2D.new()
 			rim.name = "Rim%02d" % index
@@ -249,16 +332,16 @@ static func sync_terrain(history: EditorUndoRedoManager, stage: Node, cells: Dic
 				origin + box.size, origin + Vector2(0, box.size.y), origin])
 			rim.width = 2
 			rim.default_color = Color("795747")
-			add_derived(history, stage, rim, stage)
+			add_scene_child(history, stage, rim, stage)
 
-static func remove_derived(history: EditorUndoRedoManager, parent: Node, child: Node, stage: Node) -> void:
+static func remove_scene_child(history: EditorUndoRedoManager, parent: Node, child: Node, stage: Node) -> void:
 	history.add_do_method(parent, "remove_child", child)
 	history.add_undo_method(parent, "move_child", child, child.get_index())
 	history.add_undo_property(child, "owner", stage)
 	history.add_undo_method(parent, "add_child", child)
 	history.add_undo_reference(child)
 
-static func add_derived(history: EditorUndoRedoManager, parent: Node, child: Node, stage: Node) -> void:
+static func add_scene_child(history: EditorUndoRedoManager, parent: Node, child: Node, stage: Node) -> void:
 	history.add_do_method(parent, "add_child", child)
 	history.add_do_property(child, "owner", stage)
 	history.add_do_reference(child)

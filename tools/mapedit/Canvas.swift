@@ -1,5 +1,10 @@
 import AppKit
 
+struct MapCamera: Codable {
+    let zoom: CGFloat
+    let origin: CGPoint
+}
+
 final class Canvas: NSView {
     var document: MapDocument? { didSet { refreshView() } }
     var onOverviewChange: (() -> Void)?
@@ -31,7 +36,7 @@ final class Canvas: NSView {
         switch path {
         case "PlacementMarkers/PlayerSpawn": return .systemGreen
         case "PlacementMarkers/Exit": return .systemPink
-        default: return path.hasPrefix("Checkpoints/") ? .systemOrange : nil
+        default: return path == MapDocument.checkpointKind || path.hasPrefix(MapDocument.checkpointPrefix) ? .systemOrange : nil
         }
     }
 
@@ -46,6 +51,19 @@ final class Canvas: NSView {
                                   owner: self, userInfo: nil)
         addTrackingArea(area)
         tracking = area
+    }
+
+    var camera: MapCamera { MapCamera(zoom: zoom, origin: origin) }
+
+    func restoreCamera(_ camera: MapCamera?) {
+        guard let camera, camera.zoom.isFinite, camera.zoom > 0,
+              camera.origin.x.isFinite, camera.origin.y.isFinite else {
+            fit()
+            return
+        }
+        zoom = camera.zoom
+        origin = camera.origin
+        refreshView()
     }
 
     var visibleMapRect: CGRect {
@@ -132,7 +150,8 @@ final class Canvas: NSView {
             guard let position = document.markers[path] else { continue }
             let x = origin.x + position[0] * zoom
             let y = origin.y + position[1] * zoom
-            let selected = path == marker
+            let selected = path == marker || (selectedKind == MapDocument.checkpointKind
+                && path.hasPrefix(MapDocument.checkpointPrefix))
             let label = String(path.split(separator: "/").last ?? "")
             let radius: CGFloat = Self.routeMarkerColor(for: path) == nil ? 4 : 7
             let dot = NSBezierPath(ovalIn: CGRect(x: x - radius, y: y - radius,
@@ -143,7 +162,7 @@ final class Canvas: NSView {
                 NSColor.systemYellow.setStroke()
                 dot.stroke()
             }
-            if selected || step >= 16 {
+            if path == marker || step >= 16 {
                 (label as NSString).draw(at: CGPoint(x: x + radius + 2, y: y - 7),
                     withAttributes: [.foregroundColor: NSColor.labelColor, .backgroundColor: NSColor.controlBackgroundColor,
                                      .font: NSFont.systemFont(ofSize: 10)])
@@ -151,7 +170,7 @@ final class Canvas: NSView {
         }
         if let hover, document.contains(hover) {
             let preview = NSBezierPath(rect: rect(hover).insetBy(dx: 1, dy: 1))
-            if let selectedKind, tile != nil {
+            if let selectedKind, tile != nil || selectedKind == MapDocument.checkpointKind {
                 Self.placementColor(for: selectedKind).withAlphaComponent(0.35).setFill()
                 preview.fill()
             }
@@ -249,13 +268,14 @@ final class Canvas: NSView {
             return
         }
         var next = start
+        next.source = document?.source
         if let marker, !erase, let position = start.markers[marker] {
             let size = Double(start.tileSize)
             next.markers[marker] = [
                 Double(point.x) * size + position[0].truncatingRemainder(dividingBy: size),
                 Double(point.y) * size + position[1].truncatingRemainder(dividingBy: size)
             ]
-        } else if let selectedKind, erase || tile != nil {
+        } else if let selectedKind, erase || tile != nil || selectedKind == MapDocument.checkpointKind {
             let first = previous ?? point
             let dx = point.x - first.x
             let dy = point.y - first.y
@@ -265,9 +285,13 @@ final class Canvas: NSView {
                 brush.insert(GridPoint(x: first.x + Int((Double(dx) * fraction).rounded()),
                                        y: first.y + Int((Double(dy) * fraction).rounded())))
             }
-            next.cells.removeAll { $0.kind == selectedKind && brush.contains($0.point) }
-            if !erase, let tile {
-                next.cells += brush.map { Placement(kind: selectedKind, x: $0.x, y: $0.y, tile: tile) }
+            if selectedKind == MapDocument.checkpointKind {
+                next.paintCheckpoints(in: brush, erase: erase)
+            } else {
+                next.cells.removeAll { $0.kind == selectedKind && brush.contains($0.point) }
+                if !erase, let tile {
+                    next.cells += brush.map { Placement(kind: selectedKind, x: $0.x, y: $0.y, tile: tile) }
+                }
             }
         }
         previous = point
@@ -284,6 +308,7 @@ final class Canvas: NSView {
 
 final class Minimap: NSView {
     weak var canvas: Canvas?
+    private var isNavigating = false
     override var isFlipped: Bool { true }
 
     private func mapFrame(for map: MapDocument) -> CGRect {
@@ -336,12 +361,29 @@ final class Minimap: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        guard let canvas, let map = canvas.document, mapFrame(for: map).contains(point) else { return }
+        isNavigating = true
+        navigate(to: point)
+        window?.makeFirstResponder(canvas)
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard isNavigating else { return }
+        navigate(to: convert(event.locationInWindow, from: nil))
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        isNavigating = false
+    }
+
+    private func navigate(to point: CGPoint) {
         guard let canvas, let map = canvas.document else { return }
         let frame = mapFrame(for: map)
-        let point = convert(event.locationInWindow, from: nil)
-        guard frame.contains(point) else { return }
+        guard !frame.isEmpty else { return }
         let scale = CGFloat(map.width * map.tileSize) / frame.width
-        canvas.centerMap(on: CGPoint(x: (point.x - frame.minX) * scale, y: (point.y - frame.minY) * scale))
-        window?.makeFirstResponder(canvas)
+        let x = min(max(point.x, frame.minX), frame.maxX)
+        let y = min(max(point.y, frame.minY), frame.maxY)
+        canvas.centerMap(on: CGPoint(x: (x - frame.minX) * scale, y: (y - frame.minY) * scale))
     }
 }

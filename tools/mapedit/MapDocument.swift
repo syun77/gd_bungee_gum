@@ -24,6 +24,11 @@ struct Palette: Codable {
     let labels: [String]?
 }
 
+struct SourcePlacements: Codable {
+    let cells: [Placement]
+    let markers: [String: [Double]]
+}
+
 struct MapDocument: Codable {
     let version: Int
     let stage: String
@@ -34,9 +39,38 @@ struct MapDocument: Codable {
     let layers: [String: Palette]
     var cells: [Placement]
     var markers: [String: [Double]]
+    var source: SourcePlacements?
 
     static let order = ["TerrainTiles", "OneWayPlatforms", "GumPassBarriers",
                         "GumAnchors", "Spikes", "Foods", "MusicNotes"]
+
+    static let checkpointKind = "Checkpoints"
+    static let checkpointPrefix = checkpointKind + "/"
+
+    mutating func paintCheckpoints(in points: Set<GridPoint>, erase: Bool) {
+        let size = Double(tileSize)
+        var occupied: Set<GridPoint> = []
+        for (path, position) in markers where path.hasPrefix(Self.checkpointPrefix) {
+            let point = GridPoint(x: min(width - 1, Int(position[0] / size)),
+                                  y: max(0, Int(ceil(position[1] / size)) - 1))
+            if erase && points.contains(point) {
+                markers.removeValue(forKey: path)
+            } else {
+                occupied.insert(point)
+            }
+        }
+        guard !erase else { return }
+        var number = 1
+        for point in points.subtracting(occupied).sorted(by: { ($0.y, $0.x) < ($1.y, $1.x) }) {
+            while markers[Self.checkpointPrefix + "CheckpointMapEdit_\(number)"] != nil {
+                number += 1
+            }
+            markers[Self.checkpointPrefix + "CheckpointMapEdit_\(number)"] = [
+                (Double(point.x) + 0.5) * size, Double(point.y + 1) * size
+            ]
+            number += 1
+        }
+    }
 
     func contains(_ point: GridPoint) -> Bool {
         (0..<width).contains(point.x) && (0..<height).contains(point.y)

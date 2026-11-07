@@ -21,6 +21,7 @@ func verify() -> void:
 		assert(Exchange.validate(stage, before, data) == "")
 		var no_op := Exchange.diff(before, data)
 		assert(no_op.old.is_empty() and no_op.next.is_empty() and no_op.markers.is_empty())
+		assert(no_op.checkpoints_added.is_empty() and no_op.checkpoints_removed.is_empty())
 		var invalid := data.duplicate(true)
 		invalid.cells.append(invalid.cells[0])
 		assert(Exchange.validate(stage, before, invalid).contains("Duplicate"))
@@ -32,7 +33,57 @@ func verify() -> void:
 		assert(Exchange.validate(stage, before, invalid).contains("match"))
 		data.cells.remove_at(0)
 		data.markers["PlacementMarkers/PlayerSpawn"][0] += 32
+		var checkpoints := stage.get_node("Checkpoints")
+		var old_checkpoints := checkpoints.get_children()
+		var old_checkpoint := str(stage.get_path_to(old_checkpoints[0]))
+		data.markers.erase(old_checkpoint)
+		var new_names: Array[String] = []
+		var number := 1
+		for x in [336.0, 528.0]:
+			while checkpoints.has_node("CheckpointMapEdit_%d" % number):
+				number += 1
+			var checkpoint_name := "CheckpointMapEdit_%d" % number
+			new_names.append(checkpoint_name)
+			data.markers["Checkpoints/" + checkpoint_name] = [x, 576.0]
+			number += 1
+		assert(Exchange.validate(stage, before, data) == "")
+		var stale := data.duplicate(true)
+		stale.base = "stale"
+		assert(Exchange.validate(stage, before, stale) == Exchange.STALE)
+		var recovered := Exchange.checkpoint_additions_only(before, stale)
+		assert(Exchange.validate(stage, before, recovered) == "")
+		var recovered_changes := Exchange.diff(before, recovered)
+		assert(recovered_changes.old.is_empty() and recovered_changes.next.is_empty())
+		assert(recovered_changes.markers.is_empty() and recovered_changes.checkpoints_removed.is_empty())
+		assert(recovered_changes.checkpoints_added.size() == 2)
+		stale.source = {"cells": before.cells, "markers": before.markers}
+		var newer := before.duplicate(true)
+		newer.markers["PlacementMarkers/Exit"][1] -= 32.0
+		var combined := Exchange.merge_stale(stage, newer, stale)
+		assert(combined.has("data"))
+		assert(combined.data.markers["PlacementMarkers/Exit"] == newer.markers["PlacementMarkers/Exit"])
+		assert(combined.data.markers["PlacementMarkers/PlayerSpawn"] == stale.markers["PlacementMarkers/PlayerSpawn"])
+		newer.markers["PlacementMarkers/PlayerSpawn"][0] -= 32.0
+		assert(Exchange.merge_stale(stage, newer, stale).has("error"))
+		var after_send: Dictionary = combined.data
+		var reverted := stale.duplicate(true)
+		reverted.source = {"cells": stale.cells, "markers": stale.markers}
+		reverted.cells = before.cells
+		reverted.markers = before.markers.duplicate(true)
+		# Keep the checkpoint set from the applied send. This test reverts tiles and the spawn.
+		for marker_path in reverted.markers.keys():
+			if marker_path.begins_with("Checkpoints/"):
+				reverted.markers.erase(marker_path)
+		for marker_path in stale.markers:
+			if marker_path.begins_with("Checkpoints/"):
+				reverted.markers[marker_path] = stale.markers[marker_path]
+		var repeated := Exchange.merge_stale(stage, after_send, reverted)
+		assert(repeated.has("data"))
+		assert(repeated.data.cells.size() == before.cells.size())
+		assert(repeated.data.markers["PlacementMarkers/PlayerSpawn"] == before.markers["PlacementMarkers/PlayerSpawn"])
+		assert(repeated.data.markers["PlacementMarkers/Exit"] == newer.markers["PlacementMarkers/Exit"])
 		var changes := Exchange.diff(before, data)
+		assert(changes.checkpoints_removed == [old_checkpoint] and changes.checkpoints_added.size() == 2)
 		assert(changes.terrain_changed)
 		var history := plugin.get_undo_redo()
 		var old_shapes := stage.get_node("Terrain").get_children()
@@ -42,6 +93,16 @@ func verify() -> void:
 		Exchange.commit(history, stage, changes)
 		assert(Exchange.snapshot(stage).cells.size() == data.cells.size())
 		assert(Exchange.snapshot(stage).markers == data.markers)
+		assert(checkpoints.get_child_count() == old_checkpoints.size() + 1)
+		for name in new_names:
+			var checkpoint := checkpoints.get_node(name)
+			assert(checkpoint.owner == stage and checkpoint.has_signal("reached"))
+			assert(checkpoint.scene_file_path == "res://scenes/props/checkpoint.tscn")
+		var packed := PackedScene.new()
+		assert(packed.pack(stage) == OK)
+		var copy := packed.instantiate()
+		assert(copy.has_node("Checkpoints/" + new_names[1]))
+		copy.free()
 		assert(not decor or decor.tile_map_data == decor_data)
 		for child in stage.get_children():
 			if child is Line2D and str(child.name).begins_with("Rim"):
@@ -63,7 +124,9 @@ func verify() -> void:
 		assert(Exchange.snapshot(stage) == before)
 		assert(stage.get_node("Terrain").get_children() == old_shapes)
 		assert(stage.get_children() == old_children)
+		assert(checkpoints.get_children() == old_checkpoints)
 		assert(scene_history.redo())
+		assert(Exchange.snapshot(stage).markers == data.markers)
 		assert(Exchange.snapshot(stage).cells.size() == data.cells.size())
 		assert(scene_history.undo())
 		print("MAPEDIT PASS ", path)

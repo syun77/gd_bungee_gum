@@ -1,13 +1,21 @@
 import AppKit
+import CryptoKit
+import Network
 
 private struct SavedSession: Codable {
     let map: MapDocument
     let baseline: Data?
     let file: URL?
+    let camera: MapCamera?
 }
 
 private final class PaletteGrid: NSGridView {
     override var isFlipped: Bool { true }
+}
+
+private struct PasteResponse: Decodable {
+    let status: String
+    let message: String
 }
 
 final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
@@ -25,6 +33,11 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var file: URL?
     private var categories: [String] = []
     private var variants: [[Int]] = []
+    private var pasteConnection: NWConnection?
+    private var pasteTrace = "-"
+    private var sentMap: MapDocument?
+    private var loadedMapID = UUID()
+    private var sentMapID: UUID?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         history.levelsOfUndo = 50
@@ -37,6 +50,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         variant.target = self
         variant.action = #selector(selectVariant)
+        let sendButton = NSButton(title: "Godot に送る", target: self, action: #selector(sendMap))
         let fitButton = NSButton(title: "全体表示", target: self, action: #selector(fit))
         let categoryLabel = NSTextField(labelWithString: "配置種別")
         let variantLabel = NSTextField(labelWithString: "タイル")
@@ -48,7 +62,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         paletteScroll.hasVerticalScroller = true
         paletteScroll.autohidesScrollers = true
         paletteScroll.drawsBackground = false
-        let tools = NSStackView(views: [categoryLabel, paletteScroll, variantLabel, variant, fitButton, status])
+        let tools = NSStackView(views: [categoryLabel, paletteScroll, variantLabel, variant, sendButton, fitButton, status])
         tools.orientation = .vertical
         tools.alignment = .leading
         tools.spacing = 8
@@ -67,7 +81,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.contentView = root
         let minimap = Minimap()
         minimap.canvas = canvas
-        minimap.toolTip = "ミニマップをクリックして表示位置を移動"
+        minimap.toolTip = "ミニマップをクリックまたは左ドラッグして表示位置を移動"
         canvas.onOverviewChange = { [weak minimap] in minimap?.needsDisplay = true }
         for view in [canvas, sidebar, minimap, hint] {
             view.translatesAutoresizingMaskIntoConstraints = false
@@ -131,7 +145,6 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         submenu("編集", [
             ("元に戻す", #selector(undo), "z", [.command]),
             ("やり直す", #selector(redo), "z", [.command, .shift]),
-            ("Godot 向けに配置をコピー", #selector(copyMap), "c", [.command]),
             ("配置を貼り付け", #selector(pasteMap), "v", [.command])
         ])
         submenu("表示", [("全体表示", #selector(fit), "0", [.command])])
@@ -147,8 +160,10 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
             return
         }
         let labels = ["TerrainTiles": "地形", "OneWayPlatforms": "片方向床", "GumPassBarriers": "バリア",
-                      "GumAnchors": "ガムアンカー", "Spikes": "トゲ", "Foods": "食べ物", "MusicNotes": "音符"]
-        categories = MapDocument.order.filter { map.layers[$0] != nil } + map.markers.keys.sorted()
+                      "GumAnchors": "ガムアンカー", "Spikes": "トゲ", "Foods": "食べ物", "MusicNotes": "音符", MapDocument.checkpointKind: "チェックポイント"]
+        categories = MapDocument.order.filter { map.layers[$0] != nil }
+            + [MapDocument.checkpointKind]
+            + map.markers.keys.filter { !$0.hasPrefix(MapDocument.checkpointPrefix) }.sorted()
         for (index, kind) in categories.enumerated() {
             let name = String(kind.split(separator: "/").last ?? "")
             let title = labels[kind] ?? (name == "PlayerSpawn" ? "スタート" : name == "Exit" ? "ゴール" : name)
@@ -185,7 +200,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let selected = categories[index]
         variant.removeAllItems()
         variants = map.layers[selected]?.palette ?? []
-        canvas.selectedKind = map.layers[selected] == nil ? nil : selected
+        canvas.selectedKind = map.layers[selected] != nil || selected == MapDocument.checkpointKind ? selected : nil
         canvas.marker = map.markers[selected] == nil ? nil : selected
         let labels = map.layers[selected]?.labels ?? []
         variant.addItems(withTitles: variants.enumerated().map { index, id in
@@ -213,7 +228,9 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         history.registerUndo(withTarget: self) { editor in
             guard let current = editor.canvas.document else { return }
             editor.remember(current)
-            editor.canvas.document = previous
+            var restored = previous
+            restored.source = current.source
+            editor.canvas.document = restored
             editor.refreshTitle()
         }
         history.endUndoGrouping()
@@ -247,7 +264,8 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         load(map, file: file, baseline: normalized)
     }
 
-    private func load(_ map: MapDocument, file: URL?, baseline: Data?) {
+    private func load(_ map: MapDocument, file: URL?, baseline: Data?, camera: MapCamera? = nil) {
+        loadedMapID = UUID()
         self.file = file
         self.baseline = baseline
         canvas.document = map
@@ -255,22 +273,114 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         refreshPalette()
         refreshTitle()
         window.contentView?.layoutSubtreeIfNeeded()
-        canvas.fit()
+        canvas.restoreCamera(camera)
         window.makeFirstResponder(canvas)
     }
 
-    @objc private func copyMap() {
-        guard let map = canvas.document else { return }
+    @objc private func sendMap() {
+        guard let map = canvas.document else {
+            logPaste("send skipped: no map")
+            return
+        }
+        guard pasteConnection == nil else {
+            logPaste("send skipped: request already in progress", trace: pasteTrace)
+            return
+        }
         do {
             try map.validate()
-            let data = try encode(map)
-            let pasteboard = NSPasteboard.general
-            pasteboard.clearContents()
-            guard pasteboard.setString(String(decoding: data, as: UTF8.self), forType: .string) else {
-                throw MapError("クリップボードに書き込めませんでした。")
+            var payload = try encode(map)
+            payload.append(10)
+            let trace = SHA256.hash(data: payload).prefix(6).map { String(format: "%02x", $0) }.joined()
+            pasteTrace = trace
+            logPaste("connect 127.0.0.1:47653 stage=\(map.stage) bytes=\(payload.count)", trace: trace)
+            let connection = NWConnection(host: "127.0.0.1", port: 47653, using: .tcp)
+            pasteConnection = connection
+            sentMapID = loadedMapID
+            status.stringValue = "Godot に送信中…"
+            connection.stateUpdateHandler = { [weak self, weak connection] state in
+                guard let self, let connection, self.pasteConnection === connection else { return }
+                switch state {
+                case .ready:
+                    self.logPaste("connected", trace: trace)
+                    connection.send(content: payload, completion: .contentProcessed { error in
+                        guard self.pasteConnection === connection else { return }
+                        if let error {
+                            self.finishSend(connection, error: error)
+                            return
+                        }
+                        self.sentMap = map
+                        self.status.stringValue = "Godot で確認待ち"
+                        self.logPaste("request written; waiting for confirmation result", trace: trace)
+                        connection.receive(minimumIncompleteLength: 4096, maximumLength: 4096) { data, _, _, error in
+                            self.finishSend(connection, data: data, error: error)
+                        }
+                    })
+                case .waiting(let error):
+                    self.logPaste("connection waiting: \(error)", trace: trace)
+                case .failed(let error):
+                    self.finishSend(connection, error: error)
+                default: break
+                }
             }
-            status.stringValue = "コピーしました"
-        } catch { show(error) }
+            connection.start(queue: .main)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self, weak connection] in
+                guard let connection, self?.sentMap == nil else { return }
+                self?.finishSend(connection, error: MapError("Godot から応答がありません。対象ステージを開き、MapEdit プラグインを確認してください。"))
+            }
+        } catch {
+            logPaste("send preparation failed: \(error.localizedDescription)")
+            show(error)
+        }
+    }
+
+    private func logPaste(_ message: String, trace: String = "-") {
+        let line = "\(ISO8601DateFormatter().string(from: Date())) [MapEditPaste] [\(trace)] \(message)\n"
+        FileHandle.standardError.write(Data(line.utf8))
+    }
+
+    private func finishSend(_ connection: NWConnection, data: Data? = nil, error: Error? = nil) {
+        guard pasteConnection === connection else { return }
+        pasteConnection = nil
+        defer { sentMap = nil; sentMapID = nil }
+        connection.stateUpdateHandler = nil
+        connection.cancel()
+        do {
+            if let error { throw error }
+            guard let data, !data.isEmpty else { throw MapError("Godot から応答がありません。") }
+            logPaste("reply received bytes=\(data.count)", trace: pasteTrace)
+            let response = try JSONDecoder().decode(PasteResponse.self, from: data)
+            logPaste("reply status=\(response.status) message=\(response.message)", trace: pasteTrace)
+            switch response.status {
+            case "applied":
+                recordAppliedSource()
+                status.stringValue = "Godot に反映しました"
+            case "partial": status.stringValue = "チェックポイントを反映しました"
+            case "canceled": status.stringValue = "貼り付けをキャンセルしました"
+            case "unchanged":
+                recordAppliedSource()
+                status.stringValue = "変更はありません"
+            default:
+                status.stringValue = "貼り付けできませんでした"
+                show(MapError(response.message))
+            }
+        } catch {
+            logPaste("send failed: \(error)", trace: pasteTrace)
+            status.stringValue = "送信できませんでした"
+            show(MapError("Godot に送信できませんでした。対象ステージと MapEdit プラグインを確認してください。\n\(error.localizedDescription)"))
+        }
+    }
+
+    private func recordAppliedSource() {
+        guard sentMapID == loadedMapID, let sentMap, var current = canvas.document else { return }
+        let source = SourcePlacements(cells: sentMap.cells, markers: sentMap.markers)
+        current.source = source
+        if let baseline, var saved = try? JSONDecoder().decode(MapDocument.self, from: baseline) {
+            saved.source = source
+            self.baseline = try? encode(saved)
+        }
+        canvas.document = current
+        refreshTitle()
+        logPaste("updated comparison source from confirmed send", trace: pasteTrace)
     }
 
     @objc private func pasteMap() {
@@ -353,7 +463,16 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
             let file = session.file.flatMap { url in
                 url.isFileURL && FileManager.default.fileExists(atPath: url.path) ? url : nil
             }
-            load(map, file: file, baseline: session.baseline)
+            var baseline = session.baseline
+            if map.source == nil, session.file == nil, let saved = baseline,
+               var original = try? JSONDecoder().decode(MapDocument.self, from: saved),
+               original.stage == map.stage, original.base == map.base {
+                let source = SourcePlacements(cells: original.cells, markers: original.markers)
+                map.source = source
+                original.source = source
+                baseline = try encode(original)
+            }
+            load(map, file: file, baseline: baseline, camera: session.camera)
         } catch {
             show(MapError("前回の作業を復元できませんでした。\n\(error.localizedDescription)"))
         }
@@ -366,7 +485,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
             let url = try sessionURL()
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
                                                     withIntermediateDirectories: true)
-            let session = SavedSession(map: map, baseline: baseline, file: file)
+            let session = SavedSession(map: map, baseline: baseline, file: file, camera: canvas.camera)
             try JSONEncoder().encode(session).write(to: url, options: .atomic)
             return .terminateNow
         } catch {
