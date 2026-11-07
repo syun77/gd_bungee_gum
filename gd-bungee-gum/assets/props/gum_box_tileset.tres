@@ -1,0 +1,11 @@
+[gd_resource type="TileSet" format=3 uid="uid://bcste0tuigl8s"]
+
+[ext_resource type="PackedScene" path="res://scenes/props/gum_box.tscn" id="1"]
+
+[sub_resource type="TileSetScenesCollectionSource" id="Boxes"]
+resource_name = "GumBoxes"
+scenes/0/scene = ExtResource("1")
+
+[resource]
+tile_size = Vector2i(32, 32)
+sources/0 = SubResource("Boxes")

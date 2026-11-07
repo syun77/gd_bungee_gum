@@ -18,7 +18,7 @@ private struct PasteResponse: Decodable {
     let message: String
 }
 
-final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
+final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFieldDelegate {
     private let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1180, height: 620),
                                   styleMask: [.titled, .closable, .miniaturizable, .resizable],
                                   backing: .buffered, defer: false)
@@ -27,6 +27,12 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private let preferences = UserDefaults(suiteName: "BungeeGumMapEdit")
     private static let stylesKey = "mapedit.placementStyles"
     private let styleButton = NSButton(title: "タイル設定…", target: nil, action: nil)
+    private let styleName = NSTextField(string: "")
+    private let styleShortcut = NSTextField(string: "")
+    private let styleColor = NSColorWell()
+    private let styleFeedback = NSTextField(labelWithString: "")
+    private var styleKind: String?
+    private lazy var stylePanel = makeStylePanel()
     private var categoryButtons: [NSButton] = []
     private let variantLabel = NSTextField(labelWithString: "タイル")
     private let variant = NSPopUpButton(frame: .zero, pullsDown: false)
@@ -116,6 +122,14 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
             hint.trailingAnchor.constraint(equalTo: canvas.trailingAnchor, constant: -12),
             hint.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -8)
         ])
+        canvas.onPlacementShortcut = { [weak self] key in
+            guard let self, let index = self.categories.firstIndex(where: {
+                self.canvas.placementStyle(for: $0)?.shortcut == key
+            }) else { return false }
+            self.selectCategory(at: index)
+            self.categoryButtons[index].scrollToVisible(self.categoryButtons[index].bounds)
+            return true
+        }
         canvas.onHover = { [weak self] label in self?.status.stringValue = label }
         canvas.onCommit = { [weak self] previous in
             self?.remember(previous)
@@ -157,7 +171,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         NSApp.mainMenu = main
     }
 
-    private func refreshPalette(selectedKind: String? = nil) {
+    private func refreshPalette() {
         categoryButtons.removeAll()
         guard let map = canvas.document else {
             paletteScroll.documentView = nil
@@ -169,14 +183,9 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
             + [MapDocument.checkpointKind]
             + map.markers.keys.filter { !$0.hasPrefix(MapDocument.checkpointPrefix) }.sorted()
         for (index, kind) in categories.enumerated() {
-            let title = placementName(for: kind)
-            let button = NSButton(title: title, target: self, action: #selector(chooseCategory(_:)))
-            let label = NSMutableAttributedString(string: "■  " + title)
-            label.addAttribute(.foregroundColor, value: canvas.placementColor(for: kind),
-                               range: NSRange(location: 0, length: 1))
-            button.attributedTitle = label
+            let button = NSButton(title: "", target: self, action: #selector(chooseCategory(_:)))
             button.tag = index
-            button.toolTip = title
+            updateCategoryLabel(button, kind: kind)
             button.setButtonType(.pushOnPushOff)
             button.bezelStyle = .rounded
             button.lineBreakMode = .byTruncatingTail
@@ -195,15 +204,22 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         paletteScroll.documentView = palette
         palette.scroll(.zero)
         styleButton.isEnabled = true
-        selectCategory(at: selectedKind.flatMap { categories.firstIndex(of: $0) } ?? 0)
-        if let selectedKind, let index = categories.firstIndex(of: selectedKind) {
-            categoryButtons[index].scrollToVisible(categoryButtons[index].bounds)
-        }
+        selectCategory(at: 0)
+    }
+
+    private func updateCategoryLabel(_ button: NSButton, kind: String) {
+        let title = placementName(for: kind)
+        let label = NSMutableAttributedString(string: "■  " + title)
+        label.addAttribute(.foregroundColor, value: canvas.placementColor(for: kind),
+                           range: NSRange(location: 0, length: 1))
+        button.attributedTitle = label
+        let shortcut = canvas.placementStyle(for: kind)?.shortcut
+        button.toolTip = shortcut.map { "\(title) [\($0.uppercased())]" } ?? title
     }
 
     private func placementName(for kind: String) -> String {
         let labels = ["TerrainTiles": "地形", "OneWayPlatforms": "片方向床", "GumPassBarriers": "バリア",
-                      "GumAnchors": "ガムアンカー", "Spikes": "トゲ", "Foods": "食べ物", "Baguettes": "フランスパン", "MusicNotes": "音符", MapDocument.checkpointKind: "チェックポイント"]
+                      "GumAnchors": "ガムアンカー", "Spikes": "即死トゲ", "GumBoxes": "可動ブロック", "Foods": "食べ物", "Baguettes": "フランスパン", "MusicNotes": "音符", MapDocument.checkpointKind: "チェックポイント"]
         let name = String(kind.split(separator: "/").last ?? "")
         return canvas.placementStyle(for: kind)?.name ?? labels[kind]
             ?? (name == "PlayerSpawn" ? "スタート" : name == "Exit" ? "ゴール" : name)
@@ -211,49 +227,109 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     @objc private func editPlacementStyle() {
         guard let selected = canvas.selectedKind ?? canvas.marker else { return }
-        let previousTile = variant.indexOfSelectedItem
-        let name = NSTextField(string: placementName(for: selected))
-        name.widthAnchor.constraint(equalToConstant: 220).isActive = true
-        let color = NSColorWell(frame: NSRect(x: 0, y: 0, width: 64, height: 26))
-        color.color = canvas.placementColor(for: selected)
+        styleKind = selected
+        let panel = stylePanel
+        panel.title = "タイル設定 — " + placementName(for: selected)
+        populateStyleFields(for: selected)
+        if !panel.isVisible { panel.center() }
+        panel.makeKeyAndOrderFront(nil)
+    }
+
+    private func makeStylePanel() -> NSPanel {
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 390, height: 175),
+                            styleMask: [.titled, .closable, .utilityWindow], backing: .buffered, defer: false)
+        panel.isReleasedWhenClosed = false
+        panel.delegate = self
+        styleName.delegate = self
+        styleShortcut.delegate = self
+        styleShortcut.placeholderString = "英数字1キー・空欄で解除"
+        styleColor.target = self
+        styleColor.action = #selector(changeStyleColor)
+        styleColor.isContinuous = true
         let fields = NSGridView(views: [
-            [NSTextField(labelWithString: "表示名"), name],
-            [NSTextField(labelWithString: "色"), color]
+            [NSTextField(labelWithString: "表示名"), styleName],
+            [NSTextField(labelWithString: "色"), styleColor],
+            [NSTextField(labelWithString: "ショートカット"), styleShortcut]
         ])
-        fields.setFrameSize(fields.fittingSize)
-        let dialog = NSAlert()
-        dialog.messageText = "タイル設定"
-        dialog.informativeText = selected
-        dialog.accessoryView = fields
-        dialog.addButton(withTitle: "OK")
-        dialog.addButton(withTitle: "キャンセル")
-        dialog.addButton(withTitle: "既定に戻す")
-        dialog.window.initialFirstResponder = name
-        NSColorPanel.shared.worksWhenModal = true
-        let response = dialog.runModal()
-        color.deactivate()
-        var styles = canvas.placementStyles
-        switch response {
-        case .alertFirstButtonReturn:
-            let value = name.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !value.isEmpty else {
-                show(MapError("表示名を入力してください。"))
+        styleFeedback.textColor = .secondaryLabelColor
+        let reset = NSButton(title: "既定に戻す", target: self, action: #selector(resetPlacementStyle))
+        let stack = NSStackView(views: [fields, styleFeedback, reset])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 8
+        let content = NSView()
+        panel.contentView = content
+        content.addSubview(stack)
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: content.topAnchor, constant: 12),
+            stack.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 12),
+            stack.trailingAnchor.constraint(lessThanOrEqualTo: content.trailingAnchor, constant: -12),
+            styleName.widthAnchor.constraint(equalToConstant: 220),
+            styleShortcut.widthAnchor.constraint(equalToConstant: 220)
+        ])
+        return panel
+    }
+
+    private func populateStyleFields(for kind: String) {
+        styleName.stringValue = placementName(for: kind)
+        styleColor.color = canvas.placementColor(for: kind)
+        styleShortcut.stringValue = canvas.placementStyle(for: kind)?.shortcut?.uppercased() ?? ""
+        styleFeedback.stringValue = "変更はすぐに保存されます"
+    }
+
+    func controlTextDidChange(_ notification: Notification) {
+        guard let kind = styleKind, let field = notification.object as? NSTextField else { return }
+        let previous = canvas.placementStyle(for: kind)
+        if field === styleName {
+            let name = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty else {
+                styleFeedback.stringValue = "表示名を入力してください"
                 return
             }
-            styles[selected] = PlacementStyle(name: value, color: color.color)
-        case .alertThirdButtonReturn:
-            styles.removeValue(forKey: selected)
-        default: return
+            savePlacementStyle(PlacementStyle(name: name, color: canvas.placementColor(for: kind),
+                                              shortcut: previous?.shortcut), for: kind)
+        } else if field === styleShortcut {
+            let key = field.stringValue.lowercased()
+            guard key.isEmpty || (key.utf8.count == 1 && "abcdefghijklmnopqrstuvwxyz0123456789".contains(key)) else {
+                styleFeedback.stringValue = "英数字1キーを入力してください"
+                return
+            }
+            guard key.isEmpty || !canvas.placementStyles.contains(where: { $0.key != kind && $0.value.shortcut == key }) else {
+                styleFeedback.stringValue = "そのキーは別の配置種別に割り当て済みです"
+                return
+            }
+            savePlacementStyle(PlacementStyle(name: placementName(for: kind), color: canvas.placementColor(for: kind),
+                                              shortcut: key.isEmpty ? nil : key), for: kind)
         }
+    }
+
+    @objc private func changeStyleColor() {
+        guard let kind = styleKind else { return }
+        savePlacementStyle(PlacementStyle(name: placementName(for: kind), color: styleColor.color,
+                                          shortcut: canvas.placementStyle(for: kind)?.shortcut), for: kind)
+    }
+
+    @objc private func resetPlacementStyle() {
+        guard let kind = styleKind else { return }
+        savePlacementStyle(nil, for: kind)
+        populateStyleFields(for: kind)
+    }
+
+    private func savePlacementStyle(_ style: PlacementStyle?, for kind: String) {
+        var styles = canvas.placementStyles
+        styles[kind] = style
         do {
             preferences?.set(try JSONEncoder().encode(styles), forKey: Self.stylesKey)
             canvas.placementStyles = styles
-            refreshPalette(selectedKind: selected)
-            if variants.indices.contains(previousTile) {
-                variant.selectItem(at: previousTile)
-                selectVariant()
+            if let index = categories.firstIndex(of: kind) {
+                updateCategoryLabel(categoryButtons[index], kind: kind)
             }
-        } catch { show(error) }
+            stylePanel.title = "タイル設定 — " + placementName(for: kind)
+            styleFeedback.stringValue = "変更はすぐに保存されます"
+        } catch {
+            styleFeedback.stringValue = error.localizedDescription
+        }
     }
 
     @objc private func chooseCategory(_ sender: NSButton) {
@@ -333,6 +409,11 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func load(_ map: MapDocument, file: URL?, baseline: Data?, camera: MapCamera? = nil) {
+        if styleKind != nil {
+            styleColor.deactivate()
+            stylePanel.orderOut(nil)
+            styleKind = nil
+        }
         loadedMapID = UUID()
         self.file = file
         self.baseline = baseline
@@ -563,6 +644,11 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
+        if sender !== window {
+            styleColor.deactivate()
+            styleKind = nil
+            return true
+        }
         NSApp.terminate(nil)
         return false
     }

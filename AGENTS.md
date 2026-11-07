@@ -24,7 +24,7 @@
 
 - Current setting/art direction is a pop-colored family restaurant: cream ceramic, coral/mint trim, painted frames and muted teal background. `theater_*` filenames remain the current resource identifiers. Edit both atlas copies together (`images/tilesets/` and `gd-bungee-gum/assets/tilesets/`); `restaurant_tileset_source.png` is the color-edit source.
 
-- The first editable map is `gd-bungee-gum/scenes/stages/theater_stage.tscn` (160 × 24 cells, 32 px grid). F6 opens the stage alone; F5 opens mode selection. In Stage Mode, the restaurant card starts `scenes/game.tscn` with the Teto player (A/D or arrows, Z for detach/contact kick-off, R for restart). Open `scenes/map_preview.tscn` with F6 for arrows to pan, 1–6 to select a section and Tab for overview.
+- The first editable map is `gd-bungee-gum/scenes/stages/theater_stage.tscn` (160 × 24 cells, 32 px grid). F6 opens the stage alone; F5 starts Time Attack directly (temporary debug startup). In Stage Mode, the restaurant card starts `scenes/game.tscn` with the Teto player (A/D or arrows, Z for detach/contact kick-off, R for restart). Open `scenes/map_preview.tscn` with F6 for arrows to pan, 1–6 to select a section and Tab for overview.
 - Ordinary map layers have collision disabled (except native one-way `OneWayPlatforms`); `TheaterStage/Terrain` owns merged rectangular static shapes on physics layer 1. When editing terrain tiles, update matching shapes and outline nodes together. `tools/build_theater_stage.gd` regenerates the scene/TileSet and overwrites manual edits; run only intentionally.
 - Local Godot executable: `/Applications/Godot_mono.app/Contents/MacOS/Godot` (4.5.1). For sandboxed headless runs, use `--log-file /tmp/<task>.log` to avoid a crash writing default user logs. Run the saved-map collision check with `--headless --path gd-bungee-gum --log-file /tmp/map-check.log --script res://tools/verify_theater_stage.gd`.
 
@@ -275,7 +275,7 @@
 
 - Gameplay HUD has no persistent control-help text; keep control documentation in specs/keyboard-controls.md. HUD/Status remains for runtime gum state.
 
-- F5 opens `scenes/mode_select.tscn`. Stage Mode opens `scenes/stage_select.tscn`, whose Back button and ui_cancel return to mode selection. Time Attack opens `scenes/game_time_attack.tscn`; stage_catalog.gd lists3 playable courses. Stage1 is original restaurant; inherited game_stage_2/3 scenes export stage_scene + stage_width2048. Rebuild only new maps via tools/build_provisional_stages.gd; original map/TileSet untouched. Game OPTIONS/Esc/HUD opens a pause menu with retry/selection/cancel; new entry clears checkpoint, R preserves selected scene, Exit player contact opens door, darkens/hides actor and closes before clear result. See specs/stage-selection.md and tools/verify_stage_select.gd.
+- F5 starts `scenes/game_time_attack.tscn` directly as a temporary debug default. Time Attack returns to mode selection only via the pause menu; its clear result offers retry only. Stage Mode opens `scenes/stage_select.tscn`, whose Back button and ui_cancel return to mode selection. Time Attack opens `scenes/game_time_attack.tscn`; stage_catalog.gd lists3 playable courses. Stage1 is original restaurant; inherited game_stage_2/3 scenes export stage_scene + stage_width2048. Rebuild only new maps via tools/build_provisional_stages.gd; original map/TileSet untouched. Game OPTIONS/Esc/HUD opens a pause menu with retry/selection/cancel; new entry clears checkpoint, R preserves selected scene, Exit player contact opens door, darkens/hides actor and closes before clear result. See specs/stage-selection.md and tools/verify_stage_select.gd.
 
 - Stage-start entrance source artwork: `images/tilesets/restaurant_stage_entrance_source.png` (transparent cream/mint doorway with coral canopy and arrow sign). This original is retained; the ENTRANCE animation variant supplies the normalized runtime sprite, separate from the terrain TileSet.
 
@@ -351,3 +351,11 @@
 - Replace the right palette scroll view’s entire document grid on refresh. Reusing a layer-backed NSGridView by removing rows left stale button drawings over new labels.
 
 - Baguettes uses a separate scene-tile TileMapLayer from MusicNotes. Its Y offset is +16px so scene instances sit at the cell bottom-center. Game updates the layer before connecting score pickups; Time Attack keeps the timer HUD.
+
+- MapEdit’s modeless tile settings save valid name/color/shortcut edits immediately. Placement shortcuts are unique ASCII letters/digits and act when the canvas has focus.
+
+- MapEdit GumBoxes uses a scene-tile layer in Theater and Time Attack with the existing gum_box.tscn rigid body (bit4, mass0.4). Its TileMapLayer collision is disabled; physics and gum adhesion belong to the instantiated body.
+
+- MapEdit can paint instant-death spikes in Theater and Time Attack via Spikes and the shared spike_tileset.tres. Time Attack starts with an empty layer; Game owns both overlap and swept death detection.
+
+- Checkpoint death reload carries Game.collected_items (original parent path + placed local position) and score via RESPAWN_META; food reeling never changes identity. Food/contact pickups register recursively after TileMapLayer.update_internals. Manual retry/new entry resets items; Time Attack death at entrance also preserves them. verify_stage_select.gd covers all three pickup types and repeated death.

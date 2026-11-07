@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="gd_bungee_gum"
-run/main_scene="res://scenes/mode_select.tscn"
+run/main_scene="res://scenes/game_time_attack.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 

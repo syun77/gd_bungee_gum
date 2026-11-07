@@ -1,5 +1,7 @@
 extends Node2D
 ## Fixed-step owner: validate -> direction / actions -> gum -> player -> presentation.
+const ContactPickup = preload("res://scripts/contact_pickup.gd")
+const FoodCollectible = preload("res://scripts/food_collectible.gd")
 const Settings = preload("res://scripts/game_settings.gd")
 const TIME_ATTACK_RECORD := "user://time_attack_sprint.cfg"
 const SPIKE_LAYER := 64
@@ -14,6 +16,7 @@ var active_checkpoint: NodePath
 var elapsed := 0.0
 var best_time := 0.0
 var timer_label: Label
+var collected_items: Dictionary = {}
 var score := 0
 var cleared := false
 var exit_door: Sprite2D
@@ -35,7 +38,7 @@ var manual_down_pressed := false
 
 func _ready() -> void:
 	_setup_stage()
-	_setup_score_pickups()
+	_setup_pickups()
 	spike_sweep = ShapeCast2D.new()
 	spike_sweep.shape = player_shape.shape
 	spike_sweep.collision_mask = SPIKE_LAYER
@@ -90,12 +93,35 @@ func _finish_time_attack() -> void:
 			push_warning("Cannot save Time Attack record: %s" % error_string(error))
 	timer_label.text = "TIME %.2f  |  BEST %.2f" % [elapsed, best_time]
 
-func _setup_score_pickups() -> void:
-	var baguettes := get_node_or_null("TheaterStage/Baguettes") as TileMapLayer
-	if baguettes != null:
-		baguettes.update_internals()
-		for pickup in baguettes.get_children():
-			pickup.collected.connect(_score_baguette)
+func _setup_pickups() -> void:
+	if get_tree().has_meta(RESPAWN_META):
+		var saved: Dictionary = get_tree().get_meta(RESPAWN_META)
+		if saved.get("scene") == scene_file_path:
+			collected_items = saved.get("collected_items", {}).duplicate()
+			score = saved.get("score", 0)
+	if not time_attack:
+		$HUD/Score.text = "SCORE %d" % score
+	_register_pickups($TheaterStage)
+
+func _register_pickups(host: Node) -> void:
+	if host is TileMapLayer:
+		host.update_internals()
+	for child in host.get_children():
+		if child is ContactPickup or child is FoodCollectible:
+			# Capture the placed position before gum reeling can move the item.
+			var key := "%s:%s" % [get_path_to(host), child.position]
+			if collected_items.has(key):
+				host.remove_child(child)
+				child.queue_free()
+				continue
+			if child is FoodCollectible:
+				child.collected.connect(func(_food_id: StringName): collected_items[key] = true)
+			else:
+				child.collected.connect(func(): collected_items[key] = true)
+				if host.name == &"Baguettes":
+					child.collected.connect(_score_baguette)
+		else:
+			_register_pickups(child)
 
 func _score_baguette() -> void:
 	score += BAGUETTE_POINTS
@@ -279,6 +305,7 @@ func restart(from_checkpoint := false) -> void:
 	if from_checkpoint and (time_attack or not active_checkpoint.is_empty()):
 		get_tree().set_meta(RESPAWN_META, {
 			"scene": scene_file_path, "checkpoint": active_checkpoint, "elapsed": elapsed,
+			"collected_items": collected_items.duplicate(), "score": score,
 		})
 	elif get_tree().has_meta(RESPAWN_META):
 		get_tree().remove_meta(RESPAWN_META)
@@ -391,15 +418,17 @@ func _clear_stage() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 40)
 	column.add_child(title)
-	var back := Button.new()
-	back.text = "モード選択へ" if time_attack else "ステージ選択へ"
-	back.custom_minimum_size.y = 64
 	if time_attack:
 		var retry := Button.new()
 		retry.text = "リトライ"
 		retry.custom_minimum_size.y = 64
 		column.add_child(retry)
 		retry.pressed.connect(restart)
+		retry.grab_focus()
+		return
+	var back := Button.new()
+	back.text = "ステージ選択へ"
+	back.custom_minimum_size.y = 64
 	column.add_child(back)
 	back.pressed.connect(return_to_stage_select)
 	back.grab_focus()

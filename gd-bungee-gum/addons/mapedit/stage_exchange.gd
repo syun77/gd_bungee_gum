@@ -1,7 +1,7 @@
 @tool
 extends RefCounted
 
-const LAYERS := ["TerrainTiles", "OneWayPlatforms", "GumAnchors", "GumPassBarriers", "Spikes", "Foods", "Baguettes", "MusicNotes"]
+const LAYERS := ["TerrainTiles", "OneWayPlatforms", "GumAnchors", "GumPassBarriers", "Spikes", "GumBoxes", "Foods", "Baguettes", "MusicNotes"]
 const WIDTHS := {
 	"res://scenes/stages/time_attack.tscn": 192,
 	"res://scenes/stages/theater_stage.tscn": 160,
@@ -14,6 +14,8 @@ const ATLAS_PALETTES := {
 	"Spikes": [[0, 0, 0, 0]],
 }
 const ITEM_NAMES := {
+	"spikes": "即死トゲ",
+	"gum_box": "軽いブロック",
 	"baguette": "フランスパン",
 	"music_note": "音符",
 	"chicken_diavola": "若鶏のディアボラ風",

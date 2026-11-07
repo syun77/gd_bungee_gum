@@ -20,6 +20,8 @@ func verify() -> void:
 		assert(not before.layers.Foods.labels.has(""))
 		assert(before.layers.Baguettes.labels == ["フランスパン"])
 		assert(before.layers.MusicNotes.labels == ["音符"])
+		assert(before.layers.GumBoxes.labels == ["軽いブロック"])
+		assert(before.layers.Spikes.labels == ["即死トゲ"])
 		var data := before.duplicate(true)
 		data.base = Exchange.token(before)
 		data = JSON.parse_string(JSON.stringify(data))
@@ -41,7 +43,7 @@ func verify() -> void:
 		var foods := stage.get_node("Foods") as TileMapLayer
 		assert(foods.get_cell_source_id(food_cell) == -1)
 		data.cells.append({"kind": "Foods", "x": 5, "y": 5, "tile": [0, 0, 0, 5]})
-		for kind in ["Baguettes", "MusicNotes"]:
+		for kind in ["Baguettes", "MusicNotes", "GumBoxes", "Spikes"]:
 			data.cells.append({"kind": kind, "x": 5, "y": 5, "tile": [0, 0, 0, 0]})
 		data.markers["PlacementMarkers/PlayerSpawn"][0] += 32
 		var checkpoints := stage.get_node("Checkpoints")
@@ -104,7 +106,7 @@ func verify() -> void:
 		Exchange.commit(history, stage, changes)
 		assert(Exchange.snapshot(stage).cells.size() == data.cells.size())
 		assert(foods.get_cell_alternative_tile(food_cell) == 5)
-		for kind in ["Baguettes", "MusicNotes"]:
+		for kind in ["Baguettes", "MusicNotes", "GumBoxes", "Spikes"]:
 			assert(stage.get_node(kind).get_cell_source_id(food_cell) == 0)
 		assert(Exchange.snapshot(stage).markers == data.markers)
 		assert(checkpoints.get_child_count() == old_checkpoints.size() + 1)
@@ -116,6 +118,12 @@ func verify() -> void:
 		assert(packed.pack(stage) == OK)
 		var copy := packed.instantiate()
 		assert(copy.has_node("Checkpoints/" + new_names[1]))
+		var boxes := copy.get_node("GumBoxes") as TileMapLayer
+		assert(boxes.get_cell_source_id(food_cell) == 0)
+		var box_source := boxes.tile_set.get_source(0) as TileSetScenesCollectionSource
+		var box := box_source.get_scene_tile_scene(0).instantiate() as RigidBody2D
+		assert(box.collision_layer == 4 and is_equal_approx(box.mass, 0.4))
+		box.free()
 		copy.free()
 		assert(not decor or decor.tile_map_data == decor_data)
 		for child in stage.get_children():
@@ -143,7 +151,7 @@ func verify() -> void:
 		assert(Exchange.snapshot(stage).markers == data.markers)
 		assert(Exchange.snapshot(stage).cells.size() == data.cells.size())
 		assert(foods.get_cell_alternative_tile(food_cell) == 5)
-		for kind in ["Baguettes", "MusicNotes"]:
+		for kind in ["Baguettes", "MusicNotes", "GumBoxes", "Spikes"]:
 			assert(stage.get_node(kind).get_cell_source_id(food_cell) == 0)
 		assert(scene_history.undo())
 		print("MAPEDIT PASS ", path)

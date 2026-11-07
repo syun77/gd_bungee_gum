@@ -1,3 +1,42 @@
+## Preserve collected items on checkpoint death
+
+- Goal/status: Prevent collected items respawning on death; complete.
+- Decisions: Carry collected placement identities and score through checkpoint scene reload, including Time Attack start fallback. Manual retry starts fresh. Track original placement before food reeling.
+- Files: game.gd, verify_stage_select.gd, specs/stage-selection.md, AGENTS.md, WORKLOG.md.
+- Tests: Stage selection PASS for all three pickup types, moved food, score, repeated deaths and manual reset. Refactoring: unified recursive pickup registration and renamed setup to match responsibility. Final stage selection, food collectibles and food reel suites PASS; git diff --check passed. Food suite reports exit resource-leak warnings; macOS certificate warning persists. Blockers: None. Next action: Optional interactive death/retry playtest.
+
+## Direct Time Attack debug startup
+
+- Goal/status: Skip mode selection on startup; complete.
+- Completed/decisions: Main scene starts Time Attack; mode selection remains accessible from pause menu. Time Attack clear results offer retry only.
+- Files: project.godot, game.gd, verify_stage_select.gd, stage-selection/time-attack-courses specs, AGENTS.md, WORKLOG.md.
+- Verification: Headless verify_stage_select.gd PASS (direct startup, result retry-only, menu return and existing stage flow); git diff --check passed. Final refactoring review keeps result button construction within its mode branch; no further changes needed. Godot emitted the known non-blocking macOS certificate warning.
+- Blockers: None. Next action: F5 for optional interactive playtest.
+
+## MapEdit instant-death spikes
+
+- Goal/status: Place instant-death spikes from MapEdit. Complete.
+- Completed/decisions: Added the empty Time Attack Spikes layer to the saved scene and generator. Existing shared hazard tiles are labeled 即死トゲ in the editor.
+- Files: MapEdit main.swift/README, Godot stage exchange, Time Attack scene/generator and mapedit verifier, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift build, both editor placement/Undo/Redo probes, live Time Attack overlap/sweep/death probe and git diff --check passed.
+- Blockers: None. Next action: Reopen both apps and copy the stage into MapEdit.
+
+## MapEdit movable blocks
+
+- Goal/status: Add placeable gum-pullable blocks. Complete.
+- Completed/decisions: Added the movable block palette kind and empty GumBoxes scene-tile layers in Theater and Time Attack, backed by the existing light rigid body. Stage builders preserve the layers.
+- Files: MapEdit Swift sources and README, Godot GumBoxes tileset, both stages and generators, stage exchange/verifier, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Both Godot editor probes passed placement, scene packing, and Undo/Redo. A live Time Attack probe attached to a placed block and confirmed reciprocal nonzero force. Swift build and git diff --check passed.
+- Blockers: None. Next action: Reopen both apps and reimport the stage to refresh the palette.
+
+## MapEdit live tile settings and shortcuts
+
+- Goal/status: Allow shortcut assignment per placement kind and live settings. Complete.
+- Completed/decisions: Replaced the modal dialog with a modeless settings panel, saving valid edits immediately. Added unique single ASCII letter/digit shortcuts, reset, and palette tooltip labels.
+- Files: MapEdit Canvas.swift, main.swift and README, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift build and AppKit probe passed for live name/color changes, persistence, duplicate rejection, synthetic key selection and reset. git diff --check passed. Interactive color picker was not exercised.
+- Blockers: None. Next action: Relaunch MapEdit via run.command.
+
 ## MapEdit pickup tile spacing
 
 - Goal/status: Visually separate neighboring anchors and items. Complete.

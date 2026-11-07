@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" path="res://scenes/props/ladder.tscn" id="ladder"]
 [ext_resource type="TileSet" uid="uid://cn544jrpjobls" path="res://assets/hazards/spike_tileset.tres" id="spikes"]
 [ext_resource type="TileSet" path="res://assets/items/music_note_tileset.tres" id="music_notes"]
+[ext_resource type="TileSet" path="res://assets/props/gum_box_tileset.tres" id="gum_boxes"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_sbul5"]
 size = Vector2(64, 704)
@@ -466,6 +467,10 @@ position = Vector2(3456, 640)
 
 [node name="Section06" type="Marker2D" parent="PlacementMarkers" unique_id=678036520]
 position = Vector2(4288, 704)
+
+[node name="GumBoxes" type="TileMapLayer" parent="."]
+tile_set = ExtResource("gum_boxes")
+collision_enabled = false
 
 [node name="Foods" type="TileMapLayer" parent="." unique_id=861593656]
 z_index = 3

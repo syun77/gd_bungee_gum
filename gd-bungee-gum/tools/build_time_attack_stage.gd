@@ -62,6 +62,9 @@ func build() -> void:
 	for cell in [Vector2i(11, 18), Vector2i(18, 15), Vector2i(25, 12),
 			Vector2i(38, 15), Vector2i(43, 17), Vector2i(49, 15)]:
 		anchors.set_cell(cell, 2, Vector2i.ZERO)
+	var spikes := layer("Spikes", preload("res://assets/hazards/spike_tileset.tres"))
+	spikes.z_index = 3
+	layer("GumBoxes", preload("res://assets/props/gum_box_tileset.tres"))
 	var foods := layer("Foods", preload("res://assets/foods/food_tileset.tres"))
 	foods.z_index = 3
 	add(stage, BaguetteLayout.create_layer([]))

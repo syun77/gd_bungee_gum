@@ -82,6 +82,8 @@ func _initialize() -> void:
 	spikes.z_index = 3
 	for cell in Layout.SPIKES:
 		spikes.set_cell(cell, 0, Vector2i.ZERO, 0)
+	var boxes := layer("GumBoxes")
+	boxes.tile_set = preload("res://assets/props/gum_box_tileset.tres")
 	var foods := layer("Foods")
 	foods.tile_set = load("res://assets/foods/food_tileset.tres")
 	foods.z_index = 3

@@ -42,7 +42,7 @@ struct MapDocument: Codable {
     var source: SourcePlacements?
 
     static let order = ["TerrainTiles", "OneWayPlatforms", "GumPassBarriers",
-                        "GumAnchors", "Spikes", "Foods", "Baguettes", "MusicNotes"]
+                        "GumAnchors", "Spikes", "GumBoxes", "Foods", "Baguettes", "MusicNotes"]
 
     static let namedItemKinds: Set<String> = ["Foods", "Baguettes", "MusicNotes"]
 

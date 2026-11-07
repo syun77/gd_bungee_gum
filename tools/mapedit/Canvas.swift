@@ -5,9 +5,11 @@ struct PlacementStyle: Codable {
     let red: CGFloat
     let green: CGFloat
     let blue: CGFloat
+    let shortcut: String?
 
-    init(name: String, color: NSColor) {
+    init(name: String, color: NSColor, shortcut: String? = nil) {
         self.name = name
+        self.shortcut = shortcut
         let rgb = color.usingColorSpace(.sRGB) ?? .black
         red = rgb.redComponent
         green = rgb.greenComponent
@@ -25,6 +27,7 @@ struct MapCamera: Codable {
 final class Canvas: NSView {
     var document: MapDocument? { didSet { refreshView() } }
     var placementStyles: [String: PlacementStyle] = [:] { didSet { refreshView() } }
+    var onPlacementShortcut: ((String) -> Bool)?
     var onOverviewChange: (() -> Void)?
     var selectedKind: String? { didSet { needsDisplay = true } }
     var tile: [Int]?
@@ -47,7 +50,7 @@ final class Canvas: NSView {
     private static let colors: [String: NSColor] = [
         "TerrainTiles": .systemBrown, "OneWayPlatforms": .systemTeal,
         "GumPassBarriers": .systemCyan, "GumAnchors": .systemGreen,
-        "Spikes": .systemRed, "Foods": .systemOrange, "Baguettes": .systemYellow, "MusicNotes": .systemPurple
+        "Spikes": .systemRed, "GumBoxes": .systemMint, "Foods": .systemOrange, "Baguettes": .systemYellow, "MusicNotes": .systemPurple
     ]
 
     private static func routeMarkerColor(for path: String) -> NSColor? {
@@ -229,7 +232,16 @@ final class Canvas: NSView {
     }
 
     override func keyDown(with event: NSEvent) {
-        if event.keyCode == 49 { space = true } else { super.keyDown(with: event) }
+        if event.keyCode == 49 {
+            space = true
+            return
+        }
+        let modifiers: NSEvent.ModifierFlags = [.command, .control, .option, .shift]
+        if event.modifierFlags.intersection(modifiers).isEmpty,
+           let key = event.charactersIgnoringModifiers?.lowercased(), onPlacementShortcut?(key) == true {
+            return
+        }
+        super.keyDown(with: event)
     }
 
     override func keyUp(with event: NSEvent) {
