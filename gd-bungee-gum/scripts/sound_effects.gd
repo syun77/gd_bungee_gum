@@ -7,6 +7,7 @@ const CLIPS := {
 	&"checkpoint": preload("res://assets/sounds/checkpoint.wav"),
 	&"dead": preload("res://assets/sounds/dead.wav"),
 	&"hit": preload("res://assets/sounds/hit.wav"),
+	&"score_item": preload("res://assets/sounds/item3.wav"),
 	&"item": preload("res://assets/sounds/item.wav"),
 	&"jump": preload("res://assets/sounds/jump.wav"),
 	&"landing": preload("res://assets/sounds/landing.wav"),

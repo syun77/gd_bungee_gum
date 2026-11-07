@@ -22,6 +22,6 @@ func collect() -> void:
 	ScorePopup.spawn(self, points)
 	hide()
 	set_process(false)
-	get_node("/root/SoundEffects").play(&"item")
+	get_node("/root/SoundEffects").play(&"score_item")
 	collected.emit()
 	queue_free()

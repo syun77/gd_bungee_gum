@@ -1,5 +1,7 @@
 # ゲームパラメータの編集
 
+未接続時の下降速度は `Player Movement / Max Fall Speed`（初期600 px/s）で制限する。横・上昇速度は保持し、ガム接続中は緩んでいても制限しない。切断したティックから上限を再適用する。
+
 GodotのFileSystemで `res://resources/game_settings.tres` を選択し、Inspectorで編集して保存する。F5を再実行すると反映される。現在の基準値は蹴り出し速度400 px/s、Coyote Time 0.20秒、ガム最大長400 px、射程160 px、発射速度1200 px/s。保存済み設定とスクリプトの初期値を揃えている。ガム最小自然長は4 px。Gum／Pinning診断はOFF、Jump／Landing診断はOFFを基準とする。定義・範囲・単位の説明は `scripts/game_settings.gd` にある。
 
 | Inspectorのグループ | 主な項目 |

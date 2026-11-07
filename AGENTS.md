@@ -389,3 +389,7 @@
 - Brick destruction sound uses SoundEffects crash cue (sounds/crash.wav, identical runtime assets/sounds copy); normal gum adhesion retains hit. verify_breakable_terrain asserts actual destruction cue; sound verifier derives cue count from CLIPS.
 
 - Entrance/exit door timeline opening/closing uses SoundEffects door_open/door_close (sounds/door1.wav and door2.wav; matching assets/sounds copies). Play opening once at animation start and closing once at timeline completion, after exit landing/approach.
+
+- Free falling speed uses Player Movement/max_fall_speed (default600px/s); player.gd caps downward velocity after jump resolution, before contact solving. Any connected gum (taut/slack) bypasses; detach resumes immediately. Horizontal/upward momentum stays unchanged. verify_player.gd covers default/custom cap and detach; coyote compensation fixture raises cap to isolate compensation.
+
+- Notes/baguettes share ContactPickup score_item cue (sounds/item3.wav and identical runtime copy); food retains item.wav via item cue.

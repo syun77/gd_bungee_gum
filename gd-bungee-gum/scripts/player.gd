@@ -248,6 +248,9 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 		kick_available = false
 		coyote_remaining = 0.0
 		coyote_gravity_velocity = Vector2.ZERO
+	# Connected gum retains unrestricted swing momentum, including slack connections.
+	if not gum_attached:
+		external_velocity.y = minf(external_velocity.y, settings.max_fall_speed - control_velocity.y)
 	# 外部速度は空中で保持し、接地後に床面方向の摩擦で減速する。
 	velocity = control_velocity + external_velocity
 	var landing_incoming := velocity

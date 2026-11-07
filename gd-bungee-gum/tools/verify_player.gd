@@ -107,6 +107,24 @@ func verify() -> void:
 	brake_anchor.position = Vector2(240, 280)
 	game.add_child(brake_anchor)
 	await ticks(1)
+	var saved_fall_limit: float = player.settings.max_fall_speed
+	for fall_limit in [600.0, 320.0]:
+		player.settings.max_fall_speed = fall_limit
+		for attached in [false, true]:
+			player.position = Vector2(240, 400)
+			player.reset_motion()
+			if attached:
+				assert(game.gum.attach_at(Vector2(240, 288)))
+			player.external_velocity = Vector2(125, 900)
+			await physics_frame
+			player.simulate(1.0 / 60.0)
+			assert(is_equal_approx(player.external_velocity.x, 125.0))
+			assert(player.external_velocity.y > 900.0 if attached else is_equal_approx(player.external_velocity.y, fall_limit))
+			game.gum.detach()
+			await physics_frame
+			player.simulate(1.0 / 60.0)
+			assert(is_equal_approx(player.external_velocity.y, fall_limit), "Detach restores falling limit immediately")
+	player.settings.max_fall_speed = saved_fall_limit
 	for speed in [600.0, -600.0]:
 		player.position = Vector2(240, 400)
 		player.reset_motion()
@@ -272,6 +290,9 @@ func verify_coyote_gravity_compensation(game: Node2D) -> void:
 	var original_grace: float = game.settings.coyote_time
 	var original_diagnostics: bool = game.settings.jump_diagnostics
 	game.settings.jump_diagnostics = false
+	var original_fall_limit: float = game.settings.max_fall_speed
+	# Isolate kick compensation from the separately verified terminal speed.
+	game.settings.max_fall_speed = 5000.0
 	game.settings.coyote_time = 0.2
 	for horizontal_speed in [-140.0, 0.0, 140.0]:
 		for dt in [1.0 / 60.0, 1.0 / 120.0]:
@@ -305,6 +326,7 @@ func verify_coyote_gravity_compensation(game: Node2D) -> void:
 						assert(absf(-player.external_velocity.y - game.settings.kick_speed) < 0.01,
 							"Pure-gravity launch speed must not depend on grace timing")
 					assert(player.coyote_gravity_velocity == Vector2.ZERO)
+	game.settings.max_fall_speed = original_fall_limit
 	game.settings.coyote_time = original_grace
 	game.settings.jump_diagnostics = original_diagnostics
 	print("PASS: coyote gravity compensation across timings, timesteps and horizontal/upward/excess downward momentum")

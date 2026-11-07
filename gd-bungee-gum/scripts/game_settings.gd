@@ -9,6 +9,8 @@ extends Resource
 ## Ground tangent deceleration of external velocity (px/s²).
 @export_range(0.0, 5000.0) var ground_friction := 900.0
 @export_range(0.0, 5000.0) var gravity := 1100.0
+## Downward speed limit (px/s), bypassed while gum is connected.
+@export_range(1.0, 5000.0) var max_fall_speed := 600.0
 ## Initial/contact, coyote, gum-release, food-reward and ladder impulse speed (px/s).
 @export_range(0.0, 2000.0) var kick_speed := 400.0
 ## Floor-departure kick grace (seconds); zero disables it.

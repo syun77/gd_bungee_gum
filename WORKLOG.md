@@ -1,3 +1,22 @@
+## Note and baguette pickup sound
+
+- Goal/status: Assign item3.wav to notes and baguettes; replacement source refreshed and verified; complete.
+- Completed/decisions: Shared ContactPickup uses dedicated score_item cue; food retains item cue. Copied original WAV unchanged.
+- Files: sound_effects.gd, contact_pickup.gd, assets/sounds/item3.wav, sound/item specs, AGENTS.md, WORKLOG.md.
+- Refactoring: Reviewed shared pickup ownership and central cue registry; no duplicated playback.
+- Verification: Godot import, verify_sound_effects and verify_music_note_pickup PASS; WAV byte equality and git diff --check PASS. Existing sandbox certificate/editor and exit-resource warnings remain.
+- Replacement verification: Updated source copied byte-identically to runtime; headless reimport and verify_sound_effects PASS. Existing sandbox/editor/exit-resource warnings remain. Reviewed cue wiring; no code changes needed.
+- Blockers: None. Next action: Playtest updated pickup sound balance.
+
+## Player fall speed limit
+
+- Goal/status: Cap free falling speed, exempt connected gum; complete.
+- Decisions: Shared Max Fall Speed defaults600px/s; all connected states bypass, detach resumes immediately; horizontal/upward momentum retained.
+- Files: player.gd, game_settings.gd, verify_player.gd, player-controller/game-settings specs, WORKLOG.md.
+- Verification: New default/custom cap, connected exemption and detach assertions passed; gum and controls suites PASS. Initial full player run exposed old coyote fixture expecting uncapped excess downward momentum; fixture now explicitly raises limit to isolate compensation and its rerun passes. Final full verify_player suite PASS (including corner retention/landing and all movement regressions); no assertion/script errors. git diff --check PASS. Existing macOS certificate/resource exit warnings in gum/control runs remain.
+- Refactoring: Reused existing connected snapshot; one pre-contact downward clamp, no new controller state or duplicate physics ownership. Specs and Inspector setting aligned.
+- Blockers: None. Next action: Playtest falling feel; tune Player Movement / Max Fall Speed if desired.
+
 ## Door close sound timing
 
 - Goal/status: Play door2 only when closing animation finishes; complete.

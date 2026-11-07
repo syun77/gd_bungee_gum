@@ -1,6 +1,6 @@
 # 効果音
 
-元音源はルートの `sounds/`。checkpoint / crash / dead / door1 / door2 / hit / item / jump / landing / pull / shoot の11種類の WAV を `gd-bungee-gum/assets/sounds/` にコピーして使用する。
+元音源はルートの `sounds/`。checkpoint / crash / dead / door1 / door2 / hit / item / item3 / jump / landing / pull / shoot の12種類の WAV を `gd-bungee-gum/assets/sounds/` にコピーして使用する。
 
 | 音源 | 再生タイミング |
 | --- | --- |
@@ -8,6 +8,7 @@
 | crash | ガムで破壊可能ブロックを壊した時（1マスにつき1回） |
 | dead | トゲ死亡、落下死亡（手動リスタートは無音） |
 | hit | ガムの接着成功。フードへの命中も含む |
+| item3（score_item） | 音符・フランスパンの取得確定時に1回 |
 | item | フード獲得確定。接触・ガム回収共通 |
 | jump | 成功したジャンプ。先行入力は実際に跳ぶ時。拒否・床すり抜けは無音 |
 | landing | Player.landed と同じ有効な着地。初期接地は除外 |
