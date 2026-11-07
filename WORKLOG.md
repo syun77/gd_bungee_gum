@@ -1,3 +1,17 @@
+## Dedicated score popup theme
+
+- Goal/status: Resource-based score typography editing; complete.
+- Decisions: Dedicated Theme score_popup_theme.tres owns default font/size and Label fill/outline/width. Remove all local typography overrides; preserve existing appearance, shared by10/30/1000.
+- Files: score_popup_theme.tres, score_popup.gd, specs/music-note-item-assets.md, AGENTS.md, WORKLOG.md.
+- Verification: verify_music_note_pickup PASS (all pickup popups/points/lifetimes); git diff --check passed. Final refactoring review: one Theme authority, independent from debug UI. Blockers: None. Next action: Open score_popup_theme.tres in Godot and tune Theme properties.
+
+## Locate score typography settings
+
+- Goal/status: Explain where to tune score-number outline; complete.
+- Findings: score_popup.gd lines12–14 override fill/outline/width; debug_theme.tres owns shared font and24px default size. Theme outline changes cannot override the popup local overrides.
+- Files: WORKLOG.md only. Verification: Read current script/theme; no runtime changes or tests needed.
+- Blockers: None. Next action: User can adjust popup overrides; dedicated theme resource remains optional.
+
 ## White score-number outline
 
 - Goal/status: White outline for pickup point numbers; complete.
