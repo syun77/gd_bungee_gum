@@ -1,3 +1,12 @@
+## Confirm game settings baseline
+
+- Goal/status: Adopt current saved gameplay tuning as defaults; complete.
+- Completed/decisions: Preserved current Resource values including inherited camera zoom1.5; synchronized10 explicit overrides into schema. Updated afterimage/double-jump/shockwave specs and existing AGENTS facts.
+- Files: scripts/game_settings.gd, tools/verify_double_jump.gd, specs/game-settings.md, specs/player-controller.md, specs/keyboard-controls.md, specs/gum-hit-shockwave.md, AGENTS.md, WORKLOG.md; existing user Resource edit preserved.
+- Verification: player, double_jump, player_afterimages, gum_hit_shockwave and camera headless suites PASS; double_jump now compares all stored schema properties against saved Resource. Existing certificate/resource-exit warnings remain. git diff --check PASS; graphical feel not inspected.
+- Final refactoring: Reviewed full touched schema/spec area, retained Inspector conventions and replaced stale hardcoded baseline assertion with complete Resource comparison. Spin fixture starts without horizontal momentum so existing air counter-steering does not invalidate rotation-only assertions. No gameplay controller changes.
+- Blockers: None. Next action: Use confirmed values; tune through shared Resource when further playtesting requires changes.
+
 ## Food orbit test scene
 
 - Goal/status: Center Teto in test.tscn and orbit food artwork; complete.

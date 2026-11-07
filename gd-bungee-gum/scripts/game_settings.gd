@@ -29,9 +29,9 @@ extends Resource
 
 @export_group("Player Double Jump")
 ## Impulse speed for the one-use airborne double jump only (px/s).
-@export_range(0.0, 2000.0) var double_jump_kick_speed := 380.0
+@export_range(0.0, 2000.0) var double_jump_kick_speed := 300.0
 ## Visual revolutions per second; facing controls direction, zero pauses rotation.
-@export_range(0.0, 20.0, 0.1, "or_greater", "suffix:rev/s") var double_jump_rotation_speed := 2.5
+@export_range(0.0, 20.0, 0.1, "or_greater", "suffix:rev/s") var double_jump_rotation_speed := 3.0
 
 @export_group("Player Squash and Stretch")
 ## Visual-only horizontal (X) and vertical (Y) multipliers on upward launch.
@@ -50,12 +50,12 @@ extends Resource
 @export_group("Player Afterimages")
 @export var afterimage_enabled := true
 ## Actual world movement speed (px/s), including vertical motion.
-@export_range(0.0, 3000.0) var afterimage_minimum_speed := 350.0
-@export_range(0.01, 0.5, 0.01) var afterimage_interval := 0.04
+@export_range(0.0, 3000.0) var afterimage_minimum_speed := 100.0
+@export_range(0.01, 0.5, 0.01) var afterimage_interval := 0.1
 ## Seconds until a frozen pose disappears; zero disables emission.
-@export_range(0.0, 1.0, 0.01) var afterimage_lifetime := 0.20
+@export_range(0.0, 1.0, 0.01) var afterimage_lifetime := 1.0
 ## Solid silhouette RGB and initial opacity; original texture contributes alpha only.
-@export var afterimage_color := Color(1.0, 0.72, 0.85, 0.32)
+@export var afterimage_color := Color(1.0, 0.72156864, 0.8509804, 0.23529412)
 
 @export_group("Landing Dust")
 ## Minimum floor-normal relative impact speed for visible dust (px/s).
@@ -150,10 +150,10 @@ extends Resource
 @export_group("Gum Hit Shockwave")
 @export var gum_hit_shockwave_enabled := true
 ## World-space outer radius; refraction strength is measured in screen pixels.
-@export_range(8.0, 160.0) var gum_hit_shockwave_radius := 56.0
-@export_range(0.0, 1.0) var gum_hit_shockwave_duration := 0.32
-@export_range(0.0, 16.0) var gum_hit_shockwave_strength := 4.0
-@export_range(0.0, 1.0) var gum_hit_shockwave_opacity := 0.3
+@export_range(8.0, 160.0) var gum_hit_shockwave_radius := 80.0
+@export_range(0.0, 1.0) var gum_hit_shockwave_duration := 0.6
+@export_range(0.0, 16.0) var gum_hit_shockwave_strength := 5.0
+@export_range(0.0, 1.0) var gum_hit_shockwave_opacity := 0.18
 
 @export_group("Camera Zoom")
 ## Camera2D scale: larger values show a closer view.

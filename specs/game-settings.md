@@ -76,7 +76,7 @@ READY時に表示する命中予告の補助線（発射から回収完了まで
 
 ### 高速移動の残像
 
-高速移動時の残像は `Player Afterimages` 設定で調整する。実移動距離÷固定ステップ秒数が `afterimage_minimum_speed`（350px/s）以上なら、`afterimage_interval`（0.04秒）ごとに表示中のフレーム・向き・変形をワールド座標に固定して複製する。通常走行220px/sでは発生せず、落下・ジャンプ・ガム移動にも同じ速度条件を使う。薄いピンク `afterimage_color`（RGBA 1/0.72/0.85/0.32）が `afterimage_lifetime`（0.20秒）で二次減衰し、最大8枚。減速後も既存の残像は消えるまで残る。`afterimage_enabled=false` または寿命0で消去・停止する。Playerの子として再スタート時に破棄され、当たり判定や運動には影響しない。
+高速移動時の残像は `Player Afterimages` 設定で調整する。実移動距離÷固定ステップ秒数が `afterimage_minimum_speed`（100px/s）以上なら、`afterimage_interval`（0.1秒）ごとに表示中のフレーム・向き・変形をワールド座標に固定して複製する。通常走行220px/sでも発生し、落下・ジャンプ・ガム移動にも同じ速度条件を使う。薄いピンク `afterimage_color`（RGBA 1/0.72156864/0.8509804/0.23529412）が `afterimage_lifetime`（1.0秒）で二次減衰し、最大8枚。減速後も既存の残像は消えるまで残る。`afterimage_enabled=false` または寿命0で消去・停止する。Playerの子として再スタート時に破棄され、当たり判定や運動には影響しない。
 
 残像は元のプレイヤー画像の実効Zより1低い絶対Zで描画し、常にプレイヤーの背面に置く。
 
@@ -84,7 +84,7 @@ READY時に表示する命中予告の補助線（発射から回収完了まで
 
 ### Gum Hit Shockwave
 
-Shader hit wave: enabled by default, radius56px, duration0.32s, refraction strength4 screen pixels, pink/near-white rim opacity0.3 (script defaults). Saved gameplay tuning: radius160px, duration1s, strength16px, opacity1. Duration0 disables emission. See [gum-hit-shockwave.md](gum-hit-shockwave.md).
+Shader hit wave: enabled by default, radius80px, duration0.6s, refraction strength5 screen pixels, pink/near-white rim opacity0.18. Duration0 disables emission. See [gum-hit-shockwave.md](gum-hit-shockwave.md).
 
 ### Food Collection
 
@@ -108,11 +108,11 @@ Shader hit wave: enabled by default, radius56px, duration0.32s, refraction stren
 
 ## Player Double Jump
 
-`resources/game_settings.tres` の **Player Double Jump → Double Jump Rotation Speed** (`double_jump_rotation_speed`) は2段ジャンプ中の描画回転速度。単位は回転/秒 (rev/s)、既定2.5（1回転0.4秒）。大きいほど速く、1なら1秒に1回転、0なら現在の角度で停止する。空中で値を変えても次の固定更新から反映し、膝抱えポーズ・ジャンプの強さ・速度・重力・当たり判定は変わらない。着地時には速度設定にかかわらず正立へ戻る。
+`resources/game_settings.tres` の **Player Double Jump → Double Jump Rotation Speed** (`double_jump_rotation_speed`) は2段ジャンプ中の描画回転速度。単位は回転/秒 (rev/s)、既定3.0（1回転約0.333秒）。大きいほど速く、1なら1秒に1回転、0なら現在の角度で停止する。空中で値を変えても次の固定更新から反映し、膝抱えポーズ・ジャンプの強さ・速度・重力・当たり判定は変わらない。着地時には速度設定にかかわらず正立へ戻る。
 
 回転ジャンプの向きは表示中のキャラクターに従い、右向きは時計回り、左向きは反時計回り。空中で左右入力により振り向くと、角度をリセットせずその更新から逆回転する。無入力時は直前の向きを保持する。`double_jump_rotation_speed` は両方向共通の速さで、移動速度や外部運動量には影響しない。
 
-**Player Movement → Kick Speed** (`kick_speed`) は初段・床／天井・コヨーテ・ガム解除・フード報酬・ハシゴのジャンプ速度。**Player Double Jump → Double Jump Kick Speed** (`double_jump_kick_speed`) は回転する二段目の空中ジャンプだけに適用する。単位はpx/s、二段目の既定380、現在の保存値は初段400・二段目300。上下・横の運動量処理、下降補正、ジャンプ回数・回転速度は各設定を変更しても同じ規則を使う。
+**Player Movement → Kick Speed** (`kick_speed`) は初段・床／天井・コヨーテ・ガム解除・フード報酬・ハシゴのジャンプ速度。**Player Double Jump → Double Jump Kick Speed** (`double_jump_kick_speed`) は回転する二段目の空中ジャンプだけに適用する。単位はpx/s、確定値は初段400・二段目300。上下・横の運動量処理、下降補正、ジャンプ回数・回転速度は各設定を変更しても同じ規則を使う。
 
 二段ジャンプの発動更新では縦速度を `-double_jump_kick_speed` に代入する。発動前の上昇・下降速度とその更新の重力は引き継がず、横速度だけを保持する。次更新から重力を再開する。初段・ガム解除などの補正は各既存規則を使う。
 

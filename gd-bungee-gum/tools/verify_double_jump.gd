@@ -68,7 +68,12 @@ func verify() -> void:
 	var rotation_before: float = player.sprite.rotation
 	await tick(player)
 	assert(not is_equal_approx(rotation_before, player.sprite.rotation), "Rotation continues without further input")
-	assert(is_equal_approx(load("res://scripts/game_settings.gd").new().double_jump_rotation_speed, 2.5), "Schema matches saved baseline")
+	var defaults = load("res://scripts/game_settings.gd").new()
+	var saved = load("res://resources/game_settings.tres")
+	for property in defaults.get_property_list():
+		if property.usage & PROPERTY_USAGE_SCRIPT_VARIABLE and property.usage & PROPERTY_USAGE_STORAGE:
+			assert(defaults.get(property.name) == saved.get(property.name), "Schema matches saved baseline: %s" % property.name)
+	player.external_velocity.x = 0.0
 	for speed in [1.0, 4.0, 0.0]:
 		player.settings.double_jump_rotation_speed = speed
 		for direction in [-1.0, 0.0, 1.0, 0.0]:

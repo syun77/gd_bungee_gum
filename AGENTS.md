@@ -195,7 +195,7 @@
 
 - Confirmed shared settings baseline: jump stretch(0.84,1.41)/0.31s; landing squash(1.44,0.82)/0.31s; shot particles lifetime0.5/spread16/opacity1; hit particles count16/lifetime0.5/opacity1. All diagnostics OFF; schema defaults match saved Resource.
 
-- Speed afterimages: Player calls player_afterimages.gd after animation/deformation, using actual fixed-step world displacement speed (default350px/s). Frozen nearest-filtered Sprite2D snapshots fade0.20s, interval0.04s, max8; shared Player Afterimages settings. Child lifecycle clears on restart; run tools/verify_player_afterimages.gd.
+- Speed afterimages: Player calls player_afterimages.gd after animation/deformation, using actual fixed-step world displacement speed (default100px/s). Frozen nearest-filtered Sprite2D snapshots fade1s, interval0.1s, max8; shared Player Afterimages settings. Child lifecycle clears on restart; run tools/verify_player_afterimages.gd.
 
 - Food collectibles use scene tiles in dedicated `assets/foods/food_tileset.tres` on stage `Foods` TileMapLayer;11 scenes under `scenes/items/foods/`,64px centered display on32px cells/36px pickup and gum-hit radius. Player group `player` plus physics bit2 owns contact pickup; Food Area bit32 is gum-ray target, no terrain collision. Default36 placements (six per section/all11 dishes) live in stage_layout.gd FOODS; keep saved Foods cells and generator aligned. Generator overwrites manual edits. See specs/food-item-assets.md and tools/verify_food_collectibles.gd.
 
@@ -211,7 +211,7 @@
 
 - One-way drop: grounded Down+fresh Z (pad Down+Cross) suppresses kick and temporarily clears player mask bit8; restores after feet descend58px or0.5s. Minimum descent60px/s, horizontal momentum retained, coyote consumed; solid floors retain normal kicks. See specs/one-way-platforms.md; verify_one_way.gd covers drop/restoration/solid floor.
 
-- Hit shockwave shader uses a broad refraction band and narrow pink/white core, holds brightness through45% then fades; mask screen sample only once to avoid double attenuation. Saved tuning160px/1s/16px/opacity1 differs from schema defaults; verification sets duration explicitly.
+- Hit shockwave shader uses a broad refraction band and narrow pink/white core, holds brightness through45% then fades; mask screen sample only once to avoid double attenuation. Confirmed tuning80px/0.6s/5px/opacity0.18 matches schema defaults; verification sets duration explicitly.
 
 - Textureless Polygon2D ignores its UV array in Godot4.5; shockwave radial coordinates must use vertex position/quad_radius varying. Run verify_gum_hit_shockwave_render.gd without --headless for GPU pixel regression; before/after captures live in /tmp.
 
@@ -247,11 +247,11 @@
 
 - `pixelfx/` is an independent nested upstream clone, untracked by the game repository and locally hidden via `.git/info/exclude` (not a submodule). `images/effects/*.mjs` import its core for asset authoring; preserve the checkout when adjusting Git visibility.
 
-- Double jump: one fresh airborne Z/Cross impulse, refreshed on floor or successful non-food gum adhesion; existing contact/coyote/gum-release/food/ladder jumps take priority without consuming it. Initial/contact/special jumps use kick_speed, spinning air jump uses Player Double Jump/double_jump_kick_speed (schema380/current saved300); vertical speed assignment for air jumps, gum-style downward cancellation for gum release; sprite-only rotation persists until landing/ladder/reset/non-food gum adhesion. Motion reset/reeling clears spin without restoring air allowance. See specs/player-controller.md and tools/verify_double_jump.gd; exhausted-air fixtures isolate landing-buffer/rejection tests.
+- Double jump: one fresh airborne Z/Cross impulse, refreshed on floor or successful non-food gum adhesion; existing contact/coyote/gum-release/food/ladder jumps take priority without consuming it. Initial/contact/special jumps use kick_speed, spinning air jump uses Player Double Jump/double_jump_kick_speed (default300); vertical speed assignment for air jumps, gum-style downward cancellation for gum release; sprite-only rotation persists until landing/ladder/reset/non-food gum adhesion. Motion reset/reeling clears spin without restoring air allowance. See specs/player-controller.md and tools/verify_double_jump.gd; exhausted-air fixtures isolate landing-buffer/rejection tests.
 
 - Rotation-jump tuck source: images/teto_double_jump.png,1254×1254 transparent RGBA single right-facing knees-hugged pose. Runtime copy assets/characters/teto_double_jump.png is byte-identical; player.tscn double_jump uses AtlasTexture region(328,145,606,935), sprite-only0.175 source scale on top of normal0.3125. Outbound spin prioritizes tuck; non-food adhesion stops spin and restores ordinary gum poses; mirrored/rotated visual hand uses crop-relative(143,194). See specs/character-sprite-audit.md.
 
-- Double-jump visual speed is shared Player Double Jump/double_jump_rotation_speed in rev/s (schema2.5, current saved tuning3.0;0 freezes current angle); read live per step, physics/pose unchanged. verify_double_jump.gd checks custom/live/zero speed and momentum invariants.
+- Double-jump visual speed is shared Player Double Jump/double_jump_rotation_speed in rev/s (default3.0;0 freezes current angle); read live per step, physics/pose unchanged. verify_double_jump.gd checks custom/live/zero speed and momentum invariants.
 
 - Double-jump spin follows current sprite.flip_h after pose selection: right clockwise/left counterclockwise, midair reversal retains angle, neutral retains facing. fposmod wraps signed rotation; settings speed is magnitude. verify_double_jump.gd exercises real left/right/neutral input with custom/zero speeds and fixed collision/momentum.
 
@@ -405,3 +405,5 @@
 - Replay camera uses current shared Camera Normal Zoom each applied frame via replay.tscn exported settings Resource; saved camera center is retained. Recorded zoom is unused; changing settings affects existing replays without re-recording. verify_replay covers post-recording/shared and per-frame zoom changes.
 
 - Standalone `scenes/test.tscn` displays static Teto with11 upright food sprites orbiting via `scripts/food_orbit_demo.gd`; F6 previews, root Inspector controls radius/speed (230px/30deg per second). No gameplay logic; see specs/test-scene.md.
+
+- Confirmed game_settings baseline: double jump300px/s/3rev/s; afterimages100px/s, interval0.1s, lifetime1s, RGBA(1,0.72156864,0.8509804,0.23529412); shockwave80px/0.6s/5px/0.18; camera normal zoom1.5. Script defaults match saved Resource tuning.
