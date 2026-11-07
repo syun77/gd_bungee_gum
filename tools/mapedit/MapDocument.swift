@@ -44,6 +44,33 @@ struct MapDocument: Codable {
     static let order = ["TerrainTiles", "OneWayPlatforms", "GumPassBarriers",
                         "GumAnchors", "Spikes", "GumBoxes", "Foods", "Baguettes", "MusicNotes"]
 
+    static let breakableKind = "BreakableBlocks"
+    static let breakableTile = [4, 0, 0, 0]
+
+    var placementCategories: [String] {
+        var result = Self.order.filter { layers[$0] != nil }
+        if layers["TerrainTiles"]?.palette.contains(Self.breakableTile) == true {
+            result.insert(Self.breakableKind, at: 1)
+        }
+        return result
+    }
+
+    static func placementCategory(kind: String, tile: [Int]?) -> String {
+        kind == "TerrainTiles" && tile == breakableTile ? breakableKind : kind
+    }
+
+    static func layerKind(for category: String) -> String {
+        category == breakableKind ? "TerrainTiles" : category
+    }
+
+    func placementTiles(for category: String) -> [[Int]] {
+        if category == Self.breakableKind {
+            return layers["TerrainTiles"]?.palette.filter { $0 == Self.breakableTile } ?? []
+        }
+        let tiles = layers[category]?.palette ?? []
+        return category == "TerrainTiles" ? tiles.filter { $0 != Self.breakableTile } : tiles
+    }
+
     static let namedItemKinds: Set<String> = ["Foods", "Baguettes", "MusicNotes"]
 
     static let checkpointKind = "Checkpoints"

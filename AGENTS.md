@@ -375,3 +375,17 @@
 - Gameplay HUD has no gum-status debug label (state/tension/path/rest/limit/pivots/target). Game has no status updater; retain score/timer, OPTIONS/Esc pause menu and gum visual feedback.
 
 - HUD typography: resources/hud_score_theme.tres and hud_timer_theme.tres independently own font/size and Label colors/outline/shadows for game.tscn HUD/Score and HUD/Timer. No local style overrides; Timer authored hidden, shown by Time Attack setup. Pickup popup theme stays separate.
+
+- Breakable block artwork: images/tilesets/restaurant_breakable_block.png and identical assets/tilesets runtime copy,32×32 RGBA cracked cream/coral ceramic; nearest filtering. Source and specs/breakable-block-tile.md retained; artwork only, no TileSet/behavior integration.
+
+- Brown breakable brick alternative: images/tilesets/restaurant_breakable_brick{,_source}.png with identical runtime tile,32×32 RGBA fully opaque,nearest. Cream ceramic variant retained; brown brick registered as shared TileSet source4/(0,0) and MapEdit dedicated 破壊可能ブロック category (virtual brush storing TerrainTiles; restart editor/recopy stage); existing Terrain collision rebuild applies. Swept gum-tip hits destroy one brick then retract without force; breakable_terrain.gd rebuilds collision/rims, shared terrain_rectangles.gd also serves MapEdit; scene reload restores bricks. Run verify_breakable_terrain.gd. See specs/breakable-block-tile.md.
+
+- MapEdit virtual category styles must resolve stored layer plus tile through MapDocument.placementCategory(kind:tile:); Canvas tile-aware placementColor is shared by cell/hover/minimap rendering. TerrainTiles source4 uses BreakableBlocks style, ordinary terrain retains its own style.
+
+- MapEdit PlacementStyle.outlineRGB is optional (nil=disabled by default/reset); preserve outlineColor when changing name/fill/shortcut. Canvas.drawPlacementOutline shares tile-aware category lookup for cells/preview/minimap/markers; width2px inset, reduced for tiny cells.
+
+- Brick destruction PixelFX: images/effects/brick-break.mjs → tools/build_brick_break_effect.mjs exports brick_break.png/JSON/contact; runtime copy identical.128×128cells/4×4/16frames(15visible+blank),30fps,pivot64/56. breakable_terrain spawns stage-owned brick_break_effect.gd at destroyed cell center,Z7,offset(0,8),expires0.5s; no physics. verify_breakable_terrain.gd covers effect lifecycle. See specs/brick-break-effect.md.
+
+- Brick destruction sound uses SoundEffects crash cue (sounds/crash.wav, identical runtime assets/sounds copy); normal gum adhesion retains hit. verify_breakable_terrain asserts actual destruction cue; sound verifier derives cue count from CLIPS.
+
+- Entrance/exit door timeline opening/closing uses SoundEffects door_open/door_close (sounds/door1.wav and door2.wav; matching assets/sounds copies). Play opening once at animation start and closing once at timeline completion, after exit landing/approach.

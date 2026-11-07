@@ -1,10 +1,11 @@
 # 効果音
 
-元音源はルートの `sounds/`。先頭に「2」が付かない8種類の WAV を `gd-bungee-gum/assets/sounds/` にコピーして使用する。
+元音源はルートの `sounds/`。checkpoint / crash / dead / door1 / door2 / hit / item / jump / landing / pull / shoot の11種類の WAV を `gd-bungee-gum/assets/sounds/` にコピーして使用する。
 
 | 音源 | 再生タイミング |
 | --- | --- |
 | checkpoint | チェックポイントの初回有効化（復帰時は無音） |
+| crash | ガムで破壊可能ブロックを壊した時（1マスにつき1回） |
 | dead | トゲ死亡、落下死亡（手動リスタートは無音） |
 | hit | ガムの接着成功。フードへの命中も含む |
 | item | フード獲得確定。接触・ガム回収共通 |
@@ -16,3 +17,5 @@
 SoundEffects Autoload が非位置依存の AudioStreamPlayer を再生し、終了時に破棄する。各音は一回再生で、同時発音は最大24。死亡音を含む再生中の音はシーン再読込でも維持する。収縮中の X 再入力では pull を重複再生しない。物理挙動と音源の速度・ピッチは変更しない。
 
 検証: `tools/verify_sound_effects.gd` と controls / gum / player / food / checkpoint / spike の各検証。
+
+入口・出口のドアは開き始めに door1.wav（door_open）、閉じるアニメーション完了時に door2.wav（door_close）を各1回再生する。入口の待機中と出口の着地・中央への移動中は再生しない。

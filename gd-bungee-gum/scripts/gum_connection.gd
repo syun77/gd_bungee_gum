@@ -215,7 +215,10 @@ func _step_outbound(delta: float) -> void:
 		detach("BLOCKED PATH")
 		return
 	if not hit.is_empty():
-		if attachable(hit):
+		if preload("res://scripts/breakable_terrain.gd").destroy_hit(hit):
+			SoundEffects.play(&"crash")
+			detach("BRICK DESTROYED")
+		elif attachable(hit):
 			_attach_hit(hit)
 		else:
 			detach("BLOCKED")

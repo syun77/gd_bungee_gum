@@ -74,7 +74,10 @@ func step(delta: float) -> void:
 	if approaching:
 		_step_approach(delta)
 		return
+	var previous_elapsed := elapsed
 	elapsed = minf(elapsed + delta, TOTAL_TIME)
+	if previous_elapsed <= 0.0 and elapsed > 0.0:
+		get_node("/root/SoundEffects").play(&"door_open")
 	if elapsed < OPEN_TIME:
 		frame = mini(5, int(elapsed / OPEN_TIME * 6.0))
 	elif elapsed < OPEN_TIME + FADE_TIME:
@@ -87,6 +90,7 @@ func step(delta: float) -> void:
 		var progress := (elapsed - OPEN_TIME - FADE_TIME) / CLOSE_TIME
 		frame = maxi(0, 5 - int(progress * 6.0))
 	if elapsed >= TOTAL_TIME:
+		get_node("/root/SoundEffects").play(&"door_close")
 		frame = 0
 		active = false
 

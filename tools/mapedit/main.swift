@@ -30,6 +30,8 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFi
     private let styleName = NSTextField(string: "")
     private let styleShortcut = NSTextField(string: "")
     private let styleColor = NSColorWell()
+    private let styleOutlineEnabled = NSButton(checkboxWithTitle: "縁取りを有効にする", target: nil, action: nil)
+    private let styleOutlineColor = NSColorWell()
     private let styleFeedback = NSTextField(labelWithString: "")
     private var styleKind: String?
     private lazy var stylePanel = makeStylePanel()
@@ -103,7 +105,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFi
             sidebar.topAnchor.constraint(equalTo: root.topAnchor),
             sidebar.bottomAnchor.constraint(equalTo: root.bottomAnchor),
             sidebar.trailingAnchor.constraint(equalTo: root.trailingAnchor),
-            sidebar.widthAnchor.constraint(equalToConstant: 270),
+            sidebar.widthAnchor.constraint(equalToConstant: 310),
             tools.topAnchor.constraint(equalTo: sidebar.topAnchor, constant: 12),
             tools.bottomAnchor.constraint(equalTo: sidebar.bottomAnchor, constant: -12),
             tools.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor, constant: 12),
@@ -179,7 +181,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFi
             styleButton.isEnabled = false
             return
         }
-        categories = MapDocument.order.filter { map.layers[$0] != nil }
+        categories = map.placementCategories
             + [MapDocument.checkpointKind]
             + map.markers.keys.filter { !$0.hasPrefix(MapDocument.checkpointPrefix) }.sorted()
         for (index, kind) in categories.enumerated() {
@@ -189,7 +191,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFi
             button.setButtonType(.pushOnPushOff)
             button.bezelStyle = .rounded
             button.lineBreakMode = .byTruncatingTail
-            button.widthAnchor.constraint(equalToConstant: 112).isActive = true
+            button.widthAnchor.constraint(equalToConstant: 132).isActive = true
             categoryButtons.append(button)
         }
         let palette = PaletteGrid()
@@ -218,7 +220,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFi
     }
 
     private func placementName(for kind: String) -> String {
-        let labels = ["TerrainTiles": "地形", "OneWayPlatforms": "片方向床", "GumPassBarriers": "バリア",
+        let labels = [MapDocument.breakableKind: "破壊可能ブロック", "TerrainTiles": "地形", "OneWayPlatforms": "片方向床", "GumPassBarriers": "バリア",
                       "GumAnchors": "ガムアンカー", "Spikes": "即死トゲ", "GumBoxes": "可動ブロック", "Foods": "食べ物", "Baguettes": "フランスパン", "MusicNotes": "音符", MapDocument.checkpointKind: "チェックポイント"]
         let name = String(kind.split(separator: "/").last ?? "")
         return canvas.placementStyle(for: kind)?.name ?? labels[kind]
@@ -226,7 +228,9 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFi
     }
 
     @objc private func editPlacementStyle() {
-        guard let selected = canvas.selectedKind ?? canvas.marker else { return }
+        guard let index = categoryButtons.firstIndex(where: { $0.state == .on }),
+              categories.indices.contains(index) else { return }
+        let selected = categories[index]
         styleKind = selected
         let panel = stylePanel
         panel.title = "タイル設定 — " + placementName(for: selected)
@@ -236,7 +240,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFi
     }
 
     private func makeStylePanel() -> NSPanel {
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 390, height: 175),
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 390, height: 245),
                             styleMask: [.titled, .closable, .utilityWindow], backing: .buffered, defer: false)
         panel.isReleasedWhenClosed = false
         panel.delegate = self
@@ -246,10 +250,17 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFi
         styleColor.target = self
         styleColor.action = #selector(changeStyleColor)
         styleColor.isContinuous = true
+        styleOutlineEnabled.target = self
+        styleOutlineEnabled.action = #selector(changeStyleOutline)
+        styleOutlineColor.target = self
+        styleOutlineColor.action = #selector(changeStyleOutline)
+        styleOutlineColor.isContinuous = true
         let fields = NSGridView(views: [
             [NSTextField(labelWithString: "表示名"), styleName],
             [NSTextField(labelWithString: "色"), styleColor],
-            [NSTextField(labelWithString: "ショートカット"), styleShortcut]
+            [NSTextField(labelWithString: "ショートカット"), styleShortcut],
+            [NSTextField(labelWithString: "縁取り"), styleOutlineEnabled],
+            [NSTextField(labelWithString: "縁取りの色"), styleOutlineColor]
         ])
         styleFeedback.textColor = .secondaryLabelColor
         let reset = NSButton(title: "既定に戻す", target: self, action: #selector(resetPlacementStyle))
@@ -275,6 +286,10 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFi
         styleName.stringValue = placementName(for: kind)
         styleColor.color = canvas.placementColor(for: kind)
         styleShortcut.stringValue = canvas.placementStyle(for: kind)?.shortcut?.uppercased() ?? ""
+        let outline = canvas.placementStyle(for: kind)?.outlineColor
+        styleOutlineEnabled.state = outline == nil ? .off : .on
+        styleOutlineColor.color = outline ?? .black
+        styleOutlineColor.isEnabled = outline != nil
         styleFeedback.stringValue = "変更はすぐに保存されます"
     }
 
@@ -288,7 +303,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFi
                 return
             }
             savePlacementStyle(PlacementStyle(name: name, color: canvas.placementColor(for: kind),
-                                              shortcut: previous?.shortcut), for: kind)
+                                              shortcut: previous?.shortcut, outlineColor: previous?.outlineColor), for: kind)
         } else if field === styleShortcut {
             let key = field.stringValue.lowercased()
             guard key.isEmpty || (key.utf8.count == 1 && "abcdefghijklmnopqrstuvwxyz0123456789".contains(key)) else {
@@ -300,14 +315,25 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFi
                 return
             }
             savePlacementStyle(PlacementStyle(name: placementName(for: kind), color: canvas.placementColor(for: kind),
-                                              shortcut: key.isEmpty ? nil : key), for: kind)
+                                              shortcut: key.isEmpty ? nil : key, outlineColor: previous?.outlineColor), for: kind)
         }
     }
 
     @objc private func changeStyleColor() {
         guard let kind = styleKind else { return }
         savePlacementStyle(PlacementStyle(name: placementName(for: kind), color: styleColor.color,
-                                          shortcut: canvas.placementStyle(for: kind)?.shortcut), for: kind)
+                                          shortcut: canvas.placementStyle(for: kind)?.shortcut,
+                                          outlineColor: canvas.placementStyle(for: kind)?.outlineColor), for: kind)
+    }
+
+    @objc private func changeStyleOutline() {
+        guard let kind = styleKind else { return }
+        let enabled = styleOutlineEnabled.state == .on
+        styleOutlineColor.isEnabled = enabled
+        if !enabled { styleOutlineColor.deactivate() }
+        savePlacementStyle(PlacementStyle(name: placementName(for: kind), color: canvas.placementColor(for: kind),
+                                          shortcut: canvas.placementStyle(for: kind)?.shortcut,
+                                          outlineColor: enabled ? styleOutlineColor.color : nil), for: kind)
     }
 
     @objc private func resetPlacementStyle() {
@@ -342,14 +368,18 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFi
         let selected = categories[index]
         variantLabel.stringValue = selected == "Foods" ? "料理の種類" : "タイル"
         variant.removeAllItems()
-        variants = map.layers[selected]?.palette ?? []
-        canvas.selectedKind = map.layers[selected] != nil || selected == MapDocument.checkpointKind ? selected : nil
+        variants = map.placementTiles(for: selected)
+        let layerKind = MapDocument.layerKind(for: selected)
+        canvas.selectedKind = map.layers[layerKind] != nil || selected == MapDocument.checkpointKind ? layerKind : nil
         canvas.marker = map.markers[selected] == nil ? nil : selected
-        let labels = map.layers[selected]?.labels ?? []
+        let source = map.layers[layerKind]
+        let labels = source?.labels ?? []
         variant.addItems(withTitles: variants.enumerated().map { index, id in
             let identifier = "\(id[0]) / \(id[1]),\(id[2]) / \(id[3])"
-            guard labels.indices.contains(index), !labels[index].isEmpty else { return identifier }
-            return MapDocument.namedItemKinds.contains(selected) ? labels[index] : "\(labels[index]) · \(identifier)"
+            if selected == MapDocument.breakableKind { return "茶色レンガ" }
+            let labelIndex = source?.palette.firstIndex(of: id) ?? index
+            guard labels.indices.contains(labelIndex), !labels[labelIndex].isEmpty else { return identifier }
+            return MapDocument.namedItemKinds.contains(selected) ? labels[labelIndex] : "\(labels[labelIndex]) · \(identifier)"
         })
         variant.isEnabled = !variants.isEmpty
         selectVariant()
@@ -411,6 +441,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFi
     private func load(_ map: MapDocument, file: URL?, baseline: Data?, camera: MapCamera? = nil) {
         if styleKind != nil {
             styleColor.deactivate()
+            styleOutlineColor.deactivate()
             stylePanel.orderOut(nil)
             styleKind = nil
         }
@@ -646,6 +677,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate, NSTextFi
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         if sender !== window {
             styleColor.deactivate()
+            styleOutlineColor.deactivate()
             styleKind = nil
             return true
         }

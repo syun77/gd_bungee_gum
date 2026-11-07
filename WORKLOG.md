@@ -1,3 +1,109 @@
+## Door close sound timing
+
+- Goal/status: Play door2 only when closing animation finishes; complete.
+- Completed/decisions: Entrance/exit completion branches own close cue; active guard prevents repeats. Opening timing unchanged.
+- Files: stage_entrance.gd, stage_exit.gd, sound-effects.md, AGENTS.md, WORKLOG.md.
+- Verification: Sound effects, stage entrance and stage exit suites PASS; git diff --check PASS. Known certificate/exit-resource warnings remain.
+- Final refactoring: Removed close-phase crossing checks; completion branches handle sound and deactivation together without additional state.
+- Blockers: None. Next action: Playtest closing sound timing.
+
+## Door opening / closing sounds
+
+- Goal/status: Assign door1.wav to opening and door2.wav to closing; complete.
+- Completed/decisions: Central SoundEffects cues; entrance/exit timeline boundary crossing plays once per opening/closing, including large steps.
+- Files: stage_entrance.gd, stage_exit.gd, sound_effects.gd, runtime WAVs, sound spec, AGENTS.md, WORKLOG.md.
+- Verification: Headless import completed; sound effects, stage entrance and stage exit suites PASS; runtime WAV byte equality and git diff --check PASS. Existing certificate/editor sandbox and exit-resource warnings remain.
+- Final refactoring: Reviewed phase crossings and cue ownership; no extra state/duplicate sound playback, existing timeline and physics unchanged.
+- Blockers: None. Next action: Playtest entrance/exit sound balance.
+
+## Brick crash sound
+
+- Goal/status: Assign sounds/crash.wav to block destruction; complete.
+- Completed/decisions: Dedicated SoundEffects crash cue plays once per successful gum brick destruction. Normal adhesion retains hit. Runtime WAV is byte-identical to root sound.
+- Files: assets/sounds/crash.wav/import, sound_effects.gd, gum_connection.gd, sound/destruction verifiers, sound/brick specs, AGENTS.md, WORKLOG.md.
+- Verification: verify_sound_effects PASS (nine overlapping cues/lifetime/cap), verify_breakable_terrain PASS including actual crash stream on hit; asset byte equality and git diff --check PASS. Known certificate/exit-resource/editor sandbox warnings remain.
+- Final refactoring: Cue registration stays centralized; verifier uses CLIPS size rather than hard-coded cue count. No sound speed/pitch changes.
+- Blockers: None. Next action: Playtest placed bricks for crash sound.
+
+## Stronger brick burst
+
+- Goal/status: Faster and wider fragment scatter; complete.
+- Completed/decisions: Chunk launch X1.9/Y1.65, faster spin, grit100–155px/s, dust spread24px and stronger downward arc. Timing0.5s/chunk size unchanged. Transparent canvas128×128/pivot64,56 (sheet512×512) prevents clipping; offset(0,8) unchanged.
+- Files: brick-break.mjs, generated PNG/runtime copy/JSON/contact/GIF, verify_breakable_terrain.gd, effect spec, AGENTS.md, WORKLOG.md.
+- Verification: Contact sheet inspected; PixelFX checker PASS0warnings; sheet dimensions/empty final/runtime byte equality PASS; Godot destruction/effect lifecycle PASS. git diff --check PASS. Known certificate/editor sandbox/exit-resource warnings remain.
+- Final refactoring: All asset dimension/pivot references and verifier expectations aligned; no gameplay/lifetime changes or added dependencies. Temporary checker wrapper removed.
+- Blockers: None. Next action: Playtest gum brick hits; updated GIF available.
+
+## PixelFX brick destruction effect
+
+- Goal/status: Create and integrate block destruction effect with PixelFX; complete.
+- Completed/decisions: Terracotta rotating chunks12/grit8/translucent dust/short cream impact,0.5s.96×96cells,4×4/16frames incl blank,30fps,pivot48/40. Three render/review rounds refined jitter,stable seeded trajectories,dust/grit and decay. Runtime stage-owned world-frozen Sprite2D spawns only on successful destruction, supports overlap, expires/restart-cleans.
+- Files: images/effects/brick-break.mjs, brick_break PNG/JSON/contact/GIF, matching runtime PNG/import, tools/build_brick_break_effect.mjs, brick_break_effect.gd, breakable_terrain.gd, verify_breakable_terrain.gd, specs/brick-break-effect.md, brick tile spec, AGENTS.md, WORKLOG.md.
+- Verification: PixelFX checker1pass/0fail/0warnings via temporary wrapper (removed); RGBA/384px/16frames/transparent final/runtime equality PASS. Godot verify_breakable_terrain PASS including effect center/count/slicing/nearest/independent playback/expiry/no ordinary-hit burst; verify_gum PASS incl live Game. git diff --check PASS. Known certificate/exit-resource/editor-sandbox warnings remain. Live graphical game playtest not performed.
+- Final refactoring: Sprite owns animation/lifetime only; destruction owns spawn center; sheet and JSON generated together using PixelFX helper APIs. Rebuildable source retained. Existing user Time Attack map edits untouched.
+- Blockers: None. Next action: Play placed brown bricks and fire gum; GIF/contact preview available.
+
+## Gum destroys brick tiles
+
+- Goal/status: One-hit gum destruction of brown terrain bricks; complete.
+- Completed/decisions: Swept OUTBOUND tip hits TerrainTiles source4/(0,0) → erase exactly one cell → rebuild remaining Terrain collision/rims → retract without attachment/force. READY/connected lines do not destroy. Instantiated scene changes only; reload restores authored blocks.
+- Files: breakable_terrain.gd, terrain_rectangles.gd, gum_connection.gd, MapEdit stage_exchange.gd, verify_breakable_terrain.gd, brick/mapedit specs and README, AGENTS.md, WORKLOG.md.
+- Verification: New real-physics brick suite PASS (neighbor isolation, repeat shot through removed collision, normal attachment, wrapping geometry and scene reload); verify_gum/verify_controls/verify_gum_path/verify_theater_stage PASS. Known certificate/exit-resource warnings persist. git diff --check PASS.
+- Final refactoring: Extracted shared rectangle partitioning from editor exchange for runtime use; runtime rebuilt shapes track TileMap/body transforms and rim rectangles consistently. No editor-only dependency in gameplay.
+- Blockers: None. Next action: Play a MapEdit-authored source4 brick layout and fire X/Square; no new default placements added.
+
+## Placement outline settings
+
+- Goal/status: Per-category optional outline color, default disabled; complete.
+- Completed/decisions: Tile settings checkbox/color well; optional outlineRGB persisted with style. Name/fill/shortcut changes retain outline; reset disables. Shared inset2px/reduced-small-cell drawing for map/preview/minimap and markers (round main-map markers retain round outline). Editor-only settings.
+- Files: Canvas.swift, main.swift, tools/mapedit/README.md, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift app build PASS; AppKit bitmap probe PASS default/missing-setting disabled, encode/decode persistence, brick virtual-category red edge pixels and blue center retained; image inspected. git diff --check PASS. Live settings UI gestures not exercised.
+- Final refactoring: Centralized outline rendering/category resolution, reused placement rectangles, deactivate outline color well on close/load/disable. No map exchange changes.
+- Blockers: None. Next action: Save/restart MapEdit, select category → タイル設定 → enable outline and choose color.
+
+## Fix breakable category color
+
+- Goal/status: Apply dedicated category color to brick cells, preview and minimap; complete.
+- Cause/decision: TerrainTiles storage kind bypassed virtual brush style. MapDocument.placementCategory resolves layer+tile; shared Canvas tile-aware placementColor routes all three render paths.
+- Files: MapDocument.swift, Canvas.swift, specs/mapedit.md, specs/breakable-block-tile.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift app build PASS; Canvas color probe PASS custom color/change/reset, ordinary terrain isolation, nil/nonterrain mapping. git diff --check PASS. No live GUI gesture test.
+- Final refactoring: Single category resolver and shared color overload; no duplicate source-ID checks in draw paths, placementStyles refresh already invalidates canvas/minimap.
+- Blockers: None. Next action: Save and restart MapEdit via run.command; existing saved color automatically applies to brick cells. Godot sprite colors are unchanged.
+
+## Expose breakable block category
+
+- Goal/status: Dedicated MapEdit placement category for brown brick; complete.
+- Completed/decisions: Model exposes BreakableBlocks virtual brush backed by TerrainTiles source4, filters duplicate from ground palette. UI names it 破壊可能ブロック/茶色レンガ, widens sidebar/buttons, edits category style by selected button. No storage/collision/destruction changes.
+- Files: MapDocument.swift, main.swift, Canvas.swift, MapEdit README, specs/mapedit.md, specs/breakable-block-tile.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift app build PASS; model probe PASS category/filter/mapping/placement/JSON roundtrip/snapshot restore. git diff --check PASS. Live UI and gesture Undo/Redo not exercised.
+- Final refactoring: Centralized category/tile/layer mapping in model, preserved palette label indexing after filtering, absent brick palette produces no virtual category.
+- Blockers: None. Next action: Save current edits, restart MapEdit via run.command, copy stage from Godot again; choose 破壊可能ブロック. Destruction gameplay remains unimplemented.
+
+## Integrate brown brick tile
+
+- Goal/status: Register brown brick for Godot/MapEdit terrain painting; complete.
+- Decisions: Shared TileSet source4/(0,0), existing TerrainTiles collision pipeline; no destruction rules or unsolicited map placement. Generator preserves registration.
+- Files: theater_tileset.tres, build_theater_stage.gd, stage_exchange.gd, verify_mapedit.gd, brick import metadata, specs/breakable-block-tile.md, AGENTS.md, WORKLOG.md.
+- Verification: Godot import completed. Headless resource/both-stage palette/placement validation/snapshot/terrain occupancy probe PASS; verify_theater_stage PASS1212cells/27shapes/76one-way/59corners. Editor verify_mapedit stopped at pre-existing scene-root acquisition assertion line16, before new assertions; full Undo/Redo remains unverified. Known sandbox editor .NET socket/settings warnings. git diff --check PASS.
+- Final refactoring: reviewed shared source IDs, generator parity and collision ownership; no duplicate collision or new layer required.
+- Blockers: None for image integration. Next action: Copy stage from Godot into MapEdit, choose brown tile in TerrainTiles. Gameplay destruction requires a separate rule specification.
+
+## Brown breakable block variant
+
+- Goal/status: Create brown brick-style alternative; complete.
+- Completed/decisions: Built-in imagegen edited cream reference into terracotta/ochre/chocolate colors. Selected fully opaque face; rejected transparent-hole generation. Preserve cream alternative.
+- Files: restaurant_breakable_brick{,_source}.png under images/tilesets, matching runtime tile, specs/breakable-block-tile.md, AGENTS.md, WORKLOG.md.
+- Verification: 32×32/RGBA/full opacity/runtime byte equality PASS;10× nearest preview inspected. Final review: consistent alternative filenames, no gameplay changes.
+- Blockers: None. Next action: User can select artwork; TileSet/behavior integration remains separate.
+
+## Breakable block tile artwork
+
+- Goal/status: Create restaurant-style breakable block tile; complete.
+- Completed/decisions: Built-in imagegen cream/coral ceramic with dark teal cracks; point-resized32×32 RGBA, transparent corners; artwork only.
+- Files: images/tilesets/restaurant_breakable_block{,_source}.png, matching runtime PNG, specs/breakable-block-tile.md, AGENTS.md, WORKLOG.md.
+- Verification: Pillow asserts32×32/RGBA/transparent alpha and identical runtime bytes PASS;10× nearest preview inspected. Final review: one tile plus source, no unnecessary code changes.
+- Blockers: None. Next action: Optional TileSet and destruction gameplay integration when requested.
+
 ## Remove HUD menu button
 
 - Goal/status: Remove on-screen MENU button; complete.

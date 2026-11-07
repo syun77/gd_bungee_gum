@@ -6,14 +6,22 @@ struct PlacementStyle: Codable {
     let green: CGFloat
     let blue: CGFloat
     let shortcut: String?
+    let outlineRGB: [CGFloat]?
 
-    init(name: String, color: NSColor, shortcut: String? = nil) {
+    init(name: String, color: NSColor, shortcut: String? = nil, outlineColor: NSColor? = nil) {
         self.name = name
         self.shortcut = shortcut
+        let outline = outlineColor?.usingColorSpace(.sRGB)
+        outlineRGB = outline.map { [$0.redComponent, $0.greenComponent, $0.blueComponent] }
         let rgb = color.usingColorSpace(.sRGB) ?? .black
         red = rgb.redComponent
         green = rgb.greenComponent
         blue = rgb.blueComponent
+    }
+
+    var outlineColor: NSColor? {
+        guard let rgb = outlineRGB, rgb.count == 3 else { return nil }
+        return NSColor(srgbRed: rgb[0], green: rgb[1], blue: rgb[2], alpha: 1)
     }
 
     var color: NSColor { NSColor(srgbRed: red, green: green, blue: blue, alpha: 1) }
@@ -48,7 +56,7 @@ final class Canvas: NSView {
     private var step: CGFloat { CGFloat(document?.tileSize ?? 32) * zoom }
 
     private static let colors: [String: NSColor] = [
-        "TerrainTiles": .systemBrown, "OneWayPlatforms": .systemTeal,
+        MapDocument.breakableKind: .systemOrange, "TerrainTiles": .systemBrown, "OneWayPlatforms": .systemTeal,
         "GumPassBarriers": .systemCyan, "GumAnchors": .systemGreen,
         "Spikes": .systemRed, "GumBoxes": .systemMint, "Foods": .systemOrange, "Baguettes": .systemYellow, "MusicNotes": .systemPurple
     ]
@@ -67,6 +75,22 @@ final class Canvas: NSView {
 
     func placementColor(for kind: String) -> NSColor {
         placementStyle(for: kind)?.color ?? Self.colors[kind] ?? Self.routeMarkerColor(for: kind) ?? .systemBlue
+    }
+
+    func placementColor(for kind: String, tile: [Int]?) -> NSColor {
+        placementColor(for: MapDocument.placementCategory(kind: kind, tile: tile))
+    }
+
+    func drawPlacementOutline(in rect: CGRect, kind: String, tile: [Int]? = nil, oval: Bool = false) {
+        let category = MapDocument.placementCategory(kind: kind, tile: tile)
+        guard let color = placementStyle(for: category)?.outlineColor else { return }
+        let width = min(2, min(rect.width, rect.height) / 3)
+        guard width > 0 else { return }
+        color.setStroke()
+        let inset = rect.insetBy(dx: width / 2, dy: width / 2)
+        let path = oval ? NSBezierPath(ovalIn: inset) : NSBezierPath(rect: inset)
+        path.lineWidth = width
+        path.stroke()
     }
 
     static func placementRect(in cell: CGRect, kind: String) -> CGRect {
@@ -166,8 +190,10 @@ final class Canvas: NSView {
             guard let visible = placements.first(where: { $0.kind == selectedKind }) ?? placements.last else {
                 continue
             }
-            placementColor(for: visible.kind).setFill()
-            Self.placementRect(in: cell, kind: visible.kind).fill()
+            placementColor(for: visible.kind, tile: visible.tile).setFill()
+            let placement = Self.placementRect(in: cell, kind: visible.kind)
+            placement.fill()
+            drawPlacementOutline(in: placement, kind: visible.kind, tile: visible.tile)
             if step >= 24 && visible.kind == selectedKind {
                 let id = visible.tile
                 let label = MapDocument.namedItemKinds.contains(visible.kind) ? "\(id[3])" : "\(id[1]),\(id[2])"
@@ -188,6 +214,7 @@ final class Canvas: NSView {
                                                  width: radius * 2, height: radius * 2))
             placementColor(for: path).setFill()
             dot.fill()
+            drawPlacementOutline(in: dot.bounds, kind: path, oval: true)
             if selected {
                 NSColor.systemYellow.setStroke()
                 dot.stroke()
@@ -201,8 +228,9 @@ final class Canvas: NSView {
         if let hover, document.contains(hover) {
             let preview = NSBezierPath(rect: rect(hover).insetBy(dx: 1, dy: 1))
             if let selectedKind, tile != nil || selectedKind == MapDocument.checkpointKind {
-                placementColor(for: selectedKind).withAlphaComponent(0.35).setFill()
+                placementColor(for: selectedKind, tile: tile).withAlphaComponent(0.35).setFill()
                 preview.fill()
+                drawPlacementOutline(in: preview.bounds, kind: selectedKind, tile: tile)
             }
             NSColor.labelColor.setStroke()
             preview.stroke()
@@ -374,16 +402,20 @@ final class Minimap: NSView {
         frame.fill()
 
         for cell in map.cells {
-            canvas.placementColor(for: cell.kind).setFill()
+            canvas.placementColor(for: cell.kind, tile: cell.tile).setFill()
             let bounds = CGRect(x: frame.minX + CGFloat(cell.x) * step, y: frame.minY + CGFloat(cell.y) * step,
                                 width: step, height: step)
-            Canvas.placementRect(in: bounds, kind: cell.kind).fill()
+            let placement = Canvas.placementRect(in: bounds, kind: cell.kind)
+            placement.fill()
+            canvas.drawPlacementOutline(in: placement, kind: cell.kind, tile: cell.tile)
         }
         for (path, point) in map.markers {
             canvas.placementColor(for: path).setFill()
             let x = frame.minX + point[0] * scale
             let y = frame.minY + point[1] * scale
-            CGRect(x: x - 2, y: y - 2, width: 4, height: 4).fill()
+            let markerRect = CGRect(x: x - 2, y: y - 2, width: 4, height: 4)
+            markerRect.fill()
+            canvas.drawPlacementOutline(in: markerRect, kind: path)
         }
 
         let visible = canvas.visibleMapRect

@@ -22,6 +22,10 @@ func verify() -> void:
 		assert(before.layers.MusicNotes.labels == ["音符"])
 		assert(before.layers.GumBoxes.labels == ["軽いブロック"])
 		assert(before.layers.Spikes.labels == ["即死トゲ"])
+		assert(before.layers.TerrainTiles.palette.has([4, 0, 0, 0]))
+		var brick := (stage.get_node("TerrainTiles") as TileMapLayer).tile_set.get_source(4) as TileSetAtlasSource
+		assert(brick.texture.get_size() == Vector2(32, 32))
+		assert(brick.has_tile(Vector2i.ZERO))
 		var data := before.duplicate(true)
 		data.base = Exchange.token(before)
 		data = JSON.parse_string(JSON.stringify(data))

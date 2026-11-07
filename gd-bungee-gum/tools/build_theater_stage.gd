@@ -23,6 +23,7 @@ func _initialize() -> void:
 	add_one_way_source(tiles)
 	add_gum_anchor_source(tiles)
 	add_gum_pass_barrier_source(tiles)
+	add_brown_brick_source(tiles)
 	assert(ResourceSaver.save(tiles, TILESET_PATH) == OK)
 	tiles = load(TILESET_PATH)
 	stage = Node2D.new()
@@ -213,3 +214,11 @@ func add_gum_pass_barrier_source(target: TileSet) -> void:
 	data.add_collision_polygon(2)
 	data.set_collision_polygon_points(2, 0, PackedVector2Array([
 		Vector2(-16, -16), Vector2(16, -16), Vector2(16, 16), Vector2(-16, 16)]))
+
+func add_brown_brick_source(target: TileSet) -> void:
+	var atlas := TileSetAtlasSource.new()
+	atlas.resource_name = "BrownBrick"
+	atlas.texture = load("res://assets/tilesets/restaurant_breakable_brick.png")
+	atlas.texture_region_size = Vector2i(TILE, TILE)
+	target.add_source(atlas, 4)
+	atlas.create_tile(Vector2i.ZERO)

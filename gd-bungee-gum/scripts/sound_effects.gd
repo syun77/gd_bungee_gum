@@ -1,6 +1,9 @@
 extends Node
 ## Global one-shots survive stage reloads, including immediate pit respawns.
 const CLIPS := {
+	&"door_open": preload("res://assets/sounds/door1.wav"),
+	&"door_close": preload("res://assets/sounds/door2.wav"),
+	&"crash": preload("res://assets/sounds/crash.wav"),
 	&"checkpoint": preload("res://assets/sounds/checkpoint.wav"),
 	&"dead": preload("res://assets/sounds/dead.wav"),
 	&"hit": preload("res://assets/sounds/hit.wav"),

@@ -36,7 +36,10 @@ func begin(sprite: AnimatedSprite2D) -> void:
 func step(delta: float) -> void:
 	if not active:
 		return
+	var previous_elapsed := elapsed
 	elapsed = minf(elapsed + delta, TOTAL_TIME)
+	if previous_elapsed <= CLOSED_HOLD and elapsed > CLOSED_HOLD:
+		get_node("/root/SoundEffects").play(&"door_open")
 	if elapsed < CLOSED_HOLD:
 		frame = 0
 	elif elapsed < CLOSED_HOLD + OPEN_TIME:
@@ -48,6 +51,7 @@ func step(delta: float) -> void:
 		actor.self_modulate.a = actor_color.a
 		frame = maxi(0, 5 - int(progress * 6.0))
 	if elapsed >= TOTAL_TIME:
+		get_node("/root/SoundEffects").play(&"door_close")
 		active = false
 		frame = 0
 		actor.self_modulate = actor_color

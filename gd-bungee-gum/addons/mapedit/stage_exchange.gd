@@ -7,7 +7,7 @@ const WIDTHS := {
 	"res://scenes/stages/theater_stage.tscn": 160,
 }
 const ATLAS_PALETTES := {
-	"TerrainTiles": [[0, 8, 3, 0], [0, 9, 3, 0], [0, 10, 3, 0], [0, 11, 3, 0]],
+	"TerrainTiles": [[0, 8, 3, 0], [0, 9, 3, 0], [0, 10, 3, 0], [0, 11, 3, 0], [4, 0, 0, 0]],
 	"OneWayPlatforms": [[1, 0, 0, 0], [1, 1, 0, 0], [1, 2, 0, 0], [1, 3, 0, 0]],
 	"GumAnchors": [[2, 0, 0, 0]],
 	"GumPassBarriers": [[3, 0, 0, 0]],
@@ -292,32 +292,6 @@ static func commit(history: EditorUndoRedoManager, stage: Node, changes: Diction
 		sync_terrain(history, stage, changes.terrain)
 	history.commit_action()
 
-static func rectangles(cells: Dictionary) -> Array[Rect2i]:
-	var remaining := cells.duplicate()
-	var ordered := remaining.keys()
-	ordered.sort()
-	var result: Array[Rect2i] = []
-	for origin: Vector2i in ordered:
-		if not remaining.has(origin):
-			continue
-		var width := 1
-		while remaining.has(origin + Vector2i(width, 0)):
-			width += 1
-		var height := 1
-		while row_exists(remaining, origin + Vector2i(0, height), width):
-			height += 1
-		result.append(Rect2i(origin, Vector2i(width, height)))
-		for y in height:
-			for x in width:
-				remaining.erase(origin + Vector2i(x, y))
-	return result
-
-static func row_exists(cells: Dictionary, origin: Vector2i, width: int) -> bool:
-	for x in width:
-		if not cells.has(origin + Vector2i(x, 0)):
-			return false
-	return true
-
 static func sync_terrain(history: EditorUndoRedoManager, stage: Node, cells: Dictionary) -> void:
 	var body := stage.get_node("Terrain")
 	var shapes := body.get_children()
@@ -332,7 +306,7 @@ static func sync_terrain(history: EditorUndoRedoManager, stage: Node, cells: Dic
 		for child in children:
 			if child is Line2D and str(child.name).begins_with("Rim"):
 				remove_scene_child(history, stage, child, stage)
-	var rects := rectangles(cells)
+	var rects := preload("res://scripts/terrain_rectangles.gd").rectangles(cells)
 	for index in rects.size():
 		var rect := rects[index]
 		var shape := CollisionShape2D.new()

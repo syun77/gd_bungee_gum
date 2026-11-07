@@ -12,7 +12,7 @@ func verify() -> void:
 		var clip: AudioStreamWAV = audio.CLIPS[cue]
 		check(clip.get_length() > 0.0 and clip.loop_mode == AudioStreamWAV.LOOP_DISABLED, "Valid one-shot %s" % cue)
 		audio.play(cue)
-	check(audio.get_child_count() == 8, "All eight cues overlap")
+	check(audio.get_child_count() == audio.CLIPS.size(), "All registered cues overlap")
 	for i in 30:
 		audio.play(&"jump")
 	check(audio.get_child_count() == 24, "Bounded voices")
@@ -22,6 +22,13 @@ func verify() -> void:
 	var game = load("res://scenes/game.tscn").instantiate()
 	root.add_child(game)
 	game._physics_process(game.entrance.TOTAL_TIME)
+	check(audio.get_child_count() == 2, "Entrance opens and closes once on a large step")
+	check(audio.get_child(0).stream == audio.CLIPS[&"door_open"], "Opening uses door1")
+	check(audio.get_child(1).stream == audio.CLIPS[&"door_close"], "Closing uses door2")
+	game.entrance.step(1.0)
+	check(audio.get_child_count() == 2, "Completed entrance stays silent")
+	for voice in audio.get_children():
+		voice.free()
 	current_scene = game
 	game.set_physics_process(false)
 	await physics_frame
