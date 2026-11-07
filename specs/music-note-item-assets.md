@@ -32,4 +32,4 @@
 
 `Godot --headless --path gd-bungee-gum --log-file /tmp/music-note-pickup.log --script res://tools/verify_music_note_pickup.gd` で全3ステージの実シーンタイルへの物理接触、箱/非playerグループの除外、ガムレイ対象外、ポーズ中の回収停止、再読込復元、同一フレームでの重複要求による二重通知防止、10点の一度だけの加算、文字の上昇・消滅、タイムアタックのスコアとタイマーの併記を確認する。
 
-数字演出は `scripts/score_popup.gd` をフランスパン・食べ物と共用し、数字はクリーム色・縁取りは白（4px）とする。専用 `resources/score_popup_theme.tres` のDefault Font／Default Font SizeとLabelのColors（Font Color／Font Outline Color）、Constants（Outline Size）で調整する。スクリプト側のスタイル上書きはなく、他のUIテーマとは独立する。得点と表示は `ContactPickup.points`（音符10・フランスパン30）および `FoodCollectible.POINTS`（1000）を参照する。ラベルをアイテムの外側に所有させ、回収による削除後も演出を継続する。
+数字演出は `scripts/score_popup.gd` をフランスパン・食べ物と共用し、数字はクリーム色・縁取りは白（4px）とする。専用 `resources/score_popup_theme.tres` のDefault Font／Default Font SizeとLabelのColors（Font Color／Font Outline Color）、Constants（Outline Size）で調整する。スクリプト側のスタイル上書きはなく、他のUIテーマとは独立する。得点と表示は `ContactPickup.points`（音符10・フランスパン30）および `FoodCollectible.POINTS`（300）を参照する。ラベルをアイテムの外側に所有させ、回収による削除後も演出を継続する。

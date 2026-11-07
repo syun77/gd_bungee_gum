@@ -13,6 +13,14 @@ func settle() -> void:
 	await process_frame
 	await process_frame
 
+func toggle_menu() -> void:
+	for pressed in [true, false]:
+		var event := InputEventAction.new()
+		event.action = &"pause_menu"
+		event.pressed = pressed
+		Input.parse_input_event(event)
+		Input.flush_buffered_events()
+
 func verify() -> void:
 	var startup: String = ProjectSettings.get_setting("application/run/main_scene")
 	check(startup == "res://scenes/game_time_attack.tscn", "F5 starts Time Attack directly")
@@ -21,8 +29,8 @@ func verify() -> void:
 	check(current_scene.time_attack, "Startup is Time Attack")
 	current_scene._clear_stage()
 	var results := current_scene.get_node("HUD").find_children("*", "Button", true, false)
-	check(results.size() == 2, "Time Attack result offers only retry beside HUD menu")
-	current_scene.get_node("HUD/Menu").pressed.emit()
+	check(results.size() == 1, "Time Attack result offers only retry")
+	toggle_menu()
 	check(current_scene.pause_menu.is_open, "Time Attack menu opens after clear")
 	current_scene.pause_menu.buttons[1].pressed.emit()
 	await settle()
@@ -71,10 +79,10 @@ func verify() -> void:
 		var pickup = layer.get_child(0)
 		pickup.collect()
 		pickup.collect()
-		var points: int = {"Foods": 1000, "Baguettes": 30, "MusicNotes": 10}[layer_name]
+		var points: int = {"Foods": 300, "Baguettes": 30, "MusicNotes": 10}[layer_name]
 		check(current_scene.score == score_before + points, "Pickup awards points once: " + layer_name)
 	var collected_score: int = current_scene.score
-	check(collected_score >= 1040, "Food, baguette and note award points")
+	check(collected_score >= 340, "Food, baguette and note award points")
 	var first_checkpoint = current_scene.get_node("TheaterStage/Checkpoints/Checkpoint01")
 	current_scene._on_checkpoint_reached(first_checkpoint)
 	current_scene.restart(true)
@@ -98,11 +106,11 @@ func verify() -> void:
 	check(current_scene.scene_file_path == "res://scenes/stage_select.tscn", "Menu returns to selection")
 	current_scene.start_button.pressed.emit()
 	await settle()
-	current_scene.get_node("HUD/Menu").pressed.emit()
-	check(current_scene.pause_menu.is_open, "HUD opens menu")
+	toggle_menu()
+	check(current_scene.pause_menu.is_open, "Menu action opens menu without HUD button")
 	current_scene.pause_menu.buttons[1].pressed.emit()
 	await settle()
-	check(current_scene.scene_file_path == "res://scenes/stage_select.tscn", "HUD button returns to selection")
+	check(current_scene.scene_file_path == "res://scenes/stage_select.tscn", "Menu action returns to selection")
 	for index in [1, 2]:
 		var scene_path: String = current_scene.Catalog.STAGES[index].scene
 		check(current_scene.stage_buttons.size() == 3, "Three playable stage cards")

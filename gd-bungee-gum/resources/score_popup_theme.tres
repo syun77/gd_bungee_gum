@@ -1,10 +1,10 @@
 [gd_resource type="Theme" format=3 uid="uid://dinywbm7mcwyy"]
 
-[ext_resource type="FontFile" uid="uid://c4tskst2d0ixh" path="res://assets/fonts/PixelMplus12-Regular.ttf" id="1"]
+[ext_resource type="FontFile" uid="uid://v4buufjxs3ib" path="res://assets/fonts/PixelMplus10-Bold.ttf" id="1_aa0xc"]
 
 [resource]
-default_font = ExtResource("1")
-default_font_size = 24
-Label/colors/font_color = Color(0.76296526, 0.6653618, 5.0055983e-06, 1)
-Label/colors/font_outline_color = Color(1, 1, 1, 1)
-Label/constants/outline_size = 1
+default_font = ExtResource("1_aa0xc")
+default_font_size = 30
+Label/colors/font_color = Color(0.91452706, 0.9999948, 0.36090606, 1)
+Label/colors/font_outline_color = Color(0, 0, 0, 1)
+Label/constants/outline_size = 8

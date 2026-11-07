@@ -78,7 +78,7 @@ func verify() -> void:
 	assert(is_instance_valid(popup) and popup.position.y < popup_y, "Popup survives note deletion and rises")
 	await create_timer(0.6).timeout
 	assert(not is_instance_valid(popup), "Popup expires")
-	for entry in [["res://scenes/items/baguette.tscn", "30"], ["res://scenes/items/foods/milano_doria.tscn", "1000"]]:
+	for entry in [["res://scenes/items/baguette.tscn", "30"], ["res://scenes/items/foods/milano_doria.tscn", "300"]]:
 		var item = load(entry[0]).instantiate()
 		root.add_child(item)
 		item.position = Vector2(300, -300)

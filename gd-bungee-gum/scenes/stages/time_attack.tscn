@@ -249,7 +249,7 @@ collision_enabled = false
 
 [node name="Baguettes" type="TileMapLayer" parent="." unique_id=70104694]
 position = Vector2(0, 16)
-tile_map_data = PackedByteArray("AAAgABAAAAAAAAAAAAApABIAAAAAAAAAAAA=")
+tile_map_data = PackedByteArray("AAAgABAAAAAAAAAAAAApABIAAAAAAAAAAAAYAA8AAAAAAAAAAAA=")
 tile_set = ExtResource("5_baguette")
 collision_enabled = false
 

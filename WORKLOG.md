@@ -1,3 +1,31 @@
+## Remove HUD menu button
+
+- Goal/status: Remove on-screen MENU button; implemented, verification pending.
+- Completed/decisions: Remove HUD/Menu and pressed connection; OPTIONS/Esc retain pause menu. Preserve user-authored score/timer typography/layout.
+- Files: game.tscn, game.gd, stage/pause verifiers, stage/pause/baguette specs, AGENTS.md, WORKLOG.md.
+- Verification: Pending stage/pause suites. Refactoring: deleted stale button wiring, tests use input actions/pad. Blockers: None. Next action: Run suites and reference/diff checks.
+
+## HUD score and timer themes
+
+- Goal/status: Resource-based score/time text editing; complete.
+- Decisions: Dedicated hud_score_theme.tres and hud_timer_theme.tres; preserve white24px/2px shadow appearance. Author hidden HUD/Timer in game.tscn and show in Time Attack; remove dynamic Score duplication/local shadow overrides. Existing customized popup theme untouched.
+- Files: two Theme resources, game.tscn, game.gd, specs/debug-text.md, AGENTS.md, WORKLOG.md.
+- Verification: verify_stage_select and verify_music_note_pickup PASS (stage flow, scoring, independent timer/score, popup lifecycle); git diff --check passed. Refactoring: scene owns both labels, themes own all typography. Blockers: None. Next action: Open HUD Theme resources in Godot for tuning.
+
+## Food score300
+
+- Goal/status: Set food points and popup to300; complete.
+- Completed/decisions: Shared FoodCollectible.POINTS now300; score and popup consume it. Updated exact-point/popup expectations and current specs/knowledge. Baguette30/note10 retained.
+- Files: food_collectible.gd, stage/pickup/reel verifiers, food/baguette/note specs, AGENTS.md, WORKLOG.md.
+- Verification: verify_stage_select, verify_music_note_pickup and verify_food_reel PASS (300point credit/popup, duplicate safety, death persistence); git diff --check passed. Final refactoring review confirms one shared score/popup source. Known certificate/resource-cleanup warnings remain. Blockers: None. Next action: Optional F5 pickup check.
+
+## Remove gum status HUD text
+
+- Goal/status: Remove gum-state debug text; complete.
+- Completed/decisions: Remove HUD/Status and Game status formatting/update entirely. Keep menu/score/timer and gum visuals/diagnostics.
+- Files: game.gd, game.tscn, specs/gum-flight-return.md, specs/keyboard-controls.md, AGENTS.md, WORKLOG.md.
+- Verification: verify_stage_select PASS; git diff --check passed; no remaining runtime status-label references. Final refactoring removed unused label reference and formatter. Blockers: None. Next action: Optional F5 appearance check.
+
 ## Dedicated score popup theme
 
 - Goal/status: Resource-based score typography editing; complete.

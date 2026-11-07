@@ -1,6 +1,6 @@
 extends Area2D
 ## Scene tile collectible; gum can reel it to the player's hand.
-const POINTS := 1000
+const POINTS := 300
 const ScorePopup = preload("res://scripts/score_popup.gd")
 const CollectionEffect = preload("res://scripts/food_collect_effect.gd")
 const IdleEffect = preload("res://scripts/food_idle_effect.gd")

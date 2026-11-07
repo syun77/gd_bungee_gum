@@ -275,7 +275,7 @@
 
 - Gameplay HUD has no persistent control-help text; keep control documentation in specs/keyboard-controls.md. HUD/Status remains for runtime gum state.
 
-- F5 starts `scenes/game_time_attack.tscn` directly as a temporary debug default. Time Attack returns to mode selection only via the pause menu; its clear result offers retry only. Stage Mode opens `scenes/stage_select.tscn`, whose Back button and ui_cancel return to mode selection. Time Attack opens `scenes/game_time_attack.tscn`; stage_catalog.gd lists3 playable courses. Stage1 is original restaurant; inherited game_stage_2/3 scenes export stage_scene + stage_width2048. Rebuild only new maps via tools/build_provisional_stages.gd; original map/TileSet untouched. Game OPTIONS/Esc/HUD opens a pause menu with retry/selection/cancel; new entry clears checkpoint, R preserves selected scene, Exit player contact opens door, darkens/hides actor and closes before clear result. See specs/stage-selection.md and tools/verify_stage_select.gd.
+- F5 starts `scenes/game_time_attack.tscn` directly as a temporary debug default. Time Attack returns to mode selection only via the pause menu; its clear result offers retry only. Stage Mode opens `scenes/stage_select.tscn`, whose Back button and ui_cancel return to mode selection. Time Attack opens `scenes/game_time_attack.tscn`; stage_catalog.gd lists3 playable courses. Stage1 is original restaurant; inherited game_stage_2/3 scenes export stage_scene + stage_width2048. Rebuild only new maps via tools/build_provisional_stages.gd; original map/TileSet untouched. Game OPTIONS/Esc opens a pause menu with retry/selection/cancel; new entry clears checkpoint, R preserves selected scene, Exit player contact opens door, darkens/hides actor and closes before clear result. See specs/stage-selection.md and tools/verify_stage_select.gd.
 
 - Stage-start entrance source artwork: `images/tilesets/restaurant_stage_entrance_source.png` (transparent cream/mint doorway with coral canopy and arrow sign). This original is retained; the ENTRANCE animation variant supplies the normalized runtime sprite, separate from the terrain TileSet.
 
@@ -285,7 +285,7 @@
 
 - Stage entrance: Game advances stage_entrance.gd for1.10s on fresh/manual restart; checkpoint restore skips. Frozen player/reset_motion, hidden gum, no queued jump/shot.96×128 cells/3×2 sheet built by tools/build_stage_entrance_art.py; source/runtime copies identical. Same-Z ordering puts entrance after stage/before Player. Floor ray aligns feet. Run verify_stage_entrance.gd plus stage_select/controls suites.
 
-- Pause menu is scripts/pause_menu.gd (CanvasLayer PROCESS_MODE_ALWAYS), pauses whole SceneTree; OPTIONS has its own pause_menu action, R remains restart. HUD/Menu and Esc also toggle. Retry/selection close/unpause before scene transition; close consumes next Game tick to avoid UI Cross becoming jump. _exit_tree releases owned pause. verify_pause_menu.gd covers actual pad events and frozen physics/entrance.
+- Pause menu is scripts/pause_menu.gd (CanvasLayer PROCESS_MODE_ALWAYS), pauses whole SceneTree; OPTIONS has its own pause_menu action, R remains restart. Esc also toggles; no on-screen HUD menu button. Retry/selection close/unpause before scene transition; close consumes next Game tick to avoid UI Cross becoming jump. _exit_tree releases owned pause. verify_pause_menu.gd covers actual pad events and frozen physics/entrance.
 
 - UI accept explicitly maps any-device Cross plus Enter/KpEnter/Space in project.godot; Godot built-in ui_accept in this project contained keyboard events only. verify_pause_menu.gd uses actual D-pad/Cross events; do not rely solely on emitting Button.pressed for pad QA.
 
@@ -362,12 +362,16 @@
 
 - Air counter-steering in Player.simulate clears external_velocity.x when move axis opposes it, after Gum.step force and before movement. Only when gum is disconnected; attached swings preserve X even with held opposite input. Detach-jump enables braking in the same tick. Neutral/same-direction and Y momentum remain, grounded uses friction. verify_player.gd covers mirrored free-flight braking, held-force cancellation, real attached momentum and detach-jump transition.
 
-- Shared score_popup.gd spawns stage-hosted ScorePopup numbers (cream fill/white4px outline, dedicated resources/score_popup_theme.tres, rises32px/fades0.65s) from collectible collect methods. Game._add_score handles note/baguette points; Time Attack keeps HUD/Score and creates separate HUD/Timer at y112. Death score tests allow legitimate new pickups at respawn. verify_music_note_pickup.gd checks popup lifecycle/one-shot points/timer.
+- Shared score_popup.gd spawns stage-hosted ScorePopup numbers (cream fill/white4px outline, dedicated resources/score_popup_theme.tres, rises32px/fades0.65s) from collectible collect methods. Game._add_score handles note/baguette points; Time Attack shows the authored HUD/Timer at y112 alongside HUD/Score. Death score tests allow legitimate new pickups at respawn. verify_music_note_pickup.gd checks popup lifecycle/one-shot points/timer.
 
 - Jump/shot diagnosis: Game._handle_actions prioritizes every fresh jump and detaches OUTBOUND too; simultaneous Z/X suppresses shot. Short flight then return can be intentional Z cancellation, not self-collision. Gum rays exclude Player RID and bit2; RETURNING completion never cancels OUTBOUND. verify_controls covers both gestures.
 
 - Overlapping-ring shots: _step_outbound root visibility excludes only the tip-hit anchor cell RID via _cast_segment optional excluded_rid. hit_from_inside otherwise detects the same ring twice and rejects as BLOCKED PATH. Keep player exclusion and all other blockers; verify_gum_anchors covers center/±20px offsets × five shot directions and next-tick retention.
 
-- Pickup scores: ContactPickup.points defaults30 for baguettes, MusicNote._init sets points10, FoodCollectible.POINTS=1000. Popup and Game score use these same values. Food collected(food_id) credits both contact and gum-reel completion through shared registration; score/deleted placements persist on death. verify_stage_select checks exact per-item deltas and duplicate collect safety.
+- Pickup scores: ContactPickup.points defaults30 for baguettes, MusicNote._init sets points10, FoodCollectible.POINTS=300. Popup and Game score use these same values. Food collected(food_id) credits both contact and gum-reel completion through shared registration; score/deleted placements persist on death. verify_stage_select checks exact per-item deltas and duplicate collect safety.
 
 - Score popup font/size/fill/outline/width are owned solely by resources/score_popup_theme.tres (Theme default font/size and Label colors/constants); score_popup.gd has no local style overrides. Edit this resource independently of debug_theme.tres.
+
+- Gameplay HUD has no gum-status debug label (state/tension/path/rest/limit/pivots/target). Game has no status updater; retain score/timer, OPTIONS/Esc pause menu and gum visual feedback.
+
+- HUD typography: resources/hud_score_theme.tres and hud_timer_theme.tres independently own font/size and Label colors/outline/shadows for game.tscn HUD/Score and HUD/Timer. No local style overrides; Timer authored hidden, shown by Time Attack setup. Pickup popup theme stays separate.

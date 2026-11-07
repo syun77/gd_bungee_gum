@@ -26,7 +26,6 @@ var suppress_gameplay_tick := false
 @onready var player_shape: CollisionShape2D = $Player/CollisionShape2D
 @onready var camera: Camera2D = $Camera2D
 @onready var gum: Node2D = $Gum
-@onready var status: Label = $HUD/Status
 var spike_sweep: ShapeCast2D
 var restarting := false
 var death_effect: Sprite2D
@@ -76,10 +75,8 @@ func _setup_puzzle_props() -> void:
 	$PulleyTrolley.bind(gum)
 
 func _setup_timer() -> void:
-	timer_label = $HUD/Score.duplicate()
-	timer_label.name = "Timer"
-	timer_label.position.y = 112.0
-	$HUD.add_child(timer_label)
+	timer_label = $HUD/Timer
+	timer_label.show()
 	var record := ConfigFile.new()
 	if record.load(TIME_ATTACK_RECORD) == OK:
 		best_time = record.get_value("record", "seconds", 0.0)
@@ -101,7 +98,7 @@ func _setup_pickups() -> void:
 		if saved.get("scene") == scene_file_path:
 			collected_items = saved.get("collected_items", {}).duplicate()
 			score = saved.get("score", 0)
-	$HUD/Score.text = "SCORE %d" % score
+	$HUD/Score.text = "SCORE: %d" % score
 	_register_pickups($TheaterStage)
 
 func _register_pickups(host: Node) -> void:
@@ -138,7 +135,6 @@ func _setup_pause_menu() -> void:
 	pause_menu.retry_requested.connect(restart)
 	pause_menu.selection_requested.connect(return_to_stage_select)
 	pause_menu.resumed.connect(func(): suppress_gameplay_tick = true)
-	$HUD/Menu.pressed.connect(pause_menu.open)
 
 func _setup_entrance() -> void:
 	entrance = preload("res://scripts/stage_entrance.gd").new()
@@ -226,7 +222,7 @@ func _physics_process(delta: float) -> void:
 		return
 	if time_attack:
 		elapsed += delta
-		timer_label.text = "TIME %.2f" % elapsed
+		timer_label.text = "TIME: %.2f" % elapsed
 	if is_instance_valid(death_effect):
 		if death_effect.step(delta):
 			restart(true)
@@ -255,7 +251,6 @@ func _physics_process(delta: float) -> void:
 		return
 	_update_camera(delta)
 	gum.update_aim(_aim_target())
-	_update_status()
 
 func _setup_checkpoints() -> void:
 	var checkpoints := get_node_or_null("TheaterStage/Checkpoints")
@@ -375,21 +370,6 @@ func _handle_actions(jump_requested: bool) -> void:
 	elif gum.state != gum.State.OUTBOUND:
 		gum.fire(aim_direction)
 		player.fire_gum()
-
-func _update_status() -> void:
-	if gum.connected():
-		status.text = "%s | TENSION %d%% | LENGTH %.0f / REST %.0f | LIMIT %.0f%% | PIVOTS %d" % [
-			"CONTRACT" if gum.mode == gum.Mode.CONTRACT else "LOOSEN",
-			gum.tension / gum.settings.maximum_tension * 100.0,
-			gum.path.length, gum.rest_length,
-			gum.path.length / gum.settings.maximum_length * 100.0, gum.path.pivots.size()]
-	else:
-		var phase: String = gum.release_reason
-		if gum.state == gum.State.OUTBOUND:
-			phase = "FLYING"
-		elif gum.state == gum.State.RETURNING:
-			phase = "RETURNING"
-		status.text = "%s | %s" % [phase, "TARGET" if gum.aim_valid else "NO TARGET"]
 
 func return_to_stage_select() -> void:
 	if restarting:
