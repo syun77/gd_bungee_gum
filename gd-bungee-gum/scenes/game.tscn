@@ -72,14 +72,16 @@ limit_bottom = 768
 
 [node name="Score" type="Label" parent="HUD" unique_id=1569635]
 offset_left = 24.0
-offset_top = 76.0
+offset_top = 16.0
+offset_right = 164.0
+offset_bottom = 60.0
 theme = ExtResource("13")
 text = "SCORE 0"
 
 [node name="Timer" type="Label" parent="HUD" unique_id=1382531452]
 offset_left = 24.0
-offset_top = 120.0
+offset_top = 64.0
 offset_right = 204.0
-offset_bottom = 164.0
+offset_bottom = 108.0
 theme = ExtResource("14")
 text = "TIME 0.00"

@@ -1,9 +1,9 @@
 ## Remove HUD menu button
 
-- Goal/status: Remove on-screen MENU button; implemented, verification pending.
+- Goal/status: Remove on-screen MENU button; complete.
 - Completed/decisions: Remove HUD/Menu and pressed connection; OPTIONS/Esc retain pause menu. Preserve user-authored score/timer typography/layout.
-- Files: game.tscn, game.gd, stage/pause verifiers, stage/pause/baguette specs, AGENTS.md, WORKLOG.md.
-- Verification: Pending stage/pause suites. Refactoring: deleted stale button wiring, tests use input actions/pad. Blockers: None. Next action: Run suites and reference/diff checks.
+- Files: game.tscn, game.gd, stage/pause verifiers, stage/pause/baguette/implementation specs, AGENTS.md, WORKLOG.md.
+- Verification: verify_stage_select and verify_pause_menu PASS (OPTIONS/Esc, freeze/resume/retry/selection); git diff --check passed; no stale HUD/Menu callers remain. Refactoring: deleted stale button wiring, tests use input actions/pad. Blockers: None. Next action: Optional F5 visual check.
 
 ## HUD score and timer themes
 

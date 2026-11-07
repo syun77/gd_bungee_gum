@@ -1,6 +1,6 @@
 # 一時停止メニュー
 
-OPTIONS（any-device JOY_BUTTON_START、InputMap `pause_menu`）、Esc、HUD「メニュー」で開く。メニュー表示中はSceneTree全体を一時停止し、箱・ガム・キャラクター・登場/死亡演出も停止する。`pause_menu.gd` のCanvasLayerだけALWAYSモードでUI入力を受ける。
+OPTIONS（any-device JOY_BUTTON_START、InputMap `pause_menu`）、Escで開く。メニュー表示中はSceneTree全体を一時停止し、箱・ガム・キャラクター・登場/死亡演出も停止する。`pause_menu.gd` のCanvasLayerだけALWAYSモードでUI入力を受ける。
 
 項目は順番に「リトライ」「ステージ選択に戻る」「キャンセル」。最初はリトライにフォーカス。上下で循環、Cross/Enter/Spaceで決定（ui_acceptにCrossを明示登録）、マウス操作も可能。再度OPTIONS／Escもキャンセルとして閉じる。
 
