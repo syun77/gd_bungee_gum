@@ -1,6 +1,6 @@
 [gd_scene load_steps=13 format=4]
 
-[ext_resource type="PackedScene" path="res://scenes/items/baguette.tscn" id="baguette"]
+[ext_resource type="TileSet" path="res://assets/items/baguette_tileset.tres" id="baguette"]
 [ext_resource type="TileSet" path="res://assets/tilesets/theater_tileset.tres" id="1_8ykyq"]
 [ext_resource type="TileSet" path="res://assets/foods/food_tileset.tres" id="2_33m27"]
 [ext_resource type="PackedScene" path="res://scenes/props/checkpoint.tscn" id="3_7ldjl"]
@@ -162,13 +162,8 @@ tile_map_data = PackedByteArray("AAAGABQAAAAAAAAAAAAIABIAAAAAAAAAAAAKABIAAAAAAAA
 tile_set = ExtResource("music_notes")
 collision_enabled = false
 
-[node name="Baguettes" type="Node2D" parent="."]
-
-[node name="Baguette1" parent="Baguettes" instance=ExtResource("baguette")]
-position = Vector2(240, 672)
-
-[node name="Baguette2" parent="Baguettes" instance=ExtResource("baguette")]
-position = Vector2(432, 672)
-
-[node name="Baguette3" parent="Baguettes" instance=ExtResource("baguette")]
-position = Vector2(1104, 544)
+[node name="Baguettes" type="TileMapLayer" parent="."]
+position = Vector2(0, 16)
+tile_map_data = PackedByteArray("AAAHABQAAAAAAAAAAAANABQAAAAAAAAAAAAiABAAAAAAAAAAAAA=")
+tile_set = ExtResource("baguette")
+collision_enabled = false

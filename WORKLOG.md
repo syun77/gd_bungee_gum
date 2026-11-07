@@ -1,3 +1,43 @@
+## MapEdit pickup tile spacing
+
+- Goal/status: Visually separate neighboring anchors and items. Complete.
+- Completed/decisions: Center anchor and item rectangles at 80% of cell width/height in both views. Placement remains cell-based.
+- Files: tools/mapedit/Canvas.swift, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift build and git diff --check passed. On-screen rendering was not exercised.
+- Blockers: None. Next action: Relaunch via run.command.
+
+## MapEdit baguette and note tiles
+
+- Goal/status: Offer baguette and note as independent placement tiles. Complete.
+- Completed/decisions: Added Baguettes scene tiles and retained the separate MusicNotes layer. Time Attack starts with empty layers; existing baguettes keep their world positions. Runtime connects score pickups from scene tiles and preserves the Time Attack timer.
+- Files: MapEdit Swift sources and README, Godot stage exchange, stages, stage builders, baguette layout/tileset, game.gd, verify_mapedit.gd, specs, AGENTS.md, WORKLOG.md.
+- Verification: Both MapEdit editor probes placed both item kinds in the same cell and passed Undo/Redo. Runtime probe confirmed original Theater positions and +100 scoring. Swift build and git diff --check passed.
+- Blockers: None. Next action: Relaunch both apps and copy the Godot stage to refresh the palette.
+
+## MapEdit overlapping palette labels
+
+- Goal/status: Fix overlapping items after palette refresh. Complete.
+- Completed/decisions: Replace the complete scroll document grid at each refresh and give the scroll view an opaque system background.
+- Files: tools/mapedit/main.swift, AGENTS.md, WORKLOG.md.
+- Verification: Swift build and AppKit replacement probe passed when switching Time Attack → Theater → Time Attack; old controls detached and only current buttons remained. git diff --check passed. On-screen rendering was not checked.
+- Blockers: None. Next action: Relaunch via run.command.
+
+## MapEdit named food placement
+
+- Goal/status: Enable named food item placement in MapEdit. Complete.
+- Completed/decisions: Foods uses a named dish picker without numeric IDs in the UI. Godot supplies Japanese labels for all eleven food scene tiles. Time Attack has an empty Foods layer using the same resource as Theater, in the saved scene and generator.
+- Files: MapEdit main.swift and README, Godot stage_exchange.gd, time_attack.tscn, build_time_attack_stage.gd and verify_mapedit.gd, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift build, both editor stage probes with food placement/undo/redo, food gameplay suite, and git diff --check passed.
+- Blockers: None. Next action: Reopen both apps and copy the stage from Godot to refresh the palette.
+
+## MapEdit tile display settings
+
+- Goal/status: Allow editing placement colors and display names. Complete.
+- Completed/decisions: Added per-kind settings in the right pane with native color well, editable display name, and reset. Styles persist in app-specific preferences and apply across stages.
+- Files: tools/mapedit/{Canvas,main}.swift, tools/mapedit/README.md, specs/mapedit.md, AGENTS.md, WORKLOG.md.
+- Verification: Swift build, color/name encoding round trip, checkpoint group style lookup, default reset and git diff --check passed. The interactive color panel was not exercised.
+- Blockers: None. Next action: Relaunch via run.command and select a kind before opening tile settings.
+
 ## MapEdit direct-send UI cleanup
 
 - Goal/status: Remove the clipboard-based Godot paste and MapEdit export controls. Complete.

@@ -91,13 +91,16 @@ func _finish_time_attack() -> void:
 	timer_label.text = "TIME %.2f  |  BEST %.2f" % [elapsed, best_time]
 
 func _setup_score_pickups() -> void:
-	var baguettes := get_node_or_null("TheaterStage/Baguettes")
+	var baguettes := get_node_or_null("TheaterStage/Baguettes") as TileMapLayer
 	if baguettes != null:
+		baguettes.update_internals()
 		for pickup in baguettes.get_children():
 			pickup.collected.connect(_score_baguette)
 
 func _score_baguette() -> void:
 	score += BAGUETTE_POINTS
+	if time_attack:
+		return
 	$HUD/Score.text = "SCORE %d" % score
 
 func _setup_pause_menu() -> void:

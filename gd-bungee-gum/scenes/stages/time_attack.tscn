@@ -3,6 +3,9 @@
 [ext_resource type="Shader" uid="uid://bw76aih6q5fyc" path="res://shaders/time_attack_terrain.gdshader" id="1_qb48e"]
 [ext_resource type="TileSet" uid="uid://cx8raxqtl52fj" path="res://assets/tilesets/theater_tileset.tres" id="2_4xxcv"]
 [ext_resource type="PackedScene" path="res://scenes/props/checkpoint.tscn" id="3_4xxcv"]
+[ext_resource type="TileSet" uid="uid://bdsbmytxvc077" path="res://assets/foods/food_tileset.tres" id="4_foods"]
+[ext_resource type="TileSet" uid="uid://dkfk15k0r1er3" path="res://assets/items/baguette_tileset.tres" id="5_baguette"]
+[ext_resource type="TileSet" uid="uid://cekfltm0x7mrq" path="res://assets/items/music_note_tileset.tres" id="6_music_notes"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_n2hvt"]
 shader = ExtResource("1_qb48e")
@@ -140,6 +143,23 @@ shape = SubResource("RectangleShape2D_qo8rw")
 tile_map_data = PackedByteArray("AAArABEAAgAAAAAAAAAxAA8AAgAAAAAAAAAYABIAAgAAAAAAAAAYAA0AAgAAAAAAAAAJABAAAgAAAAAAAAAQAAwAAgAAAAAAAAA5AA8AAgAAAAAAAAAnAAwAAgAAAAAAAAA=")
 tile_set = ExtResource("2_4xxcv")
 physics_quadrant_size = 1
+
+[node name="Foods" type="TileMapLayer" parent="." unique_id=2075920934]
+z_index = 3
+tile_map_data = PackedByteArray("AAADAAoAAAAAAAAABQA=")
+tile_set = ExtResource("4_foods")
+collision_enabled = false
+
+[node name="Baguettes" type="TileMapLayer" parent="." unique_id=70104694]
+position = Vector2(0, 16)
+tile_set = ExtResource("5_baguette")
+collision_enabled = false
+
+[node name="MusicNotes" type="TileMapLayer" parent="." unique_id=1692804735]
+z_index = 3
+tile_map_data = PackedByteArray("AAAHABQAAAAAAAAAAAAIABQAAAAAAAAAAAAJABQAAAAAAAAAAAAPAAoAAAAAAAAAAAAQAAoAAAAAAAAAAAARAAoAAAAAAAAAAAAIAA4AAAAAAAAAAAAJAA4AAAAAAAAAAAAKAA4AAAAAAAAAAAA=")
+tile_set = ExtResource("6_music_notes")
+collision_enabled = false
 
 [node name="PlacementMarkers" type="Node2D" parent="." unique_id=1922476873]
 

@@ -15,6 +15,11 @@ func verify() -> void:
 		var stage := EditorInterface.get_edited_scene_root()
 		assert(stage != null and stage.scene_file_path == path)
 		var before := Exchange.snapshot(stage)
+		assert(before.layers.Foods.palette.size() == 11)
+		assert(before.layers.Foods.labels.has("ミラノ風ドリア"))
+		assert(not before.layers.Foods.labels.has(""))
+		assert(before.layers.Baguettes.labels == ["フランスパン"])
+		assert(before.layers.MusicNotes.labels == ["音符"])
 		var data := before.duplicate(true)
 		data.base = Exchange.token(before)
 		data = JSON.parse_string(JSON.stringify(data))
@@ -32,6 +37,12 @@ func verify() -> void:
 		invalid.stage = "res://other.tscn"
 		assert(Exchange.validate(stage, before, invalid).contains("match"))
 		data.cells.remove_at(0)
+		var food_cell := Vector2i(5, 5)
+		var foods := stage.get_node("Foods") as TileMapLayer
+		assert(foods.get_cell_source_id(food_cell) == -1)
+		data.cells.append({"kind": "Foods", "x": 5, "y": 5, "tile": [0, 0, 0, 5]})
+		for kind in ["Baguettes", "MusicNotes"]:
+			data.cells.append({"kind": kind, "x": 5, "y": 5, "tile": [0, 0, 0, 0]})
 		data.markers["PlacementMarkers/PlayerSpawn"][0] += 32
 		var checkpoints := stage.get_node("Checkpoints")
 		var old_checkpoints := checkpoints.get_children()
@@ -92,6 +103,9 @@ func verify() -> void:
 		var decor_data := decor.tile_map_data if decor else PackedByteArray()
 		Exchange.commit(history, stage, changes)
 		assert(Exchange.snapshot(stage).cells.size() == data.cells.size())
+		assert(foods.get_cell_alternative_tile(food_cell) == 5)
+		for kind in ["Baguettes", "MusicNotes"]:
+			assert(stage.get_node(kind).get_cell_source_id(food_cell) == 0)
 		assert(Exchange.snapshot(stage).markers == data.markers)
 		assert(checkpoints.get_child_count() == old_checkpoints.size() + 1)
 		for name in new_names:
@@ -128,6 +142,9 @@ func verify() -> void:
 		assert(scene_history.redo())
 		assert(Exchange.snapshot(stage).markers == data.markers)
 		assert(Exchange.snapshot(stage).cells.size() == data.cells.size())
+		assert(foods.get_cell_alternative_tile(food_cell) == 5)
+		for kind in ["Baguettes", "MusicNotes"]:
+			assert(stage.get_node(kind).get_cell_source_id(food_cell) == 0)
 		assert(scene_history.undo())
 		print("MAPEDIT PASS ", path)
 	plugin.free()

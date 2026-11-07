@@ -1,0 +1,11 @@
+[gd_resource type="TileSet" format=3 uid="uid://dkfk15k0r1er3"]
+
+[ext_resource type="PackedScene" path="res://scenes/items/baguette.tscn" id="1"]
+
+[sub_resource type="TileSetScenesCollectionSource" id="Baguettes"]
+resource_name = "Baguettes"
+scenes/0/scene = ExtResource("1")
+
+[resource]
+tile_size = Vector2i(32, 32)
+sources/0 = SubResource("Baguettes")

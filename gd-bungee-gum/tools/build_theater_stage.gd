@@ -88,7 +88,7 @@ func _initialize() -> void:
 	for food in Layout.FOODS:
 		foods.set_cell(Vector2i(food.x, food.y), 0, Vector2i.ZERO, food.z)
 	add(stage, NoteLayout.create_layer(NoteLayout.RESTAURANT))
-	BaguetteLayout.add_pickups(stage, BaguetteLayout.THEATER_STAGE)
+	add(stage, BaguetteLayout.create_layer(BaguetteLayout.THEATER_STAGE))
 	for placement in Layout.LADDERS:
 		var ladder = load("res://scenes/props/ladder.tscn").instantiate()
 		ladder.position = Vector2(placement.x, placement.y)

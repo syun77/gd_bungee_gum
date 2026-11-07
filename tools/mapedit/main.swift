@@ -23,9 +23,12 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
                                   styleMask: [.titled, .closable, .miniaturizable, .resizable],
                                   backing: .buffered, defer: false)
     private let canvas = Canvas()
-    private let palette = PaletteGrid()
     private let paletteScroll = NSScrollView()
+    private let preferences = UserDefaults(suiteName: "BungeeGumMapEdit")
+    private static let stylesKey = "mapedit.placementStyles"
+    private let styleButton = NSButton(title: "タイル設定…", target: nil, action: nil)
     private var categoryButtons: [NSButton] = []
+    private let variantLabel = NSTextField(labelWithString: "タイル")
     private let variant = NSPopUpButton(frame: .zero, pullsDown: false)
     private let status = NSTextField(labelWithString: "")
     private let history = UndoManager()
@@ -48,21 +51,24 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.center()
         installMenu()
 
+        if let data = preferences?.data(forKey: Self.stylesKey),
+           let styles = try? JSONDecoder().decode([String: PlacementStyle].self, from: data) {
+            canvas.placementStyles = styles
+        }
+        styleButton.target = self
+        styleButton.action = #selector(editPlacementStyle)
         variant.target = self
         variant.action = #selector(selectVariant)
         let sendButton = NSButton(title: "Godot に送る", target: self, action: #selector(sendMap))
         let fitButton = NSButton(title: "全体表示", target: self, action: #selector(fit))
         let categoryLabel = NSTextField(labelWithString: "配置種別")
-        let variantLabel = NSTextField(labelWithString: "タイル")
         variant.bezelStyle = .rounded
         variant.isBordered = true
-        palette.columnSpacing = 6
-        palette.rowSpacing = 4
-        paletteScroll.documentView = palette
         paletteScroll.hasVerticalScroller = true
         paletteScroll.autohidesScrollers = true
-        paletteScroll.drawsBackground = false
-        let tools = NSStackView(views: [categoryLabel, paletteScroll, variantLabel, variant, sendButton, fitButton, status])
+        paletteScroll.drawsBackground = true
+        paletteScroll.backgroundColor = .controlBackgroundColor
+        let tools = NSStackView(views: [categoryLabel, paletteScroll, styleButton, variantLabel, variant, sendButton, fitButton, status])
         tools.orientation = .vertical
         tools.alignment = .leading
         tools.spacing = 8
@@ -151,25 +157,22 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         NSApp.mainMenu = main
     }
 
-    private func refreshPalette() {
-        while palette.numberOfRows > 0 { palette.removeRow(at: palette.numberOfRows - 1) }
+    private func refreshPalette(selectedKind: String? = nil) {
         categoryButtons.removeAll()
-        palette.setFrameSize(.zero)
         guard let map = canvas.document else {
+            paletteScroll.documentView = nil
             variant.isEnabled = false
+            styleButton.isEnabled = false
             return
         }
-        let labels = ["TerrainTiles": "地形", "OneWayPlatforms": "片方向床", "GumPassBarriers": "バリア",
-                      "GumAnchors": "ガムアンカー", "Spikes": "トゲ", "Foods": "食べ物", "MusicNotes": "音符", MapDocument.checkpointKind: "チェックポイント"]
         categories = MapDocument.order.filter { map.layers[$0] != nil }
             + [MapDocument.checkpointKind]
             + map.markers.keys.filter { !$0.hasPrefix(MapDocument.checkpointPrefix) }.sorted()
         for (index, kind) in categories.enumerated() {
-            let name = String(kind.split(separator: "/").last ?? "")
-            let title = labels[kind] ?? (name == "PlayerSpawn" ? "スタート" : name == "Exit" ? "ゴール" : name)
+            let title = placementName(for: kind)
             let button = NSButton(title: title, target: self, action: #selector(chooseCategory(_:)))
             let label = NSMutableAttributedString(string: "■  " + title)
-            label.addAttribute(.foregroundColor, value: Canvas.placementColor(for: kind),
+            label.addAttribute(.foregroundColor, value: canvas.placementColor(for: kind),
                                range: NSRange(location: 0, length: 1))
             button.attributedTitle = label
             button.tag = index
@@ -180,14 +183,77 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
             button.widthAnchor.constraint(equalToConstant: 112).isActive = true
             categoryButtons.append(button)
         }
+        let palette = PaletteGrid()
+        palette.columnSpacing = 6
+        palette.rowSpacing = 4
         let columns = 2
         for start in stride(from: 0, to: categoryButtons.count, by: columns) {
             let end = min(start + columns, categoryButtons.count)
             palette.addRow(with: Array(categoryButtons[start..<end]))
         }
         palette.setFrameSize(palette.fittingSize)
+        paletteScroll.documentView = palette
         palette.scroll(.zero)
-        selectCategory(at: 0)
+        styleButton.isEnabled = true
+        selectCategory(at: selectedKind.flatMap { categories.firstIndex(of: $0) } ?? 0)
+        if let selectedKind, let index = categories.firstIndex(of: selectedKind) {
+            categoryButtons[index].scrollToVisible(categoryButtons[index].bounds)
+        }
+    }
+
+    private func placementName(for kind: String) -> String {
+        let labels = ["TerrainTiles": "地形", "OneWayPlatforms": "片方向床", "GumPassBarriers": "バリア",
+                      "GumAnchors": "ガムアンカー", "Spikes": "トゲ", "Foods": "食べ物", "Baguettes": "フランスパン", "MusicNotes": "音符", MapDocument.checkpointKind: "チェックポイント"]
+        let name = String(kind.split(separator: "/").last ?? "")
+        return canvas.placementStyle(for: kind)?.name ?? labels[kind]
+            ?? (name == "PlayerSpawn" ? "スタート" : name == "Exit" ? "ゴール" : name)
+    }
+
+    @objc private func editPlacementStyle() {
+        guard let selected = canvas.selectedKind ?? canvas.marker else { return }
+        let previousTile = variant.indexOfSelectedItem
+        let name = NSTextField(string: placementName(for: selected))
+        name.widthAnchor.constraint(equalToConstant: 220).isActive = true
+        let color = NSColorWell(frame: NSRect(x: 0, y: 0, width: 64, height: 26))
+        color.color = canvas.placementColor(for: selected)
+        let fields = NSGridView(views: [
+            [NSTextField(labelWithString: "表示名"), name],
+            [NSTextField(labelWithString: "色"), color]
+        ])
+        fields.setFrameSize(fields.fittingSize)
+        let dialog = NSAlert()
+        dialog.messageText = "タイル設定"
+        dialog.informativeText = selected
+        dialog.accessoryView = fields
+        dialog.addButton(withTitle: "OK")
+        dialog.addButton(withTitle: "キャンセル")
+        dialog.addButton(withTitle: "既定に戻す")
+        dialog.window.initialFirstResponder = name
+        NSColorPanel.shared.worksWhenModal = true
+        let response = dialog.runModal()
+        color.deactivate()
+        var styles = canvas.placementStyles
+        switch response {
+        case .alertFirstButtonReturn:
+            let value = name.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !value.isEmpty else {
+                show(MapError("表示名を入力してください。"))
+                return
+            }
+            styles[selected] = PlacementStyle(name: value, color: color.color)
+        case .alertThirdButtonReturn:
+            styles.removeValue(forKey: selected)
+        default: return
+        }
+        do {
+            preferences?.set(try JSONEncoder().encode(styles), forKey: Self.stylesKey)
+            canvas.placementStyles = styles
+            refreshPalette(selectedKind: selected)
+            if variants.indices.contains(previousTile) {
+                variant.selectItem(at: previousTile)
+                selectVariant()
+            }
+        } catch { show(error) }
     }
 
     @objc private func chooseCategory(_ sender: NSButton) {
@@ -198,6 +264,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         guard categories.indices.contains(index), let map = canvas.document else { return }
         for button in categoryButtons { button.state = button.tag == index ? .on : .off }
         let selected = categories[index]
+        variantLabel.stringValue = selected == "Foods" ? "料理の種類" : "タイル"
         variant.removeAllItems()
         variants = map.layers[selected]?.palette ?? []
         canvas.selectedKind = map.layers[selected] != nil || selected == MapDocument.checkpointKind ? selected : nil
@@ -206,7 +273,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
         variant.addItems(withTitles: variants.enumerated().map { index, id in
             let identifier = "\(id[0]) / \(id[1]),\(id[2]) / \(id[3])"
             guard labels.indices.contains(index), !labels[index].isEmpty else { return identifier }
-            return "\(labels[index]) · \(identifier)"
+            return MapDocument.namedItemKinds.contains(selected) ? labels[index] : "\(labels[index]) · \(identifier)"
         })
         variant.isEnabled = !variants.isEmpty
         selectVariant()
@@ -215,6 +282,7 @@ final class MapEdit: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc private func selectVariant() {
         let index = variant.indexOfSelectedItem
         canvas.tile = variants.indices.contains(index) ? variants[index] : nil
+        variant.toolTip = variant.titleOfSelectedItem
         window.makeFirstResponder(canvas)
     }
 

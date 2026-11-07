@@ -1,7 +1,7 @@
 @tool
 extends RefCounted
 
-const LAYERS := ["TerrainTiles", "OneWayPlatforms", "GumAnchors", "GumPassBarriers", "Spikes", "Foods", "MusicNotes"]
+const LAYERS := ["TerrainTiles", "OneWayPlatforms", "GumAnchors", "GumPassBarriers", "Spikes", "Foods", "Baguettes", "MusicNotes"]
 const WIDTHS := {
 	"res://scenes/stages/time_attack.tscn": 192,
 	"res://scenes/stages/theater_stage.tscn": 160,
@@ -12,6 +12,21 @@ const ATLAS_PALETTES := {
 	"GumAnchors": [[2, 0, 0, 0]],
 	"GumPassBarriers": [[3, 0, 0, 0]],
 	"Spikes": [[0, 0, 0, 0]],
+}
+const ITEM_NAMES := {
+	"baguette": "フランスパン",
+	"music_note": "音符",
+	"chicken_diavola": "若鶏のディアボラ風",
+	"escargot_oven_baked": "エスカルゴのオーブン焼き",
+	"hamburger_steak": "ハンバーグ・ステーキ",
+	"italian_pudding": "イタリアンプリン",
+	"margherita_pizza": "バッファローモッツァレラのマルゲリータピザ",
+	"milano_doria": "ミラノ風ドリア",
+	"peperoncino": "ペペロンチーノ",
+	"sauteed_spinach": "ほうれん草のソテー",
+	"shrimp_salad": "小エビのサラダ",
+	"spicy_chicken": "辛味チキン",
+	"tarako_pasta": "たらこソースシシリー風",
 }
 const CHECKPOINT_SCENE := preload("res://scenes/props/checkpoint.tscn")
 const CHECKPOINT_PREFIX := "Checkpoints/"
@@ -53,7 +68,8 @@ static func snapshot(stage: Node) -> Dictionary:
 					palette[str(tile)] = tile
 					var scene := source.get_scene_tile_scene(scene_id)
 					if scene:
-						labels[str(tile)] = scene.resource_path.get_file().get_basename().capitalize()
+						var name := scene.resource_path.get_file().get_basename()
+						labels[str(tile)] = ITEM_NAMES.get(name, name.capitalize())
 		var variants := palette.values()
 		variants.sort_custom(func(a: Array, b: Array) -> bool: return str(a) < str(b))
 		layers[kind] = {"tileset": layer.tile_set.resource_path, "palette": variants,

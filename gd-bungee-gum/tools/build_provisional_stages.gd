@@ -94,7 +94,7 @@ func build(number: int) -> void:
 		label.modulate = Color("fff0cc")
 		add(stage, label)
 	add(stage, NoteLayout.create_layer(NoteLayout.TERRACE if number == 2 else NoteLayout.KITCHEN))
-	BaguetteLayout.add_pickups(stage, BaguetteLayout.STAGE_2 if number == 2 else BaguetteLayout.STAGE_3)
+	add(stage, BaguetteLayout.create_layer(BaguetteLayout.STAGE_2 if number == 2 else BaguetteLayout.STAGE_3))
 	var packed := PackedScene.new()
 	assert(packed.pack(stage) == OK)
 	assert(ResourceSaver.save(packed, "res://scenes/stages/stage_%d.tscn" % number) == OK)

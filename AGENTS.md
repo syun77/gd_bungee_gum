@@ -330,7 +330,7 @@
 
 - MapEdit uses a dedicated appearance-aware AppKit right sidebar with a scrollable two-column placement grid and a layer-backed content hierarchy. Canvas and minimap drawing each clip explicitly to their own bounds; keep panel frames disjoint.
 
-- MapEdit draws every tile kind as a full grid cell; overlapping tiles prefer the selected kind. Canvas fills and sidebar swatches share Canvas.placementColor. Markers retain pixel positions; start/goal/checkpoint use 14pt screen markers and shared green/pink/orange swatches.
+- MapEdit uses full-cell terrain and 80%-size centered rectangles for anchors and items in both map views. Overlapping tiles prefer the selected kind. Canvas fills and sidebar swatches share Canvas.placementColor. Markers retain pixel positions; start/goal/checkpoint use 14pt screen markers and shared green/pink/orange swatches.
 
 - MapEdit minimap uses Canvas.visibleMapRect in map pixels. Invalidate the overview on canvas resize, camera movement and document changes; minimap clicks and left drags preserve zoom; active drags clamp to map edges.
 
@@ -343,3 +343,11 @@
 - MapEdit carries original source cells/markers alongside edits. A stale paste merges independent changes against the source, skips already-applied values, and rejects divergent changes to the same entry.
 
 - After confirmed direct paste, MapEdit advances the source to the exact submitted placements, retaining newer local edits and keeping the source across local Undo and normal restart. Do not advance it on cancel or a partial checkpoint-only apply.
+
+- MapEdit placement display overrides use the BungeeGumMapEdit UserDefaults suite, keyed by placement ID. Canvas, minimap and palette share these styles; exchange IDs remain unchanged.
+
+- Time Attack has an initially empty Foods TileMapLayer using the same food_tileset.tres as Theater. MapEdit exports Japanese dish labels from scene resource basenames and keeps the scene-tile IDs. Reimport older sessions to get the new layer.
+
+- Replace the right palette scroll view’s entire document grid on refresh. Reusing a layer-backed NSGridView by removing rows left stale button drawings over new labels.
+
+- Baguettes uses a separate scene-tile TileMapLayer from MusicNotes. Its Y offset is +16px so scene instances sit at the cell bottom-center. Game updates the layer before connecting score pickups; Time Attack keeps the timer HUD.

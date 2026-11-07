@@ -1,5 +1,8 @@
 extends SceneTree
 ## Rebuild the dedicated Time Attack map.
+const BaguetteLayout = preload("res://scripts/baguette_layout.gd")
+const NoteLayout = preload("res://scripts/music_note_layout.gd")
+
 var stage: Node2D
 var tiles := preload("res://assets/tilesets/theater_tileset.tres")
 
@@ -59,6 +62,10 @@ func build() -> void:
 	for cell in [Vector2i(11, 18), Vector2i(18, 15), Vector2i(25, 12),
 			Vector2i(38, 15), Vector2i(43, 17), Vector2i(49, 15)]:
 		anchors.set_cell(cell, 2, Vector2i.ZERO)
+	var foods := layer("Foods", preload("res://assets/foods/food_tileset.tres"))
+	foods.z_index = 3
+	add(stage, BaguetteLayout.create_layer([]))
+	add(stage, NoteLayout.create_layer([]))
 	var markers := Node2D.new()
 	markers.name = "PlacementMarkers"
 	add(stage, markers)
