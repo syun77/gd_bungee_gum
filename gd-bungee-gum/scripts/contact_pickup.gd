@@ -1,5 +1,9 @@
 extends Area2D
 
+const ScorePopup = preload("res://scripts/score_popup.gd")
+
+@export var points := 30
+
 signal collected
 
 var is_collected := false
@@ -15,6 +19,7 @@ func collect() -> void:
 	if is_collected:
 		return
 	is_collected = true
+	ScorePopup.spawn(self, points)
 	hide()
 	set_process(false)
 	get_node("/root/SoundEffects").play(&"item")

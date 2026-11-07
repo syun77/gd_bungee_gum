@@ -4,7 +4,7 @@
 
 - `gd-bungee-gum/scenes/stages/theater_stage.tscn` を開き、`Foods`（TileMapLayer）を選択する。下部のタイルマップパネルでシーンコレクション `Foods` から料理を選び、マップにペイントする。消去は通常のタイル消去操作。現在のマップには全6区画に6個ずつ、合計36個を配置している。下段ルート・段差/ガムリフトの着地点を案内し、高い棚にも任意回収の報酬を配置。11種類すべてを使用する。
 - 専用 TileSet は `assets/foods/food_tileset.tres`。11種類のシーンは `scenes/items/foods/`、ゲーム内画像は `assets/foods/`。新規マップでもこの TileSet を TileMapLayer に指定すれば使用できる。32pxグリッド中心に配置し、64px原画を等倍・Nearestで表示する（従来の32px表示の2倍）。Sprite2Dの中心をセル中心に合わせ、32pxセルの外へ描画する。配置グリッドはそのまま。取得・ガム命中判定は中心半径36px（直径72px）の円とし、64px表示より少し広くする。
-- `food_collectible.gd` の Area2D はプレイヤーの物理レイヤー2だけを監視し、`player` グループのボディ接触で一度だけ `collected(food_id)` を通知して消える。地形・箱には衝突しない。食べ物の物理ビット32をガムのレイが検出し、命中時は手元へ引き寄せる（[food-gum-reel.md](food-gum-reel.md)）。スコア・回復・永続保存は付与しない。ステージ再起動で保存された配置が復元される。
+- `food_collectible.gd` の Area2D はプレイヤーの物理レイヤー2だけを監視し、`player` グループのボディ接触で一度だけ `collected(food_id)` を通知して消える。地形・箱には衝突しない。食べ物の物理ビット32をガムのレイが検出し、命中時は手元へ引き寄せる（[food-gum-reel.md](food-gum-reel.md)）。接触・ガム回収とも1個につき1000点を一度だけ加算し、回収位置に「1000」が0.65秒で32px上昇しながら消える。数字演出は音符・フランスパンと同じscore_popup.gdを使い、食べ物削除後も継続する。回復・永続保存は付与しない。死亡復帰では取得済み状態とスコアを保持し、新規開始・手動リトライでは配置とスコアを初期化する。
 - 配置の原本は `scripts/stage_layout.gd` の `FOODS`（セルx/y・料理シーンID）。マップ生成ツールもこの配置を再現する。生成ツールの実行は原本にない手動配置を上書きするため、通常の配置編集では実行しない。
 - 検証: `Godot --headless --path gd-bungee-gum --log-file /tmp/food-check.log --script res://tools/verify_food_collectibles.gd`。全11種類の実シーンタイル生成・接触回収・箱の除外・一度だけの通知・再読込を確認する。
 

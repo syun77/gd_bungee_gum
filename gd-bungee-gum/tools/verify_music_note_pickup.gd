@@ -71,8 +71,40 @@ func verify() -> void:
 	standalone.collect()
 	standalone.collect()
 	assert(pickups == before + 1 and not standalone.visible, "Duplicate pickup is harmless")
+	var popup := root.get_node("ScorePopup") as Label
+	assert(popup.text == "10", "Note displays exact point value")
+	var popup_y := popup.position.y
+	await create_timer(0.2).timeout
+	assert(is_instance_valid(popup) and popup.position.y < popup_y, "Popup survives note deletion and rises")
+	await create_timer(0.6).timeout
+	assert(not is_instance_valid(popup), "Popup expires")
+	for entry in [["res://scenes/items/baguette.tscn", "30"], ["res://scenes/items/foods/milano_doria.tscn", "1000"]]:
+		var item = load(entry[0]).instantiate()
+		root.add_child(item)
+		item.position = Vector2(300, -300)
+		item.collect()
+		item.collect()
+		var labels := root.find_children("ScorePopup*", "Label", false, false)
+		assert(labels.size() == 1 and labels[0].text == entry[1], "Each pickup creates one matching popup")
+		var number: Label = labels[0]
+		var start_y := number.position.y
+		await create_timer(0.2).timeout
+		assert(is_instance_valid(number) and number.position.y < start_y and number.modulate.a < 1.0, "Number rises and fades after item deletion")
+		await create_timer(0.6).timeout
+		assert(not is_instance_valid(number), "Number expires")
+	var game = load("res://scenes/game_time_attack.tscn").instantiate()
+	root.add_child(game)
+	assert(game.timer_label != game.get_node("HUD/Score"), "Time Attack has separate timer and score")
+	var note = game.get_node("TheaterStage/MusicNotes").get_child(0)
+	var score_before: int = game.score
+	note.collect()
+	note.collect()
+	assert(game.score == score_before + 10, "Note adds exactly ten points once")
+	assert(game.get_node("HUD/Score").text == "SCORE %d" % game.score, "Time Attack displays points")
+	assert(game.timer_label.text.begins_with("TIME"), "Scoring preserves timer")
+	game.free()
 	await process_frame
 	player.free()
 	box.free()
-	print("PASS: music note player contact across3stages, props/group filtering, gum exclusion, pause, reload and one-shot pickup")
+	print("PASS: music note player contact across3stages, props/group filtering, gum exclusion, pause, reload, one-shot ten points, rising/expiring popup and Time Attack HUD")
 	quit()

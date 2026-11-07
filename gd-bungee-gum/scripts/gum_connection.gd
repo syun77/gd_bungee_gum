@@ -92,8 +92,10 @@ func cast_to(point: Vector2) -> Dictionary:
 	var end := origin() + offset.limit_length(settings.attachment_range)
 	return _cast_segment(origin(), end)
 
-func _cast_segment(start: Vector2, end: Vector2) -> Dictionary:
+func _cast_segment(start: Vector2, end: Vector2, excluded_rid: RID = RID()) -> Dictionary:
 	var query := PhysicsRayQueryParameters2D.create(start, end, 1 | 4 | 16 | 32, [player.get_rid()])
+	if excluded_rid.is_valid():
+		query.exclude = query.exclude + [excluded_rid]
 	query.collide_with_areas = true
 	query.hit_from_inside = true
 	return get_world_2d().direct_space_state.intersect_ray(query)
@@ -206,7 +208,9 @@ func _step_outbound(delta: float) -> void:
 		detach("TOO FAR")
 		return
 	# The root may have moved since firing. Reject lines obstructed behind the tip.
-	var root_hit := _cast_segment(origin(), tip.move_toward(origin(), 0.1))
+	# The hit ring is an adhesion target, including when the shot starts inside it.
+	var hit_anchor_rid: RID = hit.rid if hit.get("collider") is TileMapLayer else RID()
+	var root_hit := _cast_segment(origin(), tip.move_toward(origin(), 0.1), hit_anchor_rid)
 	if not root_hit.is_empty():
 		detach("BLOCKED PATH")
 		return

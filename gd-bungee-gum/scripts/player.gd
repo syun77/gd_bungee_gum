@@ -175,6 +175,10 @@ func simulate(delta: float, jump_requested := false, attached_jump := false) -> 
 		kick_available = true
 	# project.godot の物理キー割り当てを使用。A／左矢印=-1、D／右矢印=+1。
 	var direction := Input.get_axis("move_left", "move_right")
+	# Counter-steering brakes free-flight momentum; attached swings retain momentum.
+	var gum_attached: bool = is_instance_valid(gum) and gum.connected()
+	if not grounded and not gum_attached and direction * external_velocity.x < 0.0:
+		external_velocity.x = 0.0
 	var acceleration := settings.ground_acceleration if grounded else settings.air_acceleration
 	# 入力速度は設定の加速度で目標速度へ近づけ、無入力ではゼロへ減速する。
 	var removed_control_y := control_velocity.y

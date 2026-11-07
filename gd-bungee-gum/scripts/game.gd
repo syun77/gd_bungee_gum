@@ -5,7 +5,6 @@ const FoodCollectible = preload("res://scripts/food_collectible.gd")
 const Settings = preload("res://scripts/game_settings.gd")
 const TIME_ATTACK_RECORD := "user://time_attack_sprint.cfg"
 const SPIKE_LAYER := 64
-const BAGUETTE_POINTS := 100
 const RESPAWN_META := &"checkpoint_respawn"
 var active_checkpoint: NodePath
 @export var settings: Settings
@@ -77,7 +76,10 @@ func _setup_puzzle_props() -> void:
 	$PulleyTrolley.bind(gum)
 
 func _setup_timer() -> void:
-	timer_label = $HUD/Score
+	timer_label = $HUD/Score.duplicate()
+	timer_label.name = "Timer"
+	timer_label.position.y = 112.0
+	$HUD.add_child(timer_label)
 	var record := ConfigFile.new()
 	if record.load(TIME_ATTACK_RECORD) == OK:
 		best_time = record.get_value("record", "seconds", 0.0)
@@ -99,8 +101,7 @@ func _setup_pickups() -> void:
 		if saved.get("scene") == scene_file_path:
 			collected_items = saved.get("collected_items", {}).duplicate()
 			score = saved.get("score", 0)
-	if not time_attack:
-		$HUD/Score.text = "SCORE %d" % score
+	$HUD/Score.text = "SCORE %d" % score
 	_register_pickups($TheaterStage)
 
 func _register_pickups(host: Node) -> void:
@@ -115,18 +116,18 @@ func _register_pickups(host: Node) -> void:
 				child.queue_free()
 				continue
 			if child is FoodCollectible:
-				child.collected.connect(func(_food_id: StringName): collected_items[key] = true)
+				child.collected.connect(func(_food_id: StringName):
+					collected_items[key] = true
+					_add_score(FoodCollectible.POINTS)
+				)
 			else:
 				child.collected.connect(func(): collected_items[key] = true)
-				if host.name == &"Baguettes":
-					child.collected.connect(_score_baguette)
+				child.collected.connect(_add_score.bind(child.points))
 		else:
 			_register_pickups(child)
 
-func _score_baguette() -> void:
-	score += BAGUETTE_POINTS
-	if time_attack:
-		return
+func _add_score(points: int) -> void:
+	score += points
 	$HUD/Score.text = "SCORE %d" % score
 
 func _setup_pause_menu() -> void:

@@ -9,6 +9,9 @@ var highlight_elapsed := 0.0
 var turn_elapsed := 0.0
 @onready var sprite: Sprite2D = $Sprite2D
 
+func _init() -> void:
+	points = 10
+
 func _ready() -> void:
 	# Each placed note owns its uniform; stable position phases avoid synchronized rows.
 	sprite.material = sprite.material.duplicate()

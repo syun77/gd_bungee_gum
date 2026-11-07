@@ -1,3 +1,61 @@
+## White score-number outline
+
+- Goal/status: White outline for pickup point numbers; complete.
+- Completed/decisions: Shared ScorePopup font_outline_color is white, affecting note10/baguette30/food1000; retained cream fill and4px outline.
+- Files: score_popup.gd, specs/music-note-item-assets.md, AGENTS.md, WORKLOG.md.
+- Verification: Reviewed shared style and scope; git diff --check passed. Refactoring review: one shared color override, no duplicate style. No new tests for color-only change; visual playtest not performed.
+- Blockers: None. Next action: Optional F5 appearance check.
+
+## Shared pickup point popups
+
+- Goal/status: Show rising numbers for baguette30 and food1000 like note10; complete.
+- Decisions: Shared score_popup.gd spawns outside item and retains note styling/timing. ContactPickup.points (baguette30/note10) and FoodCollectible.POINTS1000 drive both popup and score to avoid mismatches. Food contact and gum completion share collect.
+- Files: score_popup.gd, music_note.gd, contact_pickup.gd, food_collectible.gd, game.gd, pickup verifiers, music-note/baguette/food specs, AGENTS.md, WORKLOG.md.
+- Tests: verify_music_note_pickup PASS (all three values, duplicate guard, rise/fade/lifetime after deletion); verify_food_reel PASS (1000 popup on gum completion); verify_stage_select PASS (points/death persistence). Final refactoring: removed note-only popup/point constant and host-name scoring branches; shared values drive presentation and score. git diff --check passed. Known non-blocking certificate/resource cleanup warnings remain. Blockers: None. Next action: Optional F5 visual playtest.
+
+## Pickup point values
+
+- Goal/status: Baguette30 / food1000 / note10; complete.
+- Decisions: Food collected signal credits both contact and completed gum reel once. Existing shared HUD and death persistence apply; no new popup requested.
+- Files: game.gd, verify_stage_select.gd, specs/baguette-score-item.md, specs/food-item-assets.md, AGENTS.md, WORKLOG.md.
+- Tests: verify_stage_select PASS (exact30/1000/10 deltas, duplicate collection, death score preservation and manual reset); verify_food_reel PASS; git diff --check passed. Refactoring review: reuse _add_score and existing signal registration, named constants for values. Known certificate/resource-cleanup warnings remain. Blockers: None. Next action: Optional F5 pickup playtest.
+
+## Anchor-overlap shot rejection
+
+- Goal/status: Fix failure to attach when firing inside an anchor; complete.
+- Findings/decisions: Pre-fix real physics test fails overlap shots with BLOCKED PATH: hit_from_inside returns the same ring for tip hit and root visibility. Root-only ray now excludes the hit anchor cell RID, keeping terrain/props and other rings detectable. Player was already excluded; jump behavior unchanged.
+- Files: gum_connection.gd, verify_gum_anchors.gd, specs/gum-anchor-tile.md, AGENTS.md, WORKLOG.md.
+- Tests: Pre-fix overlap regression reproduced BLOCKED PATH for center and edge positions, multiple directions. Post-fix anchor and gum suites PASS. Refactoring review: explicit RID parameter; shared cast preserves player exclusion and keeps root exception local to hit anchor. Blockers: None. Final anchor and controls suites PASS; git diff --check passed. Known non-blocking certificate/exit-resource warnings remain. Next action: Optional F5 overlap-shot playtest.
+
+## Investigate jump-shot early return
+
+- Goal/status: Explain gum returning early during jumping; investigation complete.
+- Findings: Gum._cast_segment excludes Player RID and ray mask omits player bit2. Game._handle_actions handles fresh jump first: detaches even OUTBOUND, and simultaneous Z/X suppresses shot. Return completion is only handled in RETURNING, never cancels OUTBOUND by player proximity. Moving root can separately trigger BLOCKED PATH / TOO FAR; reported gesture is not captured, so exact incident remains unconfirmed.
+- Files: WORKLOG.md, AGENTS.md only; gameplay unchanged.
+- Tests: Existing verify_controls covers physical Z cancel during flight and simultaneous Z/X priority; PASS.
+- Blockers: None. Next action: Report control cause as supported explanation, distinguish unconfirmed incident; exact incident requires observed input order or release reason.
+
+## Restrict air brake to disconnected gum
+
+- Goal/status: Keep attached swing momentum, enable opposite-input brake after detach; complete.
+- Decisions: Query live Gum.connected in Player.simulate; no historical latch. Jump/manual/break releases immediately allow free-flight brake; vertical momentum unchanged.
+- Files: player.gd, verify_player.gd, specs/player-controller.md, AGENTS.md, WORKLOG.md.
+- Tests: Mirrored real-anchor attached retention and detach-jump brake checks passed; player, controls and gum suites PASS. Refactoring review: one live connected predicate, no extra state or history required. git diff --check passed. Blockers: None. Known non-blocking certificate and exit-resource warnings remain. Next action: Optional swing/detach playtest.
+
+## Music note ten-point pickup
+
+- Goal/status: Display 10 on note pickup and add ten points; complete.
+- Decisions: Note owns a stage-hosted rising/fading 0.65s label. Game shares score addition for baguettes/notes; Time Attack gets separate score/timer labels. Existing death persistence applies.
+- Files: music_note.gd, game.gd, verify_music_note_pickup.gd, verify_stage_select.gd, music-note/baguette specs, AGENTS.md, WORKLOG.md.
+- Tests: Final verify_music_note_pickup and verify_stage_select PASS; git diff --check passed. Verified popup survives item deletion, rises/expires, duplicate collection adds only10, timer remains and death retains score. Refactoring review: shared _add_score, one note POINTS constant, popup owned outside deleted scene tile. Known certificate/resource-cleanup warnings remain. Blockers: None. Next action: Optional F5 visual playtest.
+
+## Air counter-steering brake
+
+- Goal/status: Reset horizontal gum momentum on opposite movement input; complete.
+- Decisions: Clear opposing airborne external X before movement, including fresh gum force each held-input tick. Preserve Y, normal input acceleration, grounded friction and reciprocal rigid force.
+- Files: player.gd, verify_player.gd, specs/player-controller.md, AGENTS.md, WORKLOG.md.
+- Tests: Player, gum and controls suites PASS, including mirrored air brake, held-force cancellation, corner landings and reciprocal forces. Final refactoring review: keep one sign-product condition at the movement input boundary; no new state or force-source bookkeeping. git diff --check passed. Blockers: None. Known non-blocking certificate and gum/controls exit-resource warnings remain. Next action: Optional F5 swing/counter-steering feel test.
+
 ## Preserve collected items on checkpoint death
 
 - Goal/status: Prevent collected items respawning on death; complete.

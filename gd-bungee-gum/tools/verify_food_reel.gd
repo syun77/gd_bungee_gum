@@ -69,6 +69,8 @@ func verify() -> void:
 		check(distance < previous_distance, "Food moves toward hand")
 		previous_distance = distance
 	check(not is_instance_valid(food), "Reaching hand collects food")
+	var popup := root.get_node_or_null("ScorePopup") as Label
+	check(popup != null and popup.text == "1000", "Gum collection displays food points")
 	check(get_nodes_in_group("food_collect_effects").size() == 1, "Successful reel spawns collection burst")
 	check(player.food_jump_available and gum.state == gum.State.READY, "Successful collection grants jump and restores ready")
 	Input.action_release("jump")

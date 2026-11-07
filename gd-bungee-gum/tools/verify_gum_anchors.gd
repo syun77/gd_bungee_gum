@@ -97,6 +97,19 @@ func verify() -> void:
 	check(gum.connected() and gum.target == anchors, "Moving shot missing artwork attaches within margin")
 	check(gum.endpoint().is_equal_approx(center) and gum.tip.is_equal_approx(center), "Moving shot endpoint and tip finish at center")
 	gum.detach("TEST")
+	# A shot starting inside the inflated ring must attach, including at its center.
+	for offset in [Vector2.ZERO, Vector2(20, 0), Vector2(-20, 0), Vector2(0, 20), Vector2(0, -20)]:
+		for direction in [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT, Vector2(1, -1).normalized()]:
+			player.position = center + offset + Vector2(0, 34)
+			gum.fire(direction)
+			gum.step(1.0 / 60.0)
+			check(gum.connected() and gum.target == anchors, "Overlapping ring shot attaches offset=%s direction=%s reason=%s" % [offset, direction, gum.release_reason])
+			if gum.connected():
+				check(gum.endpoint().is_equal_approx(center), "Overlapping shot snaps to ring center")
+				check(is_zero_approx(gum.tension), "Overlap arrival has no immediate force")
+				gum.step(1.0 / 60.0)
+				check(gum.connected(), "Overlap connection survives next physics step")
+			gum.detach("TEST")
 	# The visible outer band remains attachable too.
 	player.position = center + Vector2(13, 140)
 	check(gum.attach_at(center + Vector2(13, 0)), "Enlarged ring outer band accepts adhesion")

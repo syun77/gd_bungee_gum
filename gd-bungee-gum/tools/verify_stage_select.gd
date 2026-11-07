@@ -67,14 +67,21 @@ func verify() -> void:
 		var layer := current_scene.get_node("TheaterStage/" + layer_name)
 		pickup_counts[layer_name] = layer.get_child_count()
 		check(layer.get_child_count() > 0, "Theater has " + layer_name)
-		layer.get_child(0).collect()
+		var score_before: int = current_scene.score
+		var pickup = layer.get_child(0)
+		pickup.collect()
+		pickup.collect()
+		var points: int = {"Foods": 1000, "Baguettes": 30, "MusicNotes": 10}[layer_name]
+		check(current_scene.score == score_before + points, "Pickup awards points once: " + layer_name)
+	var collected_score: int = current_scene.score
+	check(collected_score >= 1040, "Food, baguette and note award points")
 	var first_checkpoint = current_scene.get_node("TheaterStage/Checkpoints/Checkpoint01")
 	current_scene._on_checkpoint_reached(first_checkpoint)
 	current_scene.restart(true)
 	await settle()
 	for layer_name in pickup_counts:
 		check(current_scene.get_node("TheaterStage/" + layer_name).get_child_count() == pickup_counts[layer_name] - 1, "Death preserves " + layer_name)
-	check(current_scene.score == 100, "Death preserves collected baguette score")
+	check(current_scene.score >= collected_score, "Death preserves score before any new spawn-contact pickup")
 	current_scene.restart()
 	await settle()
 	check(current_scene.scene_file_path == "res://scenes/game.tscn", "R reloads gameplay rather than menu")

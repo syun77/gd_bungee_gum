@@ -80,6 +80,52 @@ func verify() -> void:
 	var airborne_speed: float = player.external_velocity.x
 	await ticks(8)
 	assert(is_equal_approx(player.external_velocity.x, airborne_speed), "Air must retain horizontal momentum")
+	for speed in [600.0, -600.0]:
+		player.position = Vector2(240, 400)
+		player.external_velocity = Vector2(speed, -100)
+		var same_action := "move_right" if speed > 0.0 else "move_left"
+		var opposite_action := "move_left" if speed > 0.0 else "move_right"
+		Input.action_press(same_action)
+		await ticks(1)
+		assert(is_equal_approx(player.external_velocity.x, speed), "Same-direction input preserves air momentum")
+		Input.action_release(same_action)
+		Input.action_press(opposite_action)
+		await ticks(1)
+		assert(is_zero_approx(player.external_velocity.x), "Counter-steering resets horizontal external momentum")
+		assert(player.external_velocity.y < 0.0, "Counter-steering preserves upward momentum")
+		player.apply_external_force(Vector2(speed * player.settings.player_mass, 0), 1.0)
+		await ticks(1)
+		assert(is_zero_approx(player.external_velocity.x), "Held counter-steering also cancels newly applied gum force")
+		Input.action_release(opposite_action)
+	game.set_physics_process(false)
+	var brake_anchor := StaticBody2D.new()
+	var brake_shape := CollisionShape2D.new()
+	var brake_rectangle := RectangleShape2D.new()
+	brake_rectangle.size = Vector2(40, 16)
+	brake_shape.shape = brake_rectangle
+	brake_anchor.add_child(brake_shape)
+	brake_anchor.position = Vector2(240, 280)
+	game.add_child(brake_anchor)
+	await ticks(1)
+	for speed in [600.0, -600.0]:
+		player.position = Vector2(240, 400)
+		player.reset_motion()
+		assert(game.gum.attach_at(Vector2(240, 288)), "Air brake fixture attaches to real terrain")
+		var opposite_action := "move_left" if speed > 0.0 else "move_right"
+		Input.action_press(opposite_action)
+		player.external_velocity = Vector2(speed, -100)
+		for tick in 3:
+			await physics_frame
+			player.simulate(1.0 / 60.0)
+			assert(is_equal_approx(player.external_velocity.x, speed), "Attached reverse input must preserve swing momentum")
+		game.gum.detach()
+		await physics_frame
+		player.simulate(1.0 / 60.0, true, true)
+		assert(is_zero_approx(player.external_velocity.x), "Detach jump enables counter-steering immediately")
+		assert(player.external_velocity.y < 0.0, "Detach brake preserves jump impulse")
+		Input.action_release(opposite_action)
+	brake_anchor.queue_free()
+	game.set_physics_process(true)
 	await ticks(65)
 	assert(player.is_on_floor())
 	assert(absf(player.external_velocity.x) < 0.1, "Landing must start friction")

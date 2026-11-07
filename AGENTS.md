@@ -359,3 +359,13 @@
 - MapEdit can paint instant-death spikes in Theater and Time Attack via Spikes and the shared spike_tileset.tres. Time Attack starts with an empty layer; Game owns both overlap and swept death detection.
 
 - Checkpoint death reload carries Game.collected_items (original parent path + placed local position) and score via RESPAWN_META; food reeling never changes identity. Food/contact pickups register recursively after TileMapLayer.update_internals. Manual retry/new entry resets items; Time Attack death at entrance also preserves them. verify_stage_select.gd covers all three pickup types and repeated death.
+
+- Air counter-steering in Player.simulate clears external_velocity.x when move axis opposes it, after Gum.step force and before movement. Only when gum is disconnected; attached swings preserve X even with held opposite input. Detach-jump enables braking in the same tick. Neutral/same-direction and Y momentum remain, grounded uses friction. verify_player.gd covers mirrored free-flight braking, held-force cancellation, real attached momentum and detach-jump transition.
+
+- Shared score_popup.gd spawns stage-hosted ScorePopup numbers (cream fill/white4px outline, debug theme, rises32px/fades0.65s) from collectible collect methods. Game._add_score handles note/baguette points; Time Attack keeps HUD/Score and creates separate HUD/Timer at y112. Death score tests allow legitimate new pickups at respawn. verify_music_note_pickup.gd checks popup lifecycle/one-shot points/timer.
+
+- Jump/shot diagnosis: Game._handle_actions prioritizes every fresh jump and detaches OUTBOUND too; simultaneous Z/X suppresses shot. Short flight then return can be intentional Z cancellation, not self-collision. Gum rays exclude Player RID and bit2; RETURNING completion never cancels OUTBOUND. verify_controls covers both gestures.
+
+- Overlapping-ring shots: _step_outbound root visibility excludes only the tip-hit anchor cell RID via _cast_segment optional excluded_rid. hit_from_inside otherwise detects the same ring twice and rejects as BLOCKED PATH. Keep player exclusion and all other blockers; verify_gum_anchors covers center/±20px offsets × five shot directions and next-tick retention.
+
+- Pickup scores: ContactPickup.points defaults30 for baguettes, MusicNote._init sets points10, FoodCollectible.POINTS=1000. Popup and Game score use these same values. Food collected(food_id) credits both contact and gum-reel completion through shared registration; score/deleted placements persist on death. verify_stage_select checks exact per-item deltas and duplicate collect safety.
